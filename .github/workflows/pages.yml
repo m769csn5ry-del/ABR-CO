@@ -107,3 +107,57 @@ jobs:
           path: ./todo
       - id: deploiement
         uses: actions/deploy-pages@v4
+
+  verifier:
+    name: Vérifier le site en ligne
+    needs: etat
+    if: needs.etat.outputs.url != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Interroger l'app publiée
+        env:
+          BASE: ${{ needs.etat.outputs.url }}
+        run: |
+          set -uo pipefail
+          base="${BASE%/}"
+          echo "Base : $base"
+          fail=0
+
+          check () { # url, attendu, libellé
+            code=$(curl -sSL -o /tmp/body -w '%{http_code}' --max-time 30 "$1" || echo 000)
+            if [ "$code" = "$2" ]; then
+              echo "  OK   $3 ($code)"
+            else
+              echo "::error::$3 — attendu $2, reçu $code ($1)"
+              fail=1
+            fi
+          }
+
+          check "$base/"                     200 "page d'accueil"
+          check "$base/manifest.webmanifest" 200 "manifeste"
+          check "$base/sw.js"                200 "service worker"
+          check "$base/icons/icon-180.png"   200 "icône 180"
+          check "$base/icons/icon-512.png"   200 "icône 512"
+
+          # le contenu doit bien être l'app, pas une page d'erreur ni le README
+          html=$(curl -sSL --max-time 30 "$base/")
+          for marker in 'rel="manifest"' 'apple-mobile-web-app-capable' 'Bodoni Moda' 'data-tab="today"'; do
+            case "$html" in
+              *"$marker"*) echo "  OK   marqueur présent : $marker" ;;
+              *) echo "::error::marqueur absent de la page servie : $marker"; fail=1 ;;
+            esac
+          done
+
+          # la police doit être encastrée, donc aucun appel à un hébergeur de polices
+          case "$html" in
+            *fonts.googleapis.com*|*fonts.gstatic.com*)
+              echo "::error::la page appelle un hébergeur de polices : l'app ne serait plus autonome hors connexion"; fail=1 ;;
+            *) echo "  OK   police encastrée, aucun appel externe" ;;
+          esac
+
+          if [ "$fail" = "0" ]; then
+            { echo "## L'app répond en ligne"; echo ""; echo "**$base/**"; echo ""
+              echo "Page, manifeste, service worker et icônes vérifiés."; } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::error::vérification en ligne en échec"; exit 1
+          fi
