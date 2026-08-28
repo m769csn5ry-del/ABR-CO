@@ -1,12 +1,13 @@
-# Publie Orga sur GitHub Pages.
+# Publie Orga sur GitHub Pages, et rapporte l'état réel de Pages.
 #
-# `configure-pages` avec `enablement: true` active Pages et bascule la source
-# sur « GitHub Actions » : aucun réglage manuel n'est nécessaire dans l'interface,
-# et le dossier publié ne dépend plus d'une branche choisie à la main.
+# L'activation initiale de Pages n'est PAS réalisable par un workflow : le jeton
+# d'Actions n'a pas le droit de créer le site (« Resource not accessible by
+# integration »). Ce workflow constate donc l'état, puis publie si — et seulement
+# si — la source est réglée sur « GitHub Actions ».
 #
-# L'artefact est le contenu de `todo/`, donc l'app est servie à la racine du site
-# (https://<utilisateur>.github.io/ABR-CO/) et non dans un sous-dossier : c'est ce
-# qui garde la portée du service worker et les chemins du manifeste corrects.
+# Le dossier publié est le contenu de `todo/`, pour que l'app soit servie à la
+# racine du site : c'est ce qui garde la portée du service worker et les chemins
+# du manifeste corrects.
 
 name: Publier Orga
 
@@ -23,25 +24,70 @@ permissions:
   pages: write
   id-token: write
 
-# Une publication à la fois, sans annuler celle qui est en cours.
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
+  etat:
+    name: État de GitHub Pages
+    runs-on: ubuntu-latest
+    outputs:
+      build_type: ${{ steps.pages.outputs.build_type }}
+      url: ${{ steps.pages.outputs.url }}
+    steps:
+      - name: Interroger l'API Pages
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          code=$(curl -sS -o /tmp/pages.json -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages" || echo 000)
+
+          echo "Code HTTP : $code"
+          cat /tmp/pages.json || true
+
+          if [ "$code" = "200" ]; then
+            url=$(jq -r '.html_url // ""'  /tmp/pages.json)
+            bt=$(jq  -r '.build_type // ""' /tmp/pages.json)
+            src=$(jq -r '"\(.source.branch // "?")/\(.source.path // "?")"' /tmp/pages.json)
+            st=$(jq  -r '.status // "?"'   /tmp/pages.json)
+            echo "build_type=$bt" >> "$GITHUB_OUTPUT"
+            echo "url=$url"       >> "$GITHUB_OUTPUT"
+            {
+              echo "## GitHub Pages est ACTIF"
+              echo ""
+              echo "| | |"
+              echo "|---|---|"
+              echo "| Adresse | $url |"
+              echo "| Source | \`$bt\` — branche \`$src\` |"
+              echo "| État | $st |"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "build_type=none" >> "$GITHUB_OUTPUT"
+            echo "url="            >> "$GITHUB_OUTPUT"
+            {
+              echo "## GitHub Pages est INACTIF (HTTP $code)"
+              echo ""
+              echo "Un workflow ne peut pas créer le site lui-même."
+              echo "À activer une fois dans **Settings → Pages**."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   publier:
+    name: Publier
+    needs: etat
+    if: needs.etat.outputs.build_type == 'workflow'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deploiement.outputs.page_url }}
     steps:
-      - name: Récupérer le dépôt
-        uses: actions/checkout@v4
-
-      - name: Activer Pages si ce n'est pas déjà fait
-        uses: actions/configure-pages@v5
-        with:
-          enablement: true
+      - uses: actions/checkout@v4
 
       - name: Vérifier que le paquet est complet
         run: |
@@ -55,11 +101,9 @@ jobs:
             || { echo "::error::le manifeste n'est pas lié dans index.html"; exit 1; }
           echo "Paquet complet : $(du -sh todo | cut -f1)"
 
-      - name: Empaqueter le dossier todo/
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: ./todo
-
-      - name: Déployer
-        id: deploiement
+      - id: deploiement
         uses: actions/deploy-pages@v4
