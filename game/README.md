@@ -90,6 +90,14 @@ de départ ; le reste est conforme.
 Le moteur n'est pas un échantillon rejoué : il est calculé échantillon par
 échantillon dans un `AudioWorklet` (repli sur `ScriptProcessor` si besoin).
 
+La ligne est modélisée comme un **tube**, pas comme une boîte noire : un
+guide d'onde à ligne à retard fait circuler l'onde sur les 1,6 m de conduit,
+avec réflexion et amortissement des aigus à chaque aller-retour. C'est ce qui
+donne le creux et la « longueur » d'un straight-pipe, qu'un simple banc de
+filtres ne reproduit pas. Deux résonateurs supplémentaires suivent les ordres
+2 et 3 de l'allumage, excités par les bouffées de gaz : leur gain monte avec
+la charge et le régime, et c'est de là que vient le cri du V12 dans les tours.
+
 La hauteur du son vient de la **fréquence d'allumage** — douze cylindres, quatre
 temps, soit six explosions par tour de vilebrequin : `f = régime / 10`. Au
 ralenti (900 tr/min) c'est un grondement à 90 Hz ; à 8 400 tr/min, un cri à
@@ -164,6 +172,11 @@ et d'arêtes vives, pas de galets. Les sections proches des essieux rentrent le
 bas de caisse et remontent l'épaulement au-dessus du pneu : c'est ainsi que se
 creusent les passages de roue.
 
+Le dessus n'est pas un dôme : une fonction de creux abaisse la ligne médiane
+du capot et du capot moteur sous les bosses d'ailes, comme sur la voiture.
+Les jonctions d'ouvrants — montants de portes, seuils, ligne de capot — sont
+dessinées ; sans elles la carrosserie se lit comme un bloc.
+
 Y sont greffés : bouclier avant à grande bouche noire, splitter à extrémités
 relevées et double étage de dérives, optiques en Y couché, capot à deux grands
 évents et nervure centrale, écopes latérales à lamelles, écope de toit, capot
@@ -172,6 +185,24 @@ volet mobile (animé par l'ALA), diffuseur à ailettes, **sorties Gintani** — 
 tubes de gros diamètre en titane bleui, très écartés et montés haut, sans
 silencieux — rétroviseurs, et un habitacle complet (volant hexagonal qui tourne,
 sièges baquets en cuir rouge, combiné numérique) visible en caméra intérieure.
+
+### L'habitacle
+
+Visible en caméra intérieure, et à travers le vitrage depuis l'extérieur.
+Comme la coque de carrosserie est éliminée quand on la regarde de l'intérieur,
+tout l'intérieur est bâti : pavillon, montants de pare-brise, contre-portes
+matelassées, plancher, cloison moteur avec sa vitre sur le V12.
+
+On y trouve la planche de bord à casquette, les aérateurs hexagonaux, la
+console centrale à boutons et son **cache basculant rouge de démarreur**, le
+tunnel carbone, le volant à méplats haut et bas avec ses palettes fixes, les
+sièges baquets carbone à sellerie matelassée hexagonale surpiquée, appuie-tête
+à passage de harnais, le rétroviseur, la console de pavillon et le pédalier.
+
+Le **combiné TFT est vivant** : compte-tours circulaire, rapport engagé,
+vitesse, mode de conduite, témoins TC/ABS et bandeau de passage de rapport
+sont redessinés en jeu à 20 Hz sur une texture. C'est bien l'instrumentation
+de la voiture que lit le pilote, pas une décalcomanie.
 
 Réglages de livrée dans le garage : neuf teintes, finition mate ou vernie, pack
 carbone, filet rouge de bas de caisse. Par défaut : **noir mat, filet rouge,

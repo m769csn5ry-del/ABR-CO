@@ -579,6 +579,17 @@
     this.car.setALA(v.alaOpen);
     this.car.decayFlame(dt);
 
+    /* combiné de bord : 20 rafraîchissements par seconde suffisent */
+    this._clsAcc = (this._clsAcc || 0) + dt;
+    if (this._clsAcc >= 1 / 20) {
+      this._clsAcc = 0;
+      this.car.updateCluster({
+        rpm: v.rpm, kmh: v.speed * 3.6, gear: v.gear,
+        mode: ['STRADA', 'SPORT', 'CORSA'][v.driveMode],
+        tc: v.tcActive > 0.25, abs: v.absActive > 0.25
+      });
+    }
+
     /* fumée et traces */
     let smoky = 0;
     for (let i = 0; i < 4; i++) {
@@ -751,7 +762,7 @@
     } else {
       /* caméras embarquées */
       if (mode === 1) _v.set(0, 0.62, 0.30);            /* capot */
-      else if (mode === 2) _v.set(-0.36, 0.62, 0.18);   /* habitacle */
+      else if (mode === 2) _v.set(-0.36, 0.418, 0.16);  /* habitacle : oeil du pilote */
       else _v.set(0, -0.16, 2.35);                      /* pare-chocs */
       _v.applyQuaternion(v.quat).add(v.pos);
       /* petits mouvements de tête sous les accélérations */

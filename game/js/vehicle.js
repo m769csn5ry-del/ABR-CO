@@ -119,6 +119,7 @@
     this.Ie = 0.24;                          /* V12 + volant allégé */
     this.idle = 900; this.redline = 8700; this.limiter = 8720;
     this.engineOn = false; this.starter = 0; this.cut = false; this.cutT = 0;
+    this.startFlare = 0;
     this.gears = [3.15, 2.19, 1.63, 1.29, 1.03, 0.84, 0.69];
     this.reverseRatio = -3.30;
     this.finalDrive = 4.72;
@@ -207,7 +208,10 @@
     const self = this;
     setTimeout(function () {
       self.engineOn = true;
-      self.omegaE = 2100 * Math.PI / 30;      /* coup de démarrage typique */
+      /* Un V12 atmosphérique ne démarre pas au ralenti : il monte à
+         ~2 500 tr/min dans un aboiement, puis redescend en deux secondes. */
+      self.omegaE = 2500 * Math.PI / 30;
+      self.startFlare = 1;
       self.starter = 0;
     }, 900);
   };
@@ -370,7 +374,7 @@
     } else this.tcActive = U.damp(this.tcActive, 0, 6, h);
 
     /* rupteur : coupure d'allumage franche puis reprise */
-    if (this.rpm > this.limiter) { this.cut = true; this.cutT = 0.055; }
+    if (this.rpm > this.limiter) { this.cut = true; this.cutT = 0.030; }
     if (this.cutT > 0) { this.cutT -= h; if (this.cutT <= 0) this.cut = false; }
 
     let Te = 0;
@@ -378,8 +382,10 @@
       const full = torqueAt(U.clamp(this.rpm, 0, 9000));
       const drag = 14 + 0.017 * this.rpm;         /* frein moteur (pompage) */
       Te = (this.cut ? 0 : full * thr) - drag * (1 - thr * 0.85);
-      /* régulation de ralenti */
-      if (this.rpm < this.idle && !this.cut) Te += (this.idle - this.rpm) * 0.20;
+      /* régulation de ralenti, régime cible élevé juste après le démarrage */
+      if (this.startFlare > 0) this.startFlare = Math.max(0, this.startFlare - h / 2.4);
+      const idleTarget = this.idle + 1450 * this.startFlare * this.startFlare;
+      if (this.rpm < idleTarget && !this.cut) Te += (idleTarget - this.rpm) * 0.20;
     } else if (this.starter > 0) {
       Te = 120;
     }

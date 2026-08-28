@@ -71,10 +71,30 @@
       /* ---- état des bouffées d'échappement (une par banc) */
       this.pulse = [{ t: 1e9, len: 1, amp: 0 }, { t: 1e9, len: 1, amp: 0 }];
 
+      /* ---- guide d'onde : la ligne est un tube, pas une boîte noire.
+         Une ligne droite de ~1,6 m se comporte comme un tuyau ouvert :
+         l'onde y fait des allers-retours, ce qui donne le creux et la
+         « longueur » caractéristiques d'un straight-pipe. Un simple banc
+         de filtres ne reproduit pas cela. */
+      this.pipeLen = Math.max(24, Math.round(sr * 1.62 / 343));
+      this.pipe = [
+        { buf: new Float32Array(2048), i: 0, lp: 0 },
+        { buf: new Float32Array(2048), i: 0, lp: 0 }
+      ];
+
+      /* ---- résonateurs asservis aux ordres 2 et 3 de l'allumage :
+         c'est ce qui fait monter le cri du V12 avec le régime. */
+      this.track = [
+        { y1: 0, y2: 0, a1: 0, a2: 0, g: 0 },
+        { y1: 0, y2: 0, a1: 0, a2: 0, g: 0 }
+      ];
+      this.coefTick = 0;
+
       /* ---- résonateurs des retours de flamme (pétarades) */
       this.pop = [];
-      for (let i = 0; i < 3; i++) this.pop.push({ y1: 0, y2: 0, a1: 0, a2: 0, env: 0, dec: 0, g: 0 });
+      for (let i = 0; i < 5; i++) this.pop.push({ y1: 0, y2: 0, a1: 0, a2: 0, env: 0, dec: 0, g: 0 });
       this.popIdx = 0;
+      this.burst = 0;
 
       /* ---- admission : bruit filtré passe-bande suiveur de régime */
       this.inNoise = { y1: 0, y2: 0 };
@@ -161,13 +181,22 @@
 
         /* --------- retours de flamme Gintani --------- */
         if (rpm > 2600 && (cutNow || s.thr < 0.05)) {
-          const prob = cutNow ? 0.34 : 0.14 * rn;
-          if (this.rnd() < prob) this.bang((0.35 + 0.65 * rn) * (0.6 + 0.6 * this.rnd()), this.rnd() < 0.22);
+          const prob = cutNow ? 0.40 : 0.16 * rn;
+          if (this.rnd() < prob) {
+            const big = this.rnd() < 0.26;
+            this.bang((0.35 + 0.65 * rn) * (0.6 + 0.6 * this.rnd()), big);
+            /* une détonation en entraîne souvent d'autres : rafale */
+            if (!big && this.rnd() < 0.45) this.burst = 2 + ((this.rnd() * 3) | 0);
+          }
+        }
+        if (this.burst > 0 && this.rnd() < 0.5) {
+          this.burst--;
+          this.bang(0.25 + 0.45 * this.rnd(), false);
         }
       }
 
       /* --------- excitation des résonateurs --------- */
-      let xL = 0, xR = 0;
+      let xL = 0, xR = 0, xExc = 0;
       for (let b = 0; b < 2; b++) {
         const pu = this.pulse[b];
         let x = 0;
@@ -179,6 +208,7 @@
           x = pu.amp * env * turb;
           pu.t++;
         }
+        xExc += x;
         const bank = this.res[b];
         let y = 0;
         for (let i = 0; i < bank.length; i++) {
@@ -188,7 +218,45 @@
           /* les formants aigus ne montent qu'en charge (le cri du V12) */
           y += r.hi ? v * (0.35 + 0.95 * s.load * (0.3 + 0.7 * rn)) : v;
         }
+        /* aller-retour dans le tube */
+        const P = this.pipe[b];
+        const rd = P.buf[P.i];
+        P.lp += (rd - P.lp) * 0.42;
+        P.buf[P.i] = y * 0.62 + P.lp * 0.60;
+        P.i = (P.i + 1) % this.pipeLen;
+        y = y * 0.80 + rd * 0.52;
+
         if (b === 0) xL += y; else xR += y;
+      }
+
+      /* --------- ordres 2 et 3 : le cri qui monte avec le régime --------- */
+      if (--this.coefTick <= 0) {
+        this.coefTick = 64;
+        const nyq = this.sr * 0.45;
+        for (let i = 0; i < 2; i++) {
+          const f = Math.min(nyq, fire * (2 + i));
+          const bw = 110 + f * 0.22;
+          const rr = Math.exp(-Math.PI * bw / this.sr);
+          const w = 2 * Math.PI * f / this.sr;
+          const t = this.track[i];
+          t.a1 = 2 * rr * Math.cos(w); t.a2 = -rr * rr;
+          t.g = (1 - rr) * (i === 0 ? 2.6 : 1.7);
+        }
+      }
+      {
+        const drive = s.load * (0.15 + 0.85 * rn);
+        /* Excités par les bouffées de gaz, pas par la sortie : injecter la
+           voie directe dans un résonateur puis la réinjecter revenait à en
+           soustraire les aigus (déphasage de 180° au-delà de la résonance). */
+        const xin = xExc;
+        for (let i = 0; i < 2; i++) {
+          const t = this.track[i];
+          const v2 = t.a1 * t.y1 + t.a2 * t.y2 + t.g * xin;
+          t.y2 = t.y1; t.y1 = v2;
+          const gg = v2 * drive * 0.8;
+          xL += gg * (i === 0 ? 1.0 : 0.85);
+          xR += gg * (i === 0 ? 0.88 : 1.0);
+        }
       }
 
       /* --------- pétarades --------- */
@@ -250,7 +318,7 @@
          grondement discret au ralenti à un cri assourdissant à 8 500.
          ~22 dB d'écart entre les deux extrêmes. */
       const loud = Math.pow(0.08 + 0.92 * s.load * (0.30 + 0.70 * rn), 0.8) * (0.50 + 0.50 * rn);
-      const g = 0.42 * loud * (0.45 + 0.55 * s.valve);
+      const g = 0.56 * loud * (0.45 + 0.55 * s.valve);
       /* coupe-bas à ~65 Hz : on retire le boum inutile */
       const hp = 0.9915;
       let oL = this.lpL - this.hpL.x + hp * this.hpL.y; this.hpL.x = this.lpL; this.hpL.y = oL;

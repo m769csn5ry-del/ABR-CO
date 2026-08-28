@@ -289,6 +289,38 @@
     return c;
   };
 
+  /* Sellerie matelassée à motif hexagonal (sièges, contre-portes) */
+  U.quiltCanvas = function (r, g, b) {
+    const s = 256;
+    const c = U.canvas(s, s), x = c.getContext('2d');
+    x.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+    x.fillRect(0, 0, s, s);
+    const hex = (cx, cy, rad) => {
+      x.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = i * Math.PI / 3 + Math.PI / 6;
+        const px = cx + Math.cos(a) * rad, py = cy + Math.sin(a) * rad;
+        if (i === 0) x.moveTo(px, py); else x.lineTo(px, py);
+      }
+      x.closePath();
+    };
+    const rad = s / 8, dx = rad * Math.sqrt(3), dy = rad * 1.5;
+    for (let row = -1; row * dy < s + rad; row++) {
+      for (let col = -1; col * dx < s + dx; col++) {
+        const cx = col * dx + (row % 2 ? dx / 2 : 0), cy = row * dy;
+        const grd = x.createRadialGradient(cx, cy - rad * 0.2, rad * 0.1, cx, cy, rad);
+        grd.addColorStop(0, 'rgba(255,255,255,.13)');
+        grd.addColorStop(0.72, 'rgba(0,0,0,0)');
+        grd.addColorStop(1, 'rgba(0,0,0,.34)');
+        hex(cx, cy, rad * 0.97); x.fillStyle = grd; x.fill();
+        hex(cx, cy, rad * 0.97);
+        x.strokeStyle = 'rgba(228,206,150,.55)'; x.lineWidth = 1.2;
+        x.setLineDash([3, 3]); x.stroke(); x.setLineDash([]);
+      }
+    }
+    return c;
+  };
+
   /* Marquage routier appliqué sur le ruban : ligne axiale + rives */
   U.roadCanvas = function (lanes, dashed, seed) {
     const w = 256, h = 512;
