@@ -36,7 +36,7 @@
   /* ------------------------- entrées ------------------------- */
   const Input = {
     keys: {}, mouse: { x: 0, y: 0, down: false, dx: 0, dy: 0, wheel: 0 },
-    pad: null,
+    pad: null, padBlocked: false,
     throttle: 0, brake: 0, steer: 0, handbrake: 0,
     init: function () {
       const self = this;
@@ -55,8 +55,10 @@
         if (self.mouse.down) { self.mouse.dx += e.movementX || 0; self.mouse.dy += e.movementY || 0; }
       });
       cv.addEventListener('wheel', function (e) { self.mouse.wheel += e.deltaY; e.preventDefault(); }, { passive: false });
-      addEventListener('gamepadconnected', function (e) { self.pad = e.gamepad.index; });
-      addEventListener('gamepaddisconnected', function () { self.pad = null; });
+      try {
+        addEventListener('gamepadconnected', function (e) { self.pad = e.gamepad.index; });
+        addEventListener('gamepaddisconnected', function () { self.pad = null; });
+      } catch (e) { self.padBlocked = true; }
     },
     k: function () { return this.keys; },
     sample: function (dt) {
@@ -68,23 +70,34 @@
       if (k.KeyD || k.ArrowRight) str += 1;
       if (k.Space) hb = 1;
 
-      /* manette : gâchettes analogiques + stick */
+      /* Manette : gâchettes analogiques + stick.
+         Dans un cadre embarqué, la politique de permissions peut interdire
+         la fonctionnalité « gamepad » : getGamepads() lève alors une
+         exception. Appelée à chaque image, elle interrompait la boucle de
+         rendu dès la première — écran noir, HUD figé sur ses valeurs de
+         départ. On n'interroge donc les manettes qu'une fois prouvé que
+         c'est permis, et on renonce définitivement au premier refus. */
       let padSteer = null;
-      if (navigator.getGamepads) {
-        const gps = navigator.getGamepads();
-        for (let i = 0; i < gps.length; i++) {
-          const gp = gps[i];
-          if (!gp || !gp.connected) continue;
-          const ax = gp.axes[0] || 0;
-          if (Math.abs(ax) > 0.09) padSteer = ax;
-          const rt = gp.buttons[7] ? gp.buttons[7].value : 0;
-          const lt = gp.buttons[6] ? gp.buttons[6].value : 0;
-          if (rt > 0.02) thr = Math.max(thr, rt);
-          if (lt > 0.02) brk = Math.max(brk, lt);
-          if (gp.buttons[0] && gp.buttons[0].pressed) hb = 1;
-          this.padUp = gp.buttons[5] && gp.buttons[5].pressed;
-          this.padDown = gp.buttons[4] && gp.buttons[4].pressed;
-          break;
+      if (!this.padBlocked && navigator.getGamepads) {
+        try {
+          const gps = navigator.getGamepads();
+          for (let i = 0; i < gps.length; i++) {
+            const gp = gps[i];
+            if (!gp || !gp.connected) continue;
+            const ax = gp.axes[0] || 0;
+            if (Math.abs(ax) > 0.09) padSteer = ax;
+            const rt = gp.buttons[7] ? gp.buttons[7].value : 0;
+            const lt = gp.buttons[6] ? gp.buttons[6].value : 0;
+            if (rt > 0.02) thr = Math.max(thr, rt);
+            if (lt > 0.02) brk = Math.max(brk, lt);
+            if (gp.buttons[0] && gp.buttons[0].pressed) hb = 1;
+            this.padUp = gp.buttons[5] && gp.buttons[5].pressed;
+            this.padDown = gp.buttons[4] && gp.buttons[4].pressed;
+            break;
+          }
+        } catch (e) {
+          this.padBlocked = true;
+          this.padUp = false; this.padDown = false;
         }
       }
 
