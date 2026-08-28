@@ -6,6 +6,7 @@
    ET utilisable hors connexion, sans requête vers un hébergeur de polices. */
 const fs = require('fs');
 const path = require('path');
+const { execFileSync } = require('child_process');
 
 const root = __dirname;
 let body = fs.readFileSync(path.join(root, 'src/app.html'), 'utf8');
@@ -61,6 +62,19 @@ fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 fs.writeFileSync(path.join(root, 'todo/index.html'), pwa);
 fs.writeFileSync(path.join(root, 'dist/artifact.html'), artifact);
 
+/* Paquet prêt à déposer chez un hébergeur statique (Netlify, Vercel, Cloudflare…).
+   Le contenu de todo/ est placé à la RACINE de l'archive : une fois déployé,
+   l'app vit sur `https://domaine/` et non sur `https://domaine/todo/`, ce qui
+   garde la portée du service worker et les chemins du manifeste corrects. */
+const ZIP = path.join(root, 'dist/orga-dbr-studio.zip');
+try {
+  fs.rmSync(ZIP, { force: true });
+  execFileSync('zip', ['-r', '-q', ZIP, '.', '-x', 'README.md'], { cwd: path.join(root, 'todo') });
+} catch (e) {
+  console.warn('zip indisponible — paquet non régénéré (' + e.message + ')');
+}
+
 const kb = (p) => (fs.statSync(path.join(root, p)).size / 1024).toFixed(0) + ' Ko';
-console.log('todo/index.html    ', kb('todo/index.html'));
-console.log('dist/artifact.html ', kb('dist/artifact.html'));
+console.log('todo/index.html         ', kb('todo/index.html'));
+console.log('dist/artifact.html      ', kb('dist/artifact.html'));
+if (fs.existsSync(ZIP)) console.log('dist/orga-dbr-studio.zip', kb('dist/orga-dbr-studio.zip'));

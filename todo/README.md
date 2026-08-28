@@ -13,14 +13,36 @@ aucune requête réseau. Tout est stocké dans le navigateur de l'appareil (`loc
 L'icône est un monogramme didone champagne sur encre. L'app s'ouvre en plein écran,
 sans barre d'adresse, et fonctionne **hors connexion** (service worker).
 
-## Activer l'hébergement (GitHub Pages)
+## Mettre en ligne
 
-**Settings → Pages → Build and deployment**
+L'app est un site statique sans build. `node build.js` produit
+`dist/orga-dbr-studio.zip`, dont le **contenu de `todo/` est à la racine de
+l'archive** : une fois déployé, l'app vit sur `https://domaine/` et non sur
+`https://domaine/todo/`. C'est ce qui garde la portée du service worker (`/`) et
+les chemins du manifeste corrects.
 
-- **Source** : `Deploy from a branch`
-- **Branch** : `claude/iphone-todo-app-ezlckp` (ou `main` après fusion), dossier `/ (root)`
+**Dépôt direct (le plus simple).** Déposer `dist/orga-dbr-studio.zip` sur un
+hébergeur statique acceptant l'envoi de fichiers (Netlify Drop, Cloudflare Pages
+en envoi direct…). URL immédiate, aucun build, aucun compte GitHub.
 
-L'app est alors servie à `https://<utilisateur>.github.io/ABR-CO/todo/`.
+**Vercel en ligne de commande**, depuis l'archive décompressée :
+
+```bash
+unzip dist/orga-dbr-studio.zip -d orga && cd orga
+npx vercel deploy --prod
+```
+
+**Depuis le dépôt Git.** `vercel.json` et `netlify.toml` déclarent déjà `todo`
+comme dossier publié, et interdisent la mise en cache de `sw.js` — sans quoi une
+mise à jour peut mettre des jours à atteindre les iPhones déjà installés. Attention :
+ces hébergeurs déploient la branche de production (`main` par défaut), qui doit
+donc porter le dossier `todo/`.
+
+**GitHub Pages.** *Settings → Pages* · Source `Deploy from a branch` · Branch
+`claude/iphone-todo-app-ezlckp` (ou `main` après fusion), dossier `/ (root)`.
+L'app est alors servie à `https://<utilisateur>.github.io/ABR-CO/todo/` — noter le
+suffixe `/todo/` : choisir `main` alors que le dossier n'est que sur la branche de
+travail renvoie une 404.
 
 ## Parti pris visuel
 
