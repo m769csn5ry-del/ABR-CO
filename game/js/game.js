@@ -29,7 +29,7 @@
     paint: 5, matte: true, carbon: true, livery: true, timeIdx: 2, mode: 2, quality: 'high',
     started: false, paused: false, photo: false,
     cam: 0, camNames: ['POURSUITE', 'CAPOT', 'HABITACLE', 'PARE-CHOCS', 'CINÉMA'],
-    resScale: 1, shadows: true, bloom: true, fpsCap: 0, fps: 0,
+    resScale: 1, shadows: true, bloom: true, safe: false, fpsCap: 0, fps: 0,
     t100: null, t100Start: null, vmax: 0, dayNight: false
   };
 
@@ -309,6 +309,19 @@
     };
     document.getElementById('optCarbon').onchange = function (e) { G.carbon = e.target.checked; };
     document.getElementById('optLivery').onchange = function (e) { G.livery = e.target.checked; };
+    document.getElementById('optSafe').onchange = function (e) {
+      G.safe = e.target.checked;
+      if (G.safe) { G.bloom = false; G.shadows = false; G.resScale = 0.75; G.quality = 'medium'; }
+      document.getElementById('setBloom').checked = G.bloom;
+      document.getElementById('setShadow').checked = G.shadows;
+      document.getElementById('setRes').value = Math.round(G.resScale * 100);
+      if (App.fx) App.fx.enabled = G.bloom;
+      if (App.renderer) {
+        App.renderer.shadowMap.enabled = G.shadows;
+        App.renderer.toneMappingExposure = G.bloom ? 1.18 : 1.0;
+        App.resize();
+      }
+    };
     document.getElementById('start').onclick = function () { App.start(); };
 
     document.getElementById('resume').onclick = function () { App.setPause(false); };
@@ -334,7 +347,11 @@
       if (App.renderer) App.renderer.shadowMap.enabled = e.checked;
       if (App.world) App.world.sun.shadow.needsUpdate = true;
     });
-    bind('setBloom', function (e) { G.bloom = e.checked; if (App.fx) App.fx.enabled = e.checked; });
+    bind('setBloom', function (e) {
+      G.bloom = e.checked;
+      if (App.fx) App.fx.enabled = e.checked && !App._fxRejected;
+      if (App.renderer) App.renderer.toneMappingExposure = (App.fx && App.fx.enabled) ? 1.18 : 1.0;
+    });
     bind('setTC', function (e) { if (App.vehicle) App.vehicle.tcOn = e.checked; });
     bind('setABS', function (e) { if (App.vehicle) App.vehicle.absOn = e.checked; });
     bind('setALA', function (e) { if (App.vehicle) App.vehicle.alaOn = e.checked; });
@@ -367,6 +384,13 @@
           App.vehicle.startEngine();
           App.hud.toast('V12 6.5 L — GINTANI', 2.4);
         }).catch(function () { /* le jeu reste jouable sans le son */ });
+
+        setTimeout(function () {
+          App.updateDiag();
+          if (App._fxRejected) {
+            App.hud.toast('POST-TRAITEMENT COUPÉ — INCOMPATIBLE', 4);
+          }
+        }, 1200);
       });
     });
   };
@@ -429,10 +453,23 @@
       this.fx.enabled = G.bloom;
     } catch (e) {
       /* le post-traitement est un agrément, pas une nécessité */
-      this.fx = { enabled: false, setSize: function () { }, render: function (sc, cam) { renderer.setRenderTarget(null); renderer.render(sc, cam); } };
+      this.fx = null;
+    }
+    if (!this.fx) {
+      this.fx = App.plainRenderer(renderer);
       G.bloom = false;
       const cb = document.getElementById('setBloom'); if (cb) cb.checked = false;
+    } else if (this.fx.enabled && !this.fx.selfTest()) {
+      /* La chaîne rend du noir sur cette carte : on s'en passe plutôt que
+         de livrer un écran noir. C'est exactement ce qui se produisait. */
+      this.fx.enabled = false;
+      G.bloom = false;
+      const cb = document.getElementById('setBloom'); if (cb) cb.checked = false;
+      this._fxRejected = true;
     }
+    /* sans la composition, il n'y a plus ni vignettage ni gradation :
+       on rattrape l'exposition pour ne pas délaver l'image */
+    if (!this.fx.enabled) renderer.toneMappingExposure = 1.0;
     this.effects = new Effects(scene);
     this.hud = new HUD(this.world);
 
@@ -473,8 +510,63 @@
     });
   };
 
+  /* Rendu direct, sans aucune passe : filet de sécurité ultime. */
+  App.plainRenderer = function (renderer) {
+    return {
+      enabled: false,
+      setSize: function () { },
+      selfTest: function () { return true; },
+      describe: function () { return 'rendu direct (post-traitement indisponible)'; },
+      render: function (sc, cam) { renderer.setRenderTarget(null); renderer.render(sc, cam); }
+    };
+  };
+
+  /* Mesure ce que la scène produit réellement, hors post-traitement :
+     si même cela sort noir, le problème est ailleurs et le diagnostic le dit. */
+  App.probeScene = function () {
+    const r = this.renderer;
+    const probe = new THREE.WebGLRenderTarget(8, 8, {
+      minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+      type: THREE.UnsignedByteType, format: THREE.RGBAFormat
+    });
+    let max = 0;
+    try {
+      r.setRenderTarget(probe);
+      r.render(this.scene, this.camera);
+      const buf = new Uint8Array(8 * 8 * 4);
+      r.readRenderTargetPixels(probe, 0, 0, 8, 8, buf);
+      for (let i = 0; i < buf.length; i += 4) {
+        if (buf[i] > max) max = buf[i];
+        if (buf[i + 1] > max) max = buf[i + 1];
+        if (buf[i + 2] > max) max = buf[i + 2];
+      }
+    } catch (e) { max = -1; }
+    try { probe.dispose(); r.setRenderTarget(null); } catch (e) { /* rien */ }
+    return max;
+  };
+
+  App.updateDiag = function () {
+    const el = document.getElementById('diagLine');
+    if (!el) return;
+    const v = this.viewSize();
+    const lum = this.probeScene();
+    this.diag = this.fx.describe() +
+      ' · rendu ' + Math.round(v.w * G.resScale) + 'x' + Math.round(v.h * G.resScale) +
+      ' @' + this.renderer.getPixelRatio() + 'x' +
+      ' · luminance scène ' + lum;
+    el.textContent = this.diag;
+    if (lum >= 0 && lum < 6) {
+      this.hud.toast('SCÈNE NOIRE — VOIR DIAGNOSTIC DANS PAUSE', 5);
+    }
+  };
+
   App.refreshEnv = function () {
     this.world.envDirty = false;
+    /* La carte d'environnement passe par les mêmes cibles en demi-flottant
+       que le post-traitement. Si l'auto-test a montré qu'elles rendaient du
+       noir, une carte corrompue noircirait toutes les matières : on s'en
+       passe, quitte à perdre les reflets. */
+    if (this._fxRejected) { this.scene.environment = null; return; }
     try {
       if (this.envRT) this.envRT.dispose();
       this.envRT = this.pmrem.fromScene(this.skyScene, 0.02, 1, 400);

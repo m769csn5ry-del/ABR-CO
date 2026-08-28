@@ -157,6 +157,80 @@
     this.renderer.render(this.scene, this.camera);
   };
 
+  /* Auto-test : on remplit la cible de scène d'un gris connu, on fait
+     tourner toute la chaîne, et on relit le résultat. Si elle rend du noir
+     — cible en demi-flottant non affichable, extension absente, nuanceur
+     refusé par le pilote — le jeu doit s'en apercevoir seul plutôt que de
+     laisser un écran noir muet. */
+  PostFX.prototype.selfTest = function () {
+    const r = this.renderer;
+    const probe = new THREE.WebGLRenderTarget(8, 8, {
+      minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
+      type: THREE.UnsignedByteType, format: THREE.RGBAFormat
+    });
+    const prevColor = new THREE.Color();
+    let ok = false, prevAlpha = 1;
+    try {
+      r.getClearColor(prevColor);
+      prevAlpha = r.getClearAlpha();
+      r.setClearColor(0x808080, 1);
+      r.setRenderTarget(this.rtScene);
+      r.clear(true, true, false);
+
+      this.matBright.uniforms.tDiffuse.value = this.rtScene.texture;
+      const th = this.matBright.uniforms.threshold.value;
+      this._pass(this.matBright, this.levels[0].a);
+      for (let i = 0; i < this.levels.length; i++) {
+        const L = this.levels[i];
+        if (i > 0) {
+          this.matBright.uniforms.tDiffuse.value = this.levels[i - 1].a.texture;
+          this.matBright.uniforms.threshold.value = 0;
+          this._pass(this.matBright, L.a);
+          this.matBright.uniforms.threshold.value = th;
+        }
+        this.matBlur.uniforms.tDiffuse.value = L.a.texture;
+        this.matBlur.uniforms.dir.value.set(1 / L.w, 0);
+        this._pass(this.matBlur, L.b);
+        this.matBlur.uniforms.tDiffuse.value = L.b.texture;
+        this.matBlur.uniforms.dir.value.set(0, 1 / L.h);
+        this._pass(this.matBlur, L.a);
+      }
+      const u = this.matComp.uniforms;
+      u.tDiffuse.value = this.rtScene.texture;
+      u.tB0.value = this.levels[0].a.texture;
+      u.tB1.value = this.levels[1].a.texture;
+      u.tB2.value = this.levels[2].a.texture;
+      u.tB3.value = this.levels[3].a.texture;
+      const sb = u.speedBlur.value;
+      u.speedBlur.value = 0;
+      this._pass(this.matComp, probe);
+      u.speedBlur.value = sb;
+
+      const buf = new Uint8Array(8 * 8 * 4);
+      r.readRenderTargetPixels(probe, 0, 0, 8, 8, buf);
+      let max = 0;
+      for (let i = 0; i < buf.length; i += 4) {
+        if (buf[i] > max) max = buf[i];
+        if (buf[i + 1] > max) max = buf[i + 1];
+        if (buf[i + 2] > max) max = buf[i + 2];
+      }
+      /* un gris moyen doit ressortir très au-dessus de ce seuil */
+      ok = max > 24;
+    } catch (e) {
+      ok = false;
+    }
+    try { probe.dispose(); r.setClearColor(prevColor, prevAlpha); r.setRenderTarget(null); }
+    catch (e) { /* rien */ }
+    return ok;
+  };
+
+  PostFX.prototype.describe = function () {
+    const c = this.renderer.capabilities;
+    return 'WebGL' + (c.isWebGL2 ? '2' : '1') +
+      ' · cibles ' + (this.rtType === THREE.HalfFloatType ? 'demi-flottant' : 'octets') +
+      ' · post-traitement ' + (this.enabled ? 'actif' : 'coupé');
+  };
+
   PostFX.prototype.render = function (scene, camera, params) {
     const r = this.renderer;
     if (!this.enabled) {
