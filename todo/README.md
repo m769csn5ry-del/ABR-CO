@@ -13,36 +13,32 @@ aucune requête réseau. Tout est stocké dans le navigateur de l'appareil (`loc
 L'icône est un monogramme didone champagne sur encre. L'app s'ouvre en plein écran,
 sans barre d'adresse, et fonctionne **hors connexion** (service worker).
 
-## Mettre en ligne
+## En ligne
 
-L'app est un site statique sans build. `node build.js` produit
-`dist/orga-dbr-studio.zip`, dont le **contenu de `todo/` est à la racine de
-l'archive** : une fois déployé, l'app vit sur `https://domaine/` et non sur
-`https://domaine/todo/`. C'est ce qui garde la portée du service worker (`/`) et
-les chemins du manifeste corrects.
+**https://m769csn5ry-del.github.io/ABR-CO/**
 
-**Dépôt direct (le plus simple).** Déposer `dist/orga-dbr-studio.zip` sur un
-hébergeur statique acceptant l'envoi de fichiers (Netlify Drop, Cloudflare Pages
-en envoi direct…). URL immédiate, aucun build, aucun compte GitHub.
+Pages est servi depuis la branche `gh-pages`, à la racine. C'est la **création de
+cette branche** qui a activé Pages : un workflow n'en a pas le droit — le jeton
+d'Actions se voit refuser `POST /repos/…/pages` (« Resource not accessible by
+integration »), et l'API Pages n'est pas joignable depuis un agent.
 
-**Vercel en ligne de commande**, depuis l'archive décompressée :
+`.github/workflows/pages.yml` synchronise ensuite `todo/` vers la racine de
+`gh-pages` à chaque push sur `main`, puis **vérifie la mise en ligne** : il écrit
+un témoin `version.txt` contenant le commit, attend de le voir servi — la
+construction Pages suit le push avec quelques dizaines de secondes de retard —
+et contrôle alors la page, le manifeste, le service worker, les icônes, les
+marqueurs de l'app dans le HTML, et l'absence d'appel à un hébergeur de polices.
 
-```bash
-unzip dist/orga-dbr-studio.zip -d orga && cd orga
-npx vercel deploy --prod
-```
+Le contenu de `todo/` est placé à la **racine** du site : l'app vit sur `/ABR-CO/`
+et non `/ABR-CO/todo/`, ce qui garde la portée du service worker et les chemins du
+manifeste corrects.
 
-**Depuis le dépôt Git.** `vercel.json` et `netlify.toml` déclarent déjà `todo`
-comme dossier publié, et interdisent la mise en cache de `sw.js` — sans quoi une
-mise à jour peut mettre des jours à atteindre les iPhones déjà installés. Attention :
-ces hébergeurs déploient la branche de production (`main` par défaut), qui doit
-donc porter le dossier `todo/`.
+### Ailleurs
 
-**GitHub Pages.** *Settings → Pages* · Source `Deploy from a branch` · Branch
-`claude/iphone-todo-app-ezlckp` (ou `main` après fusion), dossier `/ (root)`.
-L'app est alors servie à `https://<utilisateur>.github.io/ABR-CO/todo/` — noter le
-suffixe `/todo/` : choisir `main` alors que le dossier n'est que sur la branche de
-travail renvoie une 404.
+`node build.js` produit aussi `dist/orga-dbr-studio.zip`, avec `index.html` à la
+racine de l'archive : à déposer tel quel sur n'importe quel hébergeur statique.
+`vercel.json` et `netlify.toml` déclarent `todo` comme dossier publié pour un
+déploiement branché sur le dépôt.
 
 ## Parti pris visuel
 
