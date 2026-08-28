@@ -70,6 +70,13 @@ l'app crée « Relancer le fournisseur », échéance demain, 14:30, projet ABR&
 Ce qui est reconnu est retiré du titre et reporté dans les champs du formulaire, visible
 avant validation. Un `#tag` qui ne correspond à aucun projet est laissé tel quel dans le titre.
 
+## Export dans les deux hébergements
+
+Le lecteur d'Artifact de claude.ai bloque les liens de téléchargement. L'export détecte
+l'hôte : il passe par `claude.use('downloads')` quand cette API existe, et retombe sur un
+lien `blob:` classique partout ailleurs (GitHub Pages, Safari, navigateur de bureau).
+Le même fichier source fonctionne donc dans les deux versions.
+
 ## Données
 
 Stockage local à l'appareil, sous la clé `orga.v1`. Rien ne transite par le réseau.

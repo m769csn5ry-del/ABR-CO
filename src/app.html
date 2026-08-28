@@ -1492,15 +1492,34 @@ function applyTheme(){
   $$('#sTheme .seg').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.v === t)); });
 }
 
-function exportData(){
-  var blob = new Blob([JSON.stringify(db, null, 2)], { type:'application/json' });
-  var name = 'orga-sauvegarde-' + todayStr() + '.json';
-  var url = URL.createObjectURL(blob);
+/* Certains hôtes (le lecteur d'Artifact) bloquent les liens de téléchargement et
+   exposent une API dédiée. On la résout au démarrage, sans bloquer le reste. */
+var downloadsApi = (window.claude && typeof window.claude.use === 'function')
+  ? Promise.resolve(window.claude.use('downloads')).catch(function(){ return null; })
+  : Promise.resolve(null);
+
+function saveViaLink(json, name){
+  var url = URL.createObjectURL(new Blob([json], { type:'application/json' }));
   var a = document.createElement('a');
   a.href = url; a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
   toast('Sauvegarde exportée');
+}
+
+function exportData(){
+  var json = JSON.stringify(db, null, 2);
+  var name = 'orga-sauvegarde-' + todayStr() + '.json';
+  downloadsApi.then(function(dl){
+    if (!dl) return saveViaLink(json, name);
+    dl.save({ filename:name, data:json }).then(
+      function(){ toast('Sauvegarde exportée'); },
+      function(err){
+        if (err && err.code === 'declined') return;
+        saveViaLink(json, name);
+      }
+    );
+  });
 }
 
 function importData(file){
