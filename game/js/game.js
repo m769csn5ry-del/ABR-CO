@@ -210,7 +210,43 @@
   /* ------------------------- application ------------------------- */
   const App = {};
 
+  /* Une exception pendant l'initialisation laissait un écran noir muet :
+     le menu est masqué avant que le monde soit construit. On affiche
+     désormais la panne, avec son message, et on rend la main au garage. */
+  App.fail = function (err) {
+    const msg = (err && (err.message || err)) + '';
+    try { console.error(err); } catch (e) { /* rien */ }
+    const box = document.getElementById('fatal');
+    const txt = document.getElementById('fatalMsg');
+    if (txt) txt.textContent = msg;
+    if (box) box.classList.remove('hidden');
+    const l = document.getElementById('loader');
+    if (l) l.classList.add('hidden');
+  };
+
+  App.busy = function (text) {
+    const l = document.getElementById('loader');
+    if (!l) return;
+    l.classList.remove('hidden');
+    const t = document.getElementById('loadTxt');
+    const pr = document.getElementById('progress');
+    if (t) t.textContent = text;
+    if (pr) pr.style.width = '100%';
+  };
+  App.unbusy = function () {
+    const l = document.getElementById('loader');
+    if (l) l.classList.add('hidden');
+  };
+
   App.boot = function () {
+    addEventListener('error', function (e) {
+      if (G.started || App.renderer) App.fail(e.error || e.message);
+    });
+    const fb = document.getElementById('fatalBack');
+    if (fb) fb.onclick = function () {
+      document.getElementById('fatal').classList.add('hidden');
+      document.getElementById('menu').classList.remove('hidden');
+    };
     Input.init();
     this.buildMenu();
     const p = document.getElementById('progress');
@@ -308,19 +344,31 @@
   /* ---------------------------------------------------------------- */
   App.start = function () {
     document.getElementById('menu').classList.add('hidden');
-    if (!G.started) {
-      if (!this.renderer) this.init();
-      document.getElementById('hud').classList.remove('hidden');
-      G.started = true;
-      EngineAudio.init().then(function () {
-        EngineAudio.resume();
-        EngineAudio.setVolume(document.getElementById('setVol').value / 100);
-        App.vehicle.startEngine();
-        App.hud.toast('V12 6.5 L — GINTANI', 2.4);
+    if (G.started) { EngineAudio.resume(); return; }
+
+    /* Construire le relief, les routes et la ville prend ~1,5 s en tâche
+       synchrone. On affiche l'écran d'attente et on laisse le navigateur
+       le peindre avant de bloquer le fil d'exécution. */
+    App.busy('Construction du monde…');
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        try {
+          if (!App.renderer) App.init();
+        } catch (e) {
+          App.fail(e);
+          return;
+        }
+        App.unbusy();
+        document.getElementById('hud').classList.remove('hidden');
+        G.started = true;
+        EngineAudio.init().then(function () {
+          EngineAudio.resume();
+          EngineAudio.setVolume(document.getElementById('setVol').value / 100);
+          App.vehicle.startEngine();
+          App.hud.toast('V12 6.5 L — GINTANI', 2.4);
+        }).catch(function () { /* le jeu reste jouable sans le son */ });
       });
-    } else {
-      EngineAudio.resume();
-    }
+    });
   };
 
   App.init = function () {
@@ -328,7 +376,10 @@
     const renderer = new THREE.WebGLRenderer({
       canvas: canvas, antialias: G.quality !== 'low', powerPreference: 'high-performance'
     });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    /* Sur un écran Retina, rendre à 2x puis y ajouter cinq cibles de
+       post-traitement en demi-flottant peut dépasser la mémoire vidéo
+       disponible et faire perdre le contexte — écran noir garanti. */
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -340,7 +391,8 @@
     this.scene = scene;
 
     this.baseFov = +document.getElementById('setFov').value;
-    this.camera = new THREE.PerspectiveCamera(this.baseFov, innerWidth / innerHeight, 0.22, 14000);
+    const vs0 = this.viewSize();
+    this.camera = new THREE.PerspectiveCamera(this.baseFov, vs0.w / vs0.h, 0.22, 14000);
     scene.add(this.camera);
 
     this.world = new World(scene, { quality: G.quality });
@@ -366,8 +418,21 @@
       self.car.flame(self.vehicle.rpm > 6500 ? 0.9 : 0.4);
     };
 
-    this.fx = new PostFX(renderer, innerWidth, innerHeight);
-    this.fx.enabled = G.bloom;
+    canvas.addEventListener('webglcontextlost', function (e) {
+      e.preventDefault();
+      App.fail('Le contexte graphique a été perdu (mémoire vidéo insuffisante). ' +
+        'Baisse la résolution ou coupe le post-traitement, puis recharge.');
+    }, false);
+
+    try {
+        this.fx = new PostFX(renderer, vs0.w, vs0.h);
+      this.fx.enabled = G.bloom;
+    } catch (e) {
+      /* le post-traitement est un agrément, pas une nécessité */
+      this.fx = { enabled: false, setSize: function () { }, render: function (sc, cam) { renderer.setRenderTarget(null); renderer.render(sc, cam); } };
+      G.bloom = false;
+      const cb = document.getElementById('setBloom'); if (cb) cb.checked = false;
+    }
     this.effects = new Effects(scene);
     this.hud = new HUD(this.world);
 
@@ -393,27 +458,52 @@
     this.popTimer = 0;
 
     addEventListener('resize', function () { App.resize(); });
+    /* un cadre redimensionné après coup n'émet pas toujours « resize » */
+    if (window.ResizeObserver) {
+      try {
+        new ResizeObserver(function () { App.resize(); }).observe(document.documentElement);
+      } catch (e) { /* rien */ }
+    }
     this.resize();
 
     Input.onKey = function (code, e) { App.onKey(code, e); };
-    renderer.setAnimationLoop(function () { App.frame(); });
+    renderer.setAnimationLoop(function () {
+      try { App.frame(); }
+      catch (e) { renderer.setAnimationLoop(null); App.fail(e); }
+    });
   };
 
   App.refreshEnv = function () {
-    if (this.envRT) this.envRT.dispose();
-    this.envRT = this.pmrem.fromScene(this.skyScene, 0.02, 1, 400);
-    this.scene.environment = this.envRT.texture;
     this.world.envDirty = false;
+    try {
+      if (this.envRT) this.envRT.dispose();
+      this.envRT = this.pmrem.fromScene(this.skyScene, 0.02, 1, 400);
+      this.scene.environment = this.envRT.texture;
+    } catch (e) {
+      /* sans carte d'environnement les reflets sont plus ternes, rien de plus */
+      this.scene.environment = null;
+    }
+  };
+
+  /* Dans un cadre dont la taille n'est fixée qu'après le chargement,
+     innerWidth vaut 0 : le rendu se ferait en 2 x 2 pixels avec un rapport
+     d'aspect NaN, et plus rien ne s'afficherait jamais. */
+  App.viewSize = function () {
+    const de = document.documentElement;
+    const w = innerWidth || (de && de.clientWidth) || 960;
+    const h = innerHeight || (de && de.clientHeight) || 600;
+    return { w: Math.max(2, Math.floor(w)), h: Math.max(2, Math.floor(h)) };
   };
 
   App.resize = function () {
     if (!this.renderer) return;
-    const w = Math.max(2, Math.floor(innerWidth * G.resScale));
-    const h = Math.max(2, Math.floor(innerHeight * G.resScale));
+    const v = this.viewSize();
+    const w = Math.max(2, Math.floor(v.w * G.resScale));
+    const h = Math.max(2, Math.floor(v.h * G.resScale));
     this.renderer.setSize(w, h, false);
     const cv = this.renderer.domElement;
     cv.style.width = '100%'; cv.style.height = '100%';
-    this.camera.aspect = innerWidth / innerHeight;
+    this.camera.aspect = v.w / v.h;
     this.camera.updateProjectionMatrix();
     this.fx.setSize(w, h);
   };

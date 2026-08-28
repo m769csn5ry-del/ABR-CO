@@ -91,9 +91,21 @@
     this.quad.frustumCulled = false;
     this.scene.add(this.quad);
 
+    /* Le rendu en demi-flottant demande une extension que tous les postes
+       n'exposent pas ; sans vérification, les cibles sont incomplètes et
+       la scène ne s'affiche pas du tout. */
+    let type = THREE.HalfFloatType;
+    try {
+      const gl = renderer.getContext();
+      const ok = renderer.capabilities.isWebGL2
+        ? !!(gl.getExtension('EXT_color_buffer_half_float') || gl.getExtension('EXT_color_buffer_float'))
+        : !!gl.getExtension('EXT_color_buffer_half_float');
+      if (!ok) type = THREE.UnsignedByteType;
+    } catch (e) { type = THREE.UnsignedByteType; }
+    this.rtType = type;
     const rtOpt = {
       minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter,
-      type: THREE.HalfFloatType, format: THREE.RGBAFormat
+      type: type, format: THREE.RGBAFormat
     };
     this.rtScene = new THREE.WebGLRenderTarget(width, height, rtOpt);
     this.rtScene.depthBuffer = true;
