@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>SVJ Gintani — Open World Driving Simulator</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 120'%3E%3Cpath d='M50 2 L94 22 L94 74 Q94 104 50 118 Q6 104 6 74 L6 22 Z' fill='%230b0b0d' stroke='%23c8a44a' stroke-width='6'/%3E%3Cpath d='M30 80 L44 40 L52 62 L58 48 L70 80 Z' fill='%23c8a44a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="gl"></canvas>
+
+<!-- ====================== HUD ====================== -->
+<div id="hud" class="hidden">
+  <canvas id="cluster" width="520" height="520"></canvas>
+
+  <div id="speedbox">
+    <div id="speed">0</div>
+    <div id="speedunit">km/h</div>
+  </div>
+
+  <div id="gearbox">
+    <div id="gear">N</div>
+    <div id="mode">CORSA</div>
+  </div>
+
+  <div id="shiftlights">
+    <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+  </div>
+
+  <div id="pedals">
+    <div class="pedal"><span>ACC</span><div class="bar"><b id="barThrottle"></b></div></div>
+    <div class="pedal"><span>FRN</span><div class="bar red"><b id="barBrake"></b></div></div>
+    <div class="pedal"><span>DIR</span><div class="bar steer"><b id="barSteer"></b></div></div>
+  </div>
+
+  <div id="aids">
+    <span id="aidTC">TC</span><span id="aidABS">ABS</span><span id="aidALA">ALA</span><span id="aidLC">LC</span>
+  </div>
+
+  <canvas id="minimap" width="260" height="260"></canvas>
+
+  <div id="telemetry">
+    <div><label>G lat</label><b id="tGlat">0.00</b></div>
+    <div><label>G lon</label><b id="tGlon">0.00</b></div>
+    <div><label>Appui aéro</label><b id="tDF">0 kg</b></div>
+    <div><label>Puissance</label><b id="tPow">0 ch</b></div>
+    <div><label>0–100</label><b id="t100">—</b></div>
+    <div><label>V. max</label><b id="tVmax">0</b></div>
+    <div><label>Images/s</label><b id="tFps">—</b></div>
+  </div>
+
+  <div id="toast"></div>
+  <div id="tip">Appuie sur <b>H</b> pour les commandes</div>
+</div>
+
+<!-- ====================== MENUS ====================== -->
+<div id="loader">
+  <div class="brand">
+    <div class="crest">
+      <svg viewBox="0 0 100 120" width="72" height="86" aria-hidden="true">
+        <path d="M50 2 L94 22 L94 74 Q94 104 50 118 Q6 104 6 74 L6 22 Z" fill="none" stroke="#c8a44a" stroke-width="3"/>
+        <path d="M50 14 L82 28 L82 72 Q82 94 50 105 Q18 94 18 72 L18 28 Z" fill="#0b0b0d"/>
+        <path d="M30 78 L44 40 L52 62 L58 48 L70 78 Z" fill="#c8a44a"/>
+      </svg>
+    </div>
+    <h1>SVJ <span>GINTANI</span></h1>
+    <p class="sub">Open World Driving Simulator — V12 6.5 L atmosphérique</p>
+  </div>
+  <div class="progressWrap"><div id="progress"></div></div>
+  <div id="loadTxt">Initialisation…</div>
+</div>
+
+<div id="menu" class="hidden">
+  <div class="menuInner">
+    <header>
+      <h2>SVJ <span>GINTANI</span></h2>
+      <p>Échappement titane straight-pipe · 770 ch · 8 700 tr/min</p>
+    </header>
+
+    <section class="opt">
+      <h3>Livrée</h3>
+      <div id="paints" class="swatches"></div>
+      <label class="check"><input type="checkbox" id="optMatte" checked> Finition mate</label>
+      <label class="check"><input type="checkbox" id="optCarbon" checked> Pack carbone SVJ</label>
+      <label class="check"><input type="checkbox" id="optLivery" checked> Livrée bicolore</label>
+    </section>
+
+    <section class="opt">
+      <h3>Heure</h3>
+      <div id="times" class="pills"></div>
+    </section>
+
+    <section class="opt">
+      <h3>Mode de conduite</h3>
+      <div id="modes" class="pills"></div>
+    </section>
+
+    <section class="opt">
+      <h3>Qualité graphique</h3>
+      <div id="quality" class="pills"></div>
+    </section>
+
+    <button id="start">DÉMARRER LE MOTEUR</button>
+    <p class="hint">Clavier <b>ZQSD</b> / <b>WASD</b> / flèches · Manette compatible · Le son nécessite un clic</p>
+  </div>
+</div>
+
+<div id="pause" class="hidden">
+  <div class="menuInner small">
+    <h2>PAUSE</h2>
+    <div class="rows">
+      <div class="row"><label>Volume</label><input type="range" id="setVol" min="0" max="100" value="80"></div>
+      <div class="row"><label>Champ de vision</label><input type="range" id="setFov" min="55" max="105" value="76"></div>
+      <div class="row"><label>Résolution</label><input type="range" id="setRes" min="50" max="100" value="100"></div>
+      <div class="row"><label>Fréquence d'images</label><span id="setFps" class="pills mini"></span></div>
+      <div class="row"><label>Ombres</label><input type="checkbox" id="setShadow" checked></div>
+      <div class="row"><label>Bloom / post-process</label><input type="checkbox" id="setBloom" checked></div>
+      <div class="row"><label>Antipatinage (TC)</label><input type="checkbox" id="setTC" checked></div>
+      <div class="row"><label>ABS</label><input type="checkbox" id="setABS" checked></div>
+      <div class="row"><label>Aéro active ALA</label><input type="checkbox" id="setALA" checked></div>
+      <div class="row"><label>Boîte automatique</label><input type="checkbox" id="setAuto" checked></div>
+    </div>
+    <button id="resume">REPRENDRE</button>
+    <button id="toMenu" class="ghost">RETOUR AU GARAGE</button>
+  </div>
+</div>
+
+<div id="help" class="hidden">
+  <div class="menuInner small">
+    <h2>COMMANDES</h2>
+    <table class="keys">
+      <tr><td>Z / W / ↑</td><td>Accélérer</td></tr>
+      <tr><td>S / ↓</td><td>Freiner · marche arrière</td></tr>
+      <tr><td>Q / A / ←&nbsp;&nbsp;D / →</td><td>Direction</td></tr>
+      <tr><td>Espace</td><td>Frein à main</td></tr>
+      <tr><td>Maj gauche · Ctrl</td><td>Monter · descendre un rapport</td></tr>
+      <tr><td>E</td><td>Boîte auto / séquentielle</td></tr>
+      <tr><td>C</td><td>Changer de caméra</td></tr>
+      <tr><td>Souris (maintien)</td><td>Regarder autour</td></tr>
+      <tr><td>M</td><td>Mode de conduite (Strada/Sport/Corsa)</td></tr>
+      <tr><td>L</td><td>Launch control (frein + gaz)</td></tr>
+      <tr><td>F</td><td>Phares</td></tr>
+      <tr><td>T</td><td>Cycle jour / nuit</td></tr>
+      <tr><td>R</td><td>Remettre la voiture sur ses roues</td></tr>
+      <tr><td>P</td><td>Mode photo</td></tr>
+      <tr><td>H</td><td>Cette aide</td></tr>
+      <tr><td>Échap</td><td>Pause</td></tr>
+    </table>
+    <button id="closeHelp">FERMER</button>
+  </div>
+</div>
+
+<div id="photobar" class="hidden">MODE PHOTO — molette : zoom · souris : orbite · P : quitter</div>
+
+<script src="vendor/three.min.js"></script>
+<script src="js/util.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/carmodel.js"></script>
+<script src="js/vehicle.js"></script>
+<script src="js/world.js"></script>
+<script src="js/postfx.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
