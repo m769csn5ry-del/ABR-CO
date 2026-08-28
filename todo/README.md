@@ -1,106 +1,132 @@
-# Orga — to-do list pour l'écran d'accueil iPhone
+# Orga — DBR Studio
 
-Application web autonome (PWA) : **un seul fichier HTML**, aucune dépendance, aucun compte,
-aucun serveur. Tout est stocké dans le navigateur de l'iPhone (`localStorage`).
+To-do list installable sur l'écran d'accueil d'un iPhone. Application web autonome
+(PWA) : **un seul fichier HTML**, aucune dépendance, aucun compte, aucun serveur,
+aucune requête réseau. Tout est stocké dans le navigateur de l'appareil (`localStorage`).
 
 ## Mettre l'app sur l'écran d'accueil
 
-1. Ouvrir l'URL de l'app **dans Safari** (Chrome iOS ne sait pas installer de PWA).
+1. Ouvrir l'URL **dans Safari** (Chrome iOS ne sait pas installer de PWA).
 2. Bouton **Partager** (le carré avec la flèche vers le haut).
 3. **Sur l'écran d'accueil** → **Ajouter**.
 
-L'icône apparaît alors comme une vraie app : ouverture en plein écran, sans barre d'adresse,
-et fonctionnement **hors connexion** (service worker).
+L'icône est un monogramme didone champagne sur encre. L'app s'ouvre en plein écran,
+sans barre d'adresse, et fonctionne **hors connexion** (service worker).
 
 ## Activer l'hébergement (GitHub Pages)
 
-Dans ce dépôt : **Settings → Pages → Build and deployment**
+**Settings → Pages → Build and deployment**
 
 - **Source** : `Deploy from a branch`
 - **Branch** : `claude/iphone-todo-app-ezlckp` (ou `main` après fusion), dossier `/ (root)`
-- **Save**
 
-L'app est ensuite disponible à l'adresse :
+L'app est alors servie à `https://<utilisateur>.github.io/ABR-CO/todo/`.
 
-```
-https://<utilisateur>.github.io/ABR-CO/todo/
-```
+## Parti pris visuel
 
-Le dépôt doit être public, ou le compte doit disposer de GitHub Pages sur dépôt privé.
-
-## Ce que fait l'app
-
-| Écran | Contenu |
+| | |
 |---|---|
-| **Aujourd'hui** | Anneau de progression, tâches en retard, tâches du jour, habitudes du jour, tâches terminées |
-| **À venir** | 14 prochains jours groupés par date, puis « Plus tard » et « Sans date » |
-| **Projets** | Une carte par projet (couleur, icône, avancement), détail par projet, tâches sans projet |
-| **Habitudes** | Bande des 7 derniers jours cliquable, série en cours 🔥, record, total |
+| **Fonds** | Galerie `#E8EAEC` (pierre froide) · Chambre noire `#0C0D10` |
+| **Texte** | Graphite `#14161A` · Os `#EDECE8` |
+| **Accent unique** | Bronze `#8A6A2F` en clair, champagne `#CBA968` en sombre |
+| **Alarme** | Rouille `#A6452F`, réservée au retard |
+| **Projets** | 8 teintes sourdes : prusse, bronze, oxblood, sauge, ardoise, prune, tabac, céladon |
 
-- **Échéances** : date + heure, badges « Aujourd'hui / Demain / N j de retard ».
-- **Priorités** : basse / moyenne / haute, tri automatique.
-- **Sous-tâches** : cases à cocher + barre d'avancement sur la ligne de tâche.
-- **Récurrences** : quotidienne, du lundi au vendredi, hebdomadaire, bimensuelle, mensuelle, annuelle.
-  Cocher une tâche récurrente la reprogramme automatiquement au lieu de l'archiver.
-- **Habitudes** : n'importe quelle tâche récurrente peut être suivie avec une série.
-- **Recherche** dans les titres, notes, projets et sous-tâches.
-- **Thème** clair / sombre / automatique.
-- **Export / import** JSON pour sauvegarder ou changer d'appareil.
+**Typographie.** Bodoni Moda variable pour la couche display — titres de vue, chiffres du
+cadran, monogrammes, compteurs de série. Police système (SF Pro sur iOS) pour tout le
+fonctionnel, en chiffres tabulaires, avec des micro-capitales espacées pour les libellés.
+
+**Règle structurante.** La couleur appartient aux projets. La **priorité** est une réglure
+d'encre à gauche de la ligne — 1, 2 ou 3 px — jamais une teinte : trois niveaux se lisent
+d'un coup d'œil sans introduire trois couleurs de plus. Les cartes flottantes ont laissé
+place à des registres à filets, et le seul geste ample est le panneau du jour, en encre
+dans les deux thèmes.
+
+## Interactions
+
+| Geste | Effet |
+|---|---|
+| **Glisser une ligne vers la droite** | Termine la tâche (halo, barré animé) |
+| **Glisser vers la gauche** | Supprime — avec 5 s pour annuler depuis l'avis |
+| **Toucher une ligne** | Ouvre la fiche complète |
+| **Tirer une feuille vers le bas** | La referme |
+| **Toucher un jour dans une série** | Coche ou décoche rétroactivement |
+
+L'indicateur d'onglet glisse d'un onglet à l'autre, les listes entrent en cascade
+(26 ms de décalage par ligne), l'arc du cadran s'anime depuis sa valeur précédente.
+Tout est neutralisé sous `prefers-reduced-motion`.
+
+## Écrans
+
+| Onglet | Contenu |
+|---|---|
+| **Jour** | Panneau encre (date, salutation, cadran de progression), retards, tâches du jour, séries du jour, terminé |
+| **À venir** | 14 prochains jours groupés par date, puis « Plus tard » et « Sans date » |
+| **Projets** | Une carte par projet (monogramme, teinte, avancement), détail par projet, tâches sans projet |
+| **Séries** | Bande des 7 derniers jours cliquable, série en cours, record, total |
+
+Échéances date + heure, priorités, sous-tâches avec jauge, récurrences (quotidienne à
+annuelle) qui **reprogramment** la tâche au lieu de l'archiver, suivi de séries, recherche,
+thème clair/sombre/auto, export et import JSON.
 
 ## Saisie rapide
 
-Le champ « Tâche » comprend le français courant. En tapant :
+Le champ « Intitulé » comprend le français courant :
 
 ```
-Relancer le fournisseur demain 14h30 #ABR !!!
+Relancer la fonderie demain 14h30 #DBR !!!
 ```
 
-l'app crée « Relancer le fournisseur », échéance demain, 14:30, projet ABR&CO, priorité haute.
+→ « Relancer la fonderie », demain, 14:30, projet DBR Studio, priorité haute.
 
 | Écriture | Effet |
 |---|---|
 | `aujourd'hui`, `demain`, `après-demain` | échéance relative |
 | `lundi` … `dimanche` | prochaine occurrence de ce jour |
 | `dans 3 jours`, `dans 2 semaines`, `dans 1 mois` | échéance relative |
-| `25/12`, `25/12/2027` | date précise (l'année suivante si la date est passée) |
+| `25/12`, `25/12/2027` | date précise (l'année suivante si elle est passée) |
 | `14h`, `14h30`, `14:30` | heure |
-| `#projet` | affecte au projet dont le nom commence ainsi (accents ignorés) |
+| `#projet` | projet dont le nom commence ainsi (accents ignorés) |
 | `!` `!!` `!!!` | priorité basse / moyenne / haute |
 
-Ce qui est reconnu est retiré du titre et reporté dans les champs du formulaire, visible
-avant validation. Un `#tag` qui ne correspond à aucun projet est laissé tel quel dans le titre.
-
-## Export dans les deux hébergements
-
-Le lecteur d'Artifact de claude.ai bloque les liens de téléchargement. L'export détecte
-l'hôte : il passe par `claude.use('downloads')` quand cette API existe, et retombe sur un
-lien `blob:` classique partout ailleurs (GitHub Pages, Safari, navigateur de bureau).
-Le même fichier source fonctionne donc dans les deux versions.
+Ce qui est reconnu quitte le titre et remplit les champs du formulaire, visible avant
+validation. Un `#tag` sans projet correspondant reste dans le titre.
 
 ## Données
 
-Stockage local à l'appareil, sous la clé `orga.v1`. Rien ne transite par le réseau.
-Conséquence : les données ne se synchronisent pas entre appareils, et **désinstaller
-l'app ou effacer les données de Safari les supprime**. D'où l'export JSON dans les Réglages.
+Stockage local, clé `orga.v1`. Rien ne transite par le réseau. Les données ne se
+synchronisent donc pas entre appareils, et désinstaller l'app ou effacer les données de
+Safari les supprime — d'où l'export JSON dans les Réglages.
+
+L'export détecte son hôte : il passe par `claude.use('downloads')` là où cette API existe
+(lecteur d'Artifact, qui bloque les liens de téléchargement) et retombe sur un lien `blob:`
+partout ailleurs. Un seul fichier source couvre les deux hébergements.
 
 ## Développement
 
-La source unique est `src/app.html` (styles + markup + script). Le script de build produit
-les deux sorties :
+La source unique est `src/app.html` (styles + markup + script). Le build produit les deux
+sorties :
 
 ```bash
 node build.js
-# → todo/index.html      version PWA (avec manifeste, icônes, service worker)
-# → dist/artifact.html   version pour un Artifact claude.ai (sans html/head/body)
+# → todo/index.html      PWA (manifeste, icônes, service worker)
+# → dist/artifact.html   Artifact claude.ai (sans html/head/body)
 ```
 
-Ne pas éditer `todo/index.html` directement : il est régénéré.
+Ne pas éditer `todo/index.html` : il est régénéré.
 
-Après une modification, incrémenter `VERSION` dans `todo/sw.js` pour que les iPhones déjà
-installés récupèrent la nouvelle version au lieu de servir le cache.
+Après modification, incrémenter `VERSION` dans `todo/sw.js` pour que les iPhones déjà
+installés reçoivent la nouvelle version au lieu du cache.
 
-Les icônes sont générées par `scripts/icons.js` (rendu Chromium via Playwright) :
+Icônes d'écran d'accueil :
 
 ```bash
-node scripts/icons.js
+NODE_PATH=/opt/node22/lib/node_modules node scripts/icons.js
 ```
+
+### Typographie embarquée
+
+`src/fonts/BodoniModa-latin.woff2` (variable, sous-ensemble latin, 46 Ko) est encastrée en
+base64 par `build.js`. C'est délibéré : une police distinctive **et** disponible hors
+connexion, sans requête vers un hébergeur de polices. Sous licence SIL OFL 1.1
+(`src/fonts/OFL.txt`).

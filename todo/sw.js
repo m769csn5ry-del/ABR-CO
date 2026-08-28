@@ -1,6 +1,6 @@
 /* Service worker : rend l'app utilisable hors connexion.
    Stratégie « cache d'abord » pour la coquille, avec mise à jour en arrière-plan. */
-const VERSION = 'orga-v1.0.0';
+const VERSION = 'orga-v2.0.0';
 const SHELL = [
   './',
   './index.html',
