@@ -1,13 +1,13 @@
-# Publie Orga sur GitHub Pages, et rapporte l'état réel de Pages.
+# Publie Orga sur GitHub Pages.
 #
-# L'activation initiale de Pages n'est PAS réalisable par un workflow : le jeton
-# d'Actions n'a pas le droit de créer le site (« Resource not accessible by
-# integration »). Ce workflow constate donc l'état, puis publie si — et seulement
-# si — la source est réglée sur « GitHub Actions ».
+# Pages est servi depuis la branche `gh-pages` (c'est sa création qui a activé
+# Pages : un workflow n'a pas le droit de créer le site lui-même — le jeton
+# d'Actions se voit refuser l'opération). Ce workflow synchronise donc `todo/`
+# vers `gh-pages` à chaque modification, puis attend et vérifie la mise en ligne.
 #
-# Le dossier publié est le contenu de `todo/`, pour que l'app soit servie à la
-# racine du site : c'est ce qui garde la portée du service worker et les chemins
-# du manifeste corrects.
+# Le contenu de `todo/` est placé à la RACINE de `gh-pages` : l'app est servie sur
+# /ABR-CO/ et non /ABR-CO/todo/, ce qui garde la portée du service worker et les
+# chemins du manifeste corrects.
 
 name: Publier Orga
 
@@ -19,75 +19,22 @@ on:
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
   group: pages
   cancel-in-progress: false
 
 jobs:
-  etat:
-    name: État de GitHub Pages
-    runs-on: ubuntu-latest
-    outputs:
-      build_type: ${{ steps.pages.outputs.build_type }}
-      url: ${{ steps.pages.outputs.url }}
-    steps:
-      - name: Interroger l'API Pages
-        id: pages
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -uo pipefail
-          code=$(curl -sS -o /tmp/pages.json -w '%{http_code}' \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages" || echo 000)
-
-          echo "Code HTTP : $code"
-          cat /tmp/pages.json || true
-
-          if [ "$code" = "200" ]; then
-            url=$(jq -r '.html_url // ""'  /tmp/pages.json)
-            bt=$(jq  -r '.build_type // ""' /tmp/pages.json)
-            src=$(jq -r '"\(.source.branch // "?")/\(.source.path // "?")"' /tmp/pages.json)
-            st=$(jq  -r '.status // "?"'   /tmp/pages.json)
-            echo "build_type=$bt" >> "$GITHUB_OUTPUT"
-            echo "url=$url"       >> "$GITHUB_OUTPUT"
-            {
-              echo "## GitHub Pages est ACTIF"
-              echo ""
-              echo "| | |"
-              echo "|---|---|"
-              echo "| Adresse | $url |"
-              echo "| Source | \`$bt\` — branche \`$src\` |"
-              echo "| État | $st |"
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "build_type=none" >> "$GITHUB_OUTPUT"
-            echo "url="            >> "$GITHUB_OUTPUT"
-            {
-              echo "## GitHub Pages est INACTIF (HTTP $code)"
-              echo ""
-              echo "Un workflow ne peut pas créer le site lui-même."
-              echo "À activer une fois dans **Settings → Pages**."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
-
   publier:
-    name: Publier
-    needs: etat
-    if: needs.etat.outputs.build_type == 'workflow'
+    name: Synchroniser gh-pages
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploiement.outputs.page_url }}
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.sync.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Vérifier que le paquet est complet
         run: |
@@ -99,65 +46,97 @@ jobs:
           done
           grep -q 'rel="manifest"' todo/index.html \
             || { echo "::error::le manifeste n'est pas lié dans index.html"; exit 1; }
+          grep -q 'data:font/woff2;base64' todo/index.html \
+            || { echo "::error::la police display n'est pas encastrée"; exit 1; }
           echo "Paquet complet : $(du -sh todo | cut -f1)"
 
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./todo
-      - id: deploiement
-        uses: actions/deploy-pages@v4
+      - name: Publier sur gh-pages
+        id: sync
+        run: |
+          set -euo pipefail
+          sha="${GITHUB_SHA::7}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git fetch origin gh-pages --depth=1
+          git worktree add ../site origin/gh-pages --detach
+          git -C ../site checkout -B gh-pages
+
+          # `--delete` : un fichier retiré de todo/ doit disparaître du site.
+          rsync -a --delete --exclude '.git' --exclude 'README.md' todo/ ../site/
+          touch ../site/.nojekyll
+          # sert de témoin : la vérification attend de voir CE commit en ligne.
+          echo "$sha" > ../site/version.txt
+
+          cd ../site
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Rien de neuf à publier."
+            exit 0
+          fi
+          git commit -qm "Publie $sha"
+          git push origin gh-pages
 
   verifier:
     name: Vérifier le site en ligne
-    needs: etat
-    if: needs.etat.outputs.url != ''
+    needs: publier
     runs-on: ubuntu-latest
+    permissions:
+      pages: read
     steps:
-      - name: Interroger l'app publiée
+      - name: Attendre puis contrôler l'app publiée
         env:
-          BASE: ${{ needs.etat.outputs.url }}
+          GH_TOKEN: ${{ github.token }}
+          ATTENDU: ${{ needs.publier.outputs.sha }}
         run: |
           set -uo pipefail
-          base="${BASE%/}"
+
+          base=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+                   -H "Accept: application/vnd.github+json" \
+                   "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages" \
+                 | jq -r '.html_url // ""')
+          base="${base%/}"
+          [ -n "$base" ] || { echo "::error::Pages inactif"; exit 1; }
           echo "Base : $base"
+
+          # La construction Pages suit le push avec quelques dizaines de secondes
+          # de retard : on attend de voir le témoin du commit courant.
+          for i in $(seq 1 30); do
+            vu=$(curl -sSL --max-time 20 "$base/version.txt" 2>/dev/null | tr -d '[:space:]' || true)
+            [ "$vu" = "$ATTENDU" ] && { echo "Version en ligne : $vu (tentative $i)"; break; }
+            echo "  … en ligne : '${vu:-rien}', attendu '$ATTENDU' (tentative $i)"
+            sleep 10
+          done
+          [ "$vu" = "$ATTENDU" ] || { echo "::error::le site n'a pas repris le commit $ATTENDU"; exit 1; }
+
           fail=0
-
-          check () { # url, attendu, libellé
-            code=$(curl -sSL -o /tmp/body -w '%{http_code}' --max-time 30 "$1" || echo 000)
-            if [ "$code" = "$2" ]; then
-              echo "  OK   $3 ($code)"
-            else
-              echo "::error::$3 — attendu $2, reçu $code ($1)"
-              fail=1
-            fi
+          check () {
+            code=$(curl -sSL -o /dev/null -w '%{http_code}' --max-time 30 "$1" || echo 000)
+            if [ "$code" = "$2" ]; then echo "  OK   $3 ($code)"
+            else echo "::error::$3 — attendu $2, reçu $code ($1)"; fail=1; fi
           }
-
           check "$base/"                     200 "page d'accueil"
           check "$base/manifest.webmanifest" 200 "manifeste"
           check "$base/sw.js"                200 "service worker"
           check "$base/icons/icon-180.png"   200 "icône 180"
           check "$base/icons/icon-512.png"   200 "icône 512"
 
-          # le contenu doit bien être l'app, pas une page d'erreur ni le README
           html=$(curl -sSL --max-time 30 "$base/")
-          for marker in 'rel="manifest"' 'apple-mobile-web-app-capable' 'Bodoni Moda' 'data-tab="today"'; do
+          for m in 'rel="manifest"' 'apple-mobile-web-app-capable' 'Bodoni Moda' 'data-tab="today"'; do
             case "$html" in
-              *"$marker"*) echo "  OK   marqueur présent : $marker" ;;
-              *) echo "::error::marqueur absent de la page servie : $marker"; fail=1 ;;
+              *"$m"*) echo "  OK   marqueur présent : $m" ;;
+              *) echo "::error::marqueur absent de la page servie : $m"; fail=1 ;;
             esac
           done
-
-          # la police doit être encastrée, donc aucun appel à un hébergeur de polices
           case "$html" in
             *fonts.googleapis.com*|*fonts.gstatic.com*)
-              echo "::error::la page appelle un hébergeur de polices : l'app ne serait plus autonome hors connexion"; fail=1 ;;
+              echo "::error::appel à un hébergeur de polices : l'app ne serait plus autonome hors connexion"; fail=1 ;;
             *) echo "  OK   police encastrée, aucun appel externe" ;;
           esac
 
-          if [ "$fail" = "0" ]; then
-            { echo "## L'app répond en ligne"; echo ""; echo "**$base/**"; echo ""
-              echo "Page, manifeste, service worker et icônes vérifiés."; } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "::error::vérification en ligne en échec"; exit 1
-          fi
+          [ "$fail" = "0" ] || { echo "::error::vérification en ligne en échec"; exit 1; }
+          { echo "## L'app répond en ligne"; echo ""; echo "**$base/**"; echo ""
+            echo "Commit \`$ATTENDU\` — page, manifeste, service worker et icônes vérifiés."
+          } >> "$GITHUB_STEP_SUMMARY"
