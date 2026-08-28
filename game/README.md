@@ -108,6 +108,33 @@ Autour : réverbération convolutive (marquée sous le tunnel), bruit de vent
 fonction du carré de la vitesse, roulement dépendant du revêtement, crissement
 de pneus piloté par le glissement réel, chocs.
 
+## 120 images par seconde
+
+La boucle de rendu n'impose aucun plafond par défaut : `requestAnimationFrame`
+se cale sur la dalle, donc 120 Hz sur un écran 120 Hz. Un sélecteur
+**60 / 120 / illimité** est disponible dans le menu pause, et le nombre
+d'images par seconde s'affiche dans la télémétrie.
+
+Ce qui a été fait pour tenir la cadence :
+
+- **Simulation découplée du rendu** : la physique tourne à pas fixe de 200 Hz
+  avec accumulateur. Le nombre d'images par seconde ne change donc rien au
+  comportement de la voiture, et sauter une image ne fausse rien.
+- **Zéro allocation par image** dans les chemins chauds. Les points de contact
+  de carrosserie, les vecteurs de caméra et les sommets des traces de gomme
+  sont préalloués : à 200 Hz et 120 images/s, en recréer à chaque passage
+  faisait travailler le ramasse-miettes et provoquait des à-coups.
+- **HUD à 60 Hz, carte à 20 Hz** : repeindre le combiné en Canvas 2D à 120 Hz
+  n'apporte rien de visible et coûte du temps CPU.
+- **Ombres régénérées à 60 Hz** : à 120 images/s, une carte d'ombre d'une image
+  d'âge est invisible, et c'est l'une des passes GPU les plus lourdes.
+
+Coût CPU mesuré par image (hors GPU) : physique 0,20 ms · modèle 0,01 ms ·
+audio 0,02 ms · caméra 0,02 ms · HUD 0,15 ms — soit **~0,3 ms sur les 8,33 ms**
+que laisse le 120 Hz. La limite est donc uniquement graphique : si la cadence
+n'y est pas, baisser la résolution ou couper le post-traitement dans le menu
+pause suffit à la retrouver.
+
 ## Le monde
 
 4 × 4 km de relief fractal : plaine urbaine, collines, montagnes en périphérie.
@@ -132,15 +159,23 @@ ce qui permet de tourner à 200 Hz sans coût.
 
 Carrosserie construite par *loft* : vingt-sept sections transversales cotées sur
 les dimensions réelles (4 943 × 2 098 × 1 136 mm, empattement 2 700 mm), reliées
-en une surface lisse. Les sections proches des essieux rentrent le bas de caisse
-et remontent l'épaulement au-dessus du pneu — c'est ainsi que se creusent les
-passages de roue.
+par une spline d'Hermite à tension abaissée — une Aventador est faite de facettes
+et d'arêtes vives, pas de galets. Les sections proches des essieux rentrent le
+bas de caisse et remontent l'épaulement au-dessus du pneu : c'est ainsi que se
+creusent les passages de roue.
 
-Y sont greffés : splitter et dérives carbone, optiques en Y, écopes latérales à
-lamelles, écope de toit, capot moteur à grille hexagonale laissant voir le V12,
-aileron SVJ à volet mobile (animé par l'ALA), diffuseur à ailettes, sorties
-Gintani en titane bleui, rétroviseurs, et un habitacle complet (volant hexagonal
-qui tourne, sièges baquets, combiné numérique) visible en caméra intérieure.
+Y sont greffés : bouclier avant à grande bouche noire, splitter à extrémités
+relevées et double étage de dérives, optiques en Y couché, capot à deux grands
+évents et nervure centrale, écopes latérales à lamelles, écope de toit, capot
+moteur à grille hexagonale laissant voir le V12, aileron SVJ à grandes joues et
+volet mobile (animé par l'ALA), diffuseur à ailettes, **sorties Gintani** — deux
+tubes de gros diamètre en titane bleui, très écartés et montés haut, sans
+silencieux — rétroviseurs, et un habitacle complet (volant hexagonal qui tourne,
+sièges baquets en cuir rouge, combiné numérique) visible en caméra intérieure.
+
+Réglages de livrée dans le garage : neuf teintes, finition mate ou vernie, pack
+carbone, filet rouge de bas de caisse. Par défaut : **noir mat, filet rouge,
+étriers rouges, sellerie rouge**.
 
 Pneus aux cotes exactes — 255/30 R20 à l'avant, 355/25 R21 à l'arrière — jantes
 forgées à rayons doubles, disques carbone-céramique percés et étriers.

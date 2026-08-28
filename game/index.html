@@ -48,6 +48,7 @@
     <div><label>Puissance</label><b id="tPow">0 ch</b></div>
     <div><label>0–100</label><b id="t100">—</b></div>
     <div><label>V. max</label><b id="tVmax">0</b></div>
+    <div><label>Images/s</label><b id="tFps">—</b></div>
   </div>
 
   <div id="toast"></div>
@@ -81,8 +82,9 @@
     <section class="opt">
       <h3>Livrée</h3>
       <div id="paints" class="swatches"></div>
-      <label class="check"><input type="checkbox" id="optMatte"> Finition mate</label>
+      <label class="check"><input type="checkbox" id="optMatte" checked> Finition mate</label>
       <label class="check"><input type="checkbox" id="optCarbon" checked> Pack carbone SVJ</label>
+      <label class="check"><input type="checkbox" id="optLivery" checked> Livrée bicolore</label>
     </section>
 
     <section class="opt">
@@ -112,6 +114,7 @@
       <div class="row"><label>Volume</label><input type="range" id="setVol" min="0" max="100" value="80"></div>
       <div class="row"><label>Champ de vision</label><input type="range" id="setFov" min="55" max="105" value="76"></div>
       <div class="row"><label>Résolution</label><input type="range" id="setRes" min="50" max="100" value="100"></div>
+      <div class="row"><label>Fréquence d'images</label><span id="setFps" class="pills mini"></span></div>
       <div class="row"><label>Ombres</label><input type="checkbox" id="setShadow" checked></div>
       <div class="row"><label>Bloom / post-process</label><input type="checkbox" id="setBloom" checked></div>
       <div class="row"><label>Antipatinage (TC)</label><input type="checkbox" id="setTC" checked></div>

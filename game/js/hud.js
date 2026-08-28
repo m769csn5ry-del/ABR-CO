@@ -27,6 +27,7 @@
       df: document.getElementById('tDF'),
       pow: document.getElementById('tPow'),
       t100: document.getElementById('t100'),
+      fps: document.getElementById('tFps'),
       vmax: document.getElementById('tVmax'),
       toast: document.getElementById('toast'),
       lights: document.getElementById('shiftlights')
@@ -200,7 +201,9 @@
   const MODES = ['STRADA', 'SPORT', 'CORSA'];
   HUD.prototype.update = function (v, dt, extra) {
     this.drawCluster(v, dt);
-    this.drawMap(v);
+    /* la carte bouge lentement : 20 rafraîchissements par seconde suffisent */
+    this._mapAcc = (this._mapAcc || 0) + dt;
+    if (this._mapAcc >= 1 / 20) { this.drawMap(v); this._mapAcc = 0; }
 
     const kmh = v.speed * 3.6;
     this.el.speed.textContent = Math.round(kmh);
@@ -224,6 +227,7 @@
     this.el.pow.textContent = Math.round(v.powerKW * 1.35962) + ' ch';
     this.el.t100.textContent = extra.t100 ? extra.t100.toFixed(2) + ' s' : '—';
     this.el.vmax.textContent = Math.round(extra.vmax * 3.6) + ' km/h';
+    if (extra.fps) this.el.fps.textContent = Math.round(extra.fps);
 
     /* témoins de passage de rapport */
     const frac = U.clamp((v.rpm - 5600) / (v.limiter - 5600), 0, 1);

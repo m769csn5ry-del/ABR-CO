@@ -162,6 +162,13 @@
     this.accum = 0;
     this._q = new THREE.Quaternion();
     this._m = new THREE.Matrix3();
+    /* points de contact carrosserie, préalloués : à 200 Hz, les recréer
+       à chaque pas générait des dizaines de milliers d'objets par seconde */
+    this._hitPts = [
+      new V3(0, 0.10, 2.30), new V3(0, 0.10, -2.28),
+      new V3(0.95, 0.10, 0.9), new V3(-0.95, 0.10, 0.9),
+      new V3(0.95, 0.10, -0.9), new V3(-0.95, 0.10, -0.9)
+    ];
   }
 
   /* ---------------------------------------------------------------
@@ -574,7 +581,7 @@
       /* appliqué aux centres de poussée avant/arrière -> vrai transfert */
       _tmp.copy(this.up).multiplyScalar(-dfF);
       _force.add(_tmp);
-      _v1.copy(this.forward).multiplyScalar(this.a * 0.9).applyQuaternion(new THREE.Quaternion());
+      _v1.copy(this.forward).multiplyScalar(this.a * 0.9);
       _torque.add(_v2.crossVectors(_v1, _tmp));
       _tmp.copy(this.up).multiplyScalar(-dfR);
       _force.add(_tmp);
@@ -615,11 +622,7 @@
     /* ============ 7. collisions décor ============ */
     this.impact = 0;
     if (W.collide) {
-      const pts = [
-        new V3(0, 0.10, 2.30), new V3(0, 0.10, -2.28),
-        new V3(0.95, 0.10, 0.9), new V3(-0.95, 0.10, 0.9),
-        new V3(0.95, 0.10, -0.9), new V3(-0.95, 0.10, -0.9)
-      ];
+      const pts = this._hitPts;
       for (let i = 0; i < pts.length; i++) {
         this.localToWorld(pts[i], _v1);
         const hit = W.collide(_v1, 0.42);
@@ -697,7 +700,7 @@
   Vehicle.prototype.respawn = function (x, z, heading) {
     const g = this.world.sample(x, z);
     this.pos.set(x, g.y + 0.62, z);
-    this.quat.setFromAxisAngle(new V3(0, 1, 0), heading || 0);
+    _v1.set(0, 1, 0); this.quat.setFromAxisAngle(_v1, heading || 0);
     this.vel.set(0, 0, 0);
     this.angVel.set(0, 0, 0);
     for (let i = 0; i < 4; i++) {

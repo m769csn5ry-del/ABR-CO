@@ -26,10 +26,10 @@
   const QUALS = [{ n: 'BASSE', v: 'low' }, { n: 'MOYENNE', v: 'medium' }, { n: 'HAUTE', v: 'high' }];
 
   const G = {
-    paint: 0, matte: false, carbon: true, timeIdx: 2, mode: 2, quality: 'high',
+    paint: 5, matte: true, carbon: true, livery: true, timeIdx: 2, mode: 2, quality: 'high',
     started: false, paused: false, photo: false,
     cam: 0, camNames: ['POURSUITE', 'CAPOT', 'HABITACLE', 'PARE-CHOCS', 'CINÉMA'],
-    resScale: 1, shadows: true, bloom: true,
+    resScale: 1, shadows: true, bloom: true, fpsCap: 0, fps: 0,
     t100: null, t100Start: null, vmax: 0, dayNight: false
   };
 
@@ -140,7 +140,10 @@
     this.skid.frustumCulled = false;
     scene.add(this.skid);
     this.ki = 0;
-    this.lastSkid = [null, null, null, null];
+    this.lastSkid = [];
+    for (let i = 0; i < 4; i++) {
+      this.lastSkid.push({ p: new V3(), r: new V3(), a: 0, valid: false });
+    }
   }
 
   Effects.prototype.puff = function (pos, vel, size, color) {
@@ -156,31 +159,38 @@
     s.sp.scale.setScalar(size);
   };
 
+  /* Corners préalloués : une trace peut produire ~90 quads par seconde et
+     par roue ; allouer des vecteurs à ce rythme fait travailler le GC et
+     provoque des à-coups visibles à 120 images/s. */
+  const _c = [new V3(), new V3(), new V3(), new V3()];
   Effects.prototype.mark = function (i, p, right, width, alpha) {
     const prev = this.lastSkid[i];
-    if (prev && p.distanceToSquared(prev.p) < 0.10) return;
-    if (prev) {
+    if (prev.valid && p.distanceToSquared(prev.p) < 0.10) return;
+    if (prev.valid) {
       const o = this.ki * 18;
-      const aL = prev.p.clone().addScaledVector(prev.r, width * 0.5);
-      const aR = prev.p.clone().addScaledVector(prev.r, -width * 0.5);
-      const bL = p.clone().addScaledVector(right, width * 0.5);
-      const bR = p.clone().addScaledVector(right, -width * 0.5);
-      aL.y += 0.02; aR.y += 0.02; bL.y += 0.02; bR.y += 0.02;
-      const tri = [aL, bL, aR, aR, bL, bR];
+      const hwd = width * 0.5;
+      _c[0].copy(prev.p).addScaledVector(prev.r, hwd);
+      _c[1].copy(prev.p).addScaledVector(prev.r, -hwd);
+      _c[2].copy(p).addScaledVector(right, hwd);
+      _c[3].copy(p).addScaledVector(right, -hwd);
+      for (let k = 0; k < 4; k++) _c[k].y += 0.02;
+      /* deux triangles : aL, bL, aR puis aR, bL, bR */
+      const order = [0, 2, 1, 1, 2, 3];
       for (let k = 0; k < 6; k++) {
-        this.skidPos[o + k * 3] = tri[k].x;
-        this.skidPos[o + k * 3 + 1] = tri[k].y;
-        this.skidPos[o + k * 3 + 2] = tri[k].z;
-        this.skidAlpha[this.ki * 6 + k] = k < 3 ? prev.a : alpha;
+        const c = _c[order[k]];
+        this.skidPos[o + k * 3] = c.x;
+        this.skidPos[o + k * 3 + 1] = c.y;
+        this.skidPos[o + k * 3 + 2] = c.z;
+        this.skidAlpha[this.ki * 6 + k] = (order[k] < 2) ? prev.a : alpha;
       }
       this.ki = (this.ki + 1) % this.MAX;
       this.skid.geometry.attributes.position.needsUpdate = true;
       this.skid.geometry.attributes.aAlpha.needsUpdate = true;
     }
-    this.lastSkid[i] = { p: p.clone(), r: right.clone(), a: alpha };
+    prev.p.copy(p); prev.r.copy(right); prev.a = alpha; prev.valid = true;
   };
 
-  Effects.prototype.breakTrail = function (i) { this.lastSkid[i] = null; };
+  Effects.prototype.breakTrail = function (i) { this.lastSkid[i].valid = false; };
 
   Effects.prototype.update = function (dt) {
     for (let i = 0; i < this.smoke.length; i++) {
@@ -262,6 +272,7 @@
       if (App.car) App.car.setPaint(PAINTS[G.paint].hex, G.matte);
     };
     document.getElementById('optCarbon').onchange = function (e) { G.carbon = e.target.checked; };
+    document.getElementById('optLivery').onchange = function (e) { G.livery = e.target.checked; };
     document.getElementById('start').onclick = function () { App.start(); };
 
     document.getElementById('resume').onclick = function () { App.setPause(false); };
@@ -279,7 +290,14 @@
     bind('setVol', function (e) { EngineAudio.setVolume(e.value / 100); });
     bind('setFov', function (e) { App.baseFov = +e.value; });
     bind('setRes', function (e) { G.resScale = e.value / 100; App.resize(); });
-    bind('setShadow', function (e) { G.shadows = e.checked; if (App.renderer) App.renderer.shadowMap.enabled = e.checked; });
+    pills('setFps', ['60', '120', 'ILLIMITÉ'], 2, function (i) {
+      G.fpsCap = i === 0 ? 60 : i === 1 ? 120 : 0;
+    });
+    bind('setShadow', function (e) {
+      G.shadows = e.checked;
+      if (App.renderer) App.renderer.shadowMap.enabled = e.checked;
+      if (App.world) App.world.sun.shadow.needsUpdate = true;
+    });
     bind('setBloom', function (e) { G.bloom = e.checked; if (App.fx) App.fx.enabled = e.checked; });
     bind('setTC', function (e) { if (App.vehicle) App.vehicle.tcOn = e.checked; });
     bind('setABS', function (e) { if (App.vehicle) App.vehicle.absOn = e.checked; });
@@ -329,7 +347,8 @@
     this.world.setTime(TIMES[G.timeIdx].t);
 
     this.car = CarModel.build({
-      color: PAINTS[G.paint].hex, matte: G.matte, carbon: G.carbon, interior: true
+      color: PAINTS[G.paint].hex, matte: G.matte, carbon: G.carbon,
+      livery: G.livery, interior: true
     });
     /* le maillage est calé sur le centre de gravité du châssis */
     this.carPivot = new THREE.Group();
@@ -359,6 +378,12 @@
     skyClone.scale.setScalar(100);
     this.skyScene.add(skyClone);
     this.refreshEnv();
+
+    /* Les ombres se régénèrent au plus 60 fois par seconde : à 120 Hz une
+       carte d'ombre d'une image d'âge est invisible, et c'est l'une des
+       passes GPU les plus coûteuses. */
+    this.world.sun.shadow.autoUpdate = false;
+    this.world.sun.shadow.needsUpdate = true;
 
     this.camState = {
       pos: new V3(), look: new V3(), yaw: 0, pitch: 0, dist: 7.4, fov: this.baseFov, shake: 0
@@ -468,8 +493,19 @@
 
   /* ---------------------------------------------------------------- */
   const _q = new THREE.Quaternion(), _v = new V3(), _v2 = new V3(), _v3 = new V3();
+  const UP = new V3(0, 1, 0);
 
   App.frame = function () {
+    /* Limiteur d'images. Par défaut aucun plafond : requestAnimationFrame
+       se cale sur la dalle, donc 120 Hz sur un écran 120 Hz. Le pas de
+       simulation est indépendant (accumulateur à 200 Hz), sauter une image
+       ne fausse donc rien. */
+    const now = performance.now();
+    if (G.fpsCap > 0 && now - (this._lastFrame || 0) < 1000 / G.fpsCap - 0.6) return;
+    const raw = now - (this._lastFrame || now);
+    this._lastFrame = now;
+    if (raw > 0.2) G.fps = G.fps ? G.fps + (1000 / raw - G.fps) * 0.08 : 1000 / raw;
+
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const v = this.vehicle;
 
@@ -501,6 +537,12 @@
 
     if (this.world.envDirty) this.refreshEnv();
 
+    this._shadowAcc = (this._shadowAcc || 0) + dt;
+    if (G.shadows && this._shadowAcc >= 1 / 60) {
+      this.world.sun.shadow.needsUpdate = true;
+      this._shadowAcc = 0;
+    }
+
     const kmh = v.speed * 3.6;
     this.fx.render(this.scene, this.camera, {
       bloom: G.bloom ? (0.42 + night * 0.5) : 0,
@@ -510,7 +552,13 @@
       grain: night > 0.4 ? 0.013 : 0.008
     });
 
-    if (!G.paused && !G.photo) this.hud.update(v, dt, { t100: G.t100, vmax: G.vmax });
+    /* Le combiné et la carte sont redessinés au plus 60 fois par seconde :
+       inutile de les repeindre à 120 Hz, et cela libère du temps CPU. */
+    this._hudAcc = (this._hudAcc || 0) + dt;
+    if (!G.paused && !G.photo && this._hudAcc >= 1 / 60) {
+      this.hud.update(v, this._hudAcc, { t100: G.t100, vmax: G.vmax, fps: G.fps });
+      this._hudAcc = 0;
+    }
   };
 
   /* --------- transfert de l'état physique vers le modèle 3D --------- */
@@ -549,7 +597,8 @@
       for (let i = 2; i < 4; i++) {
         const w = v.wheels[i];
         if (w.skid < 0.2 || !w.grounded) continue;
-        _v.copy(w.contact).add(new V3((Math.random() - 0.5) * 0.3, 0.12, (Math.random() - 0.5) * 0.3));
+        _v.copy(w.contact);
+        _v.x += (Math.random() - 0.5) * 0.3; _v.y += 0.12; _v.z += (Math.random() - 0.5) * 0.3;
         _v2.copy(v.vel).multiplyScalar(-0.10);
         _v2.y += 0.7 + Math.random() * 0.5;
         _v2.addScaledVector(v.right, (Math.random() - 0.5) * 1.4);
@@ -682,7 +731,7 @@
       const height = (mode === 4 ? 1.5 : 2.35) + U.clamp(kmh / 420, 0, 0.7);
       _v.copy(v.forward);
       _v.y = 0; _v.normalize();
-      _v.applyAxisAngle(new V3(0, 1, 0), cs.yaw);
+      _v.applyAxisAngle(UP, cs.yaw);
       _v2.copy(v.pos).addScaledVector(_v, -dist);
       _v2.y += height + cs.pitch * 4;
       /* la caméra retarde légèrement -> sensation de vitesse */
@@ -701,11 +750,10 @@
       cam.rotateZ(U.clamp(-v.gLat * 0.035, -0.09, 0.09));
     } else {
       /* caméras embarquées */
-      let local;
-      if (mode === 1) local = new V3(0, 0.62, 0.30);          /* capot */
-      else if (mode === 2) local = new V3(-0.36, 0.62, 0.18); /* habitacle */
-      else local = new V3(0, -0.16, 2.35);                    /* pare-chocs */
-      _v.copy(local).applyQuaternion(v.quat).add(v.pos);
+      if (mode === 1) _v.set(0, 0.62, 0.30);            /* capot */
+      else if (mode === 2) _v.set(-0.36, 0.62, 0.18);   /* habitacle */
+      else _v.set(0, -0.16, 2.35);                      /* pare-chocs */
+      _v.applyQuaternion(v.quat).add(v.pos);
       /* petits mouvements de tête sous les accélérations */
       if (mode === 2) {
         _v.addScaledVector(v.right, -U.clamp(v.gLat, -1.2, 1.2) * 0.035);

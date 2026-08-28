@@ -24,8 +24,8 @@
         Les stations proches des essieux rentrent le bas de caisse
         (wFloor ≈ 0,61) et remontent l'épaulement au-dessus du sommet
         du pneu : c'est ce qui creuse les passages de roue.          */
-    [ 2.470, 0.470, 0.170, 0.560, 0.300, 0.290, 0.395],
-    [ 2.330, 0.700, 0.128, 0.850, 0.310, 0.520, 0.452],
+    [ 2.470, 0.440, 0.170, 0.520, 0.286, 0.250, 0.362],
+    [ 2.330, 0.690, 0.126, 0.830, 0.300, 0.500, 0.424],
     [ 2.150, 0.830, 0.108, 0.955, 0.345, 0.680, 0.520],
     [ 1.950, 0.880, 0.100, 1.010, 0.380, 0.780, 0.575],
     [ 1.800, 0.845, 0.112, 1.030, 0.470, 0.815, 0.610],
@@ -48,9 +48,9 @@
     [-1.500, 0.608, 0.174, 1.049, 0.744, 0.885, 0.920],
     [-1.650, 0.652, 0.156, 1.049, 0.692, 0.890, 0.918],
     [-1.800, 0.840, 0.152, 1.038, 0.566, 0.892, 0.916],
-    [-2.020, 0.880, 0.230, 1.010, 0.500, 0.895, 0.910],
-    [-2.280, 0.800, 0.350, 0.960, 0.516, 0.880, 0.898],
-    [-2.470, 0.700, 0.470, 0.890, 0.545, 0.820, 0.880]
+    [-2.020, 0.858, 0.240, 1.000, 0.516, 0.880, 0.902],
+    [-2.280, 0.752, 0.362, 0.918, 0.540, 0.826, 0.868],
+    [-2.470, 0.590, 0.484, 0.792, 0.560, 0.690, 0.826]
   ];
 
 
@@ -91,7 +91,10 @@
     ];
   }
 
-  /* Catmull-Rom 2D échantillonné : t ∈ [0,1] du bas au haut */
+  /* Spline d'Hermite cardinale, t ∈ [0,1] du bas vers le haut.
+     La tension (0,5 = Catmull-Rom classique) est volontairement abaissée :
+     une Aventador est faite de facettes et d'arêtes vives, pas de galets. */
+  const TENSION = 0.30;
   function halfPoint(cp, t) {
     const n = cp.length;
     const u = t * (n - 1);
@@ -100,8 +103,10 @@
     const f = u - i;
     const p0 = cp[Math.max(0, i - 1)], p1 = cp[i], p2 = cp[i + 1], p3 = cp[Math.min(n - 1, i + 2)];
     const f2 = f * f, f3 = f2 * f;
+    const h00 = 2 * f3 - 3 * f2 + 1, h10 = f3 - 2 * f2 + f;
+    const h01 = -2 * f3 + 3 * f2, h11 = f3 - f2;
     const c = (a, b, cc, d) =>
-      0.5 * ((2 * b) + (-a + cc) * f + (2 * a - 5 * b + 4 * cc - d) * f2 + (-a + 3 * b - 3 * cc + d) * f3);
+      h00 * b + h10 * TENSION * (cc - a) + h01 * cc + h11 * TENSION * (d - b);
     return [c(p0[0], p1[0], p2[0], p3[0]), c(p0[1], p1[1], p2[1], p3[1])];
   }
 
@@ -174,7 +179,9 @@
     const tyreMap = U.toTexture(U.tyreCanvas(), 8, 1, 8);
     const tyre = new THREE.MeshStandardMaterial({ map: tyreMap, color: 0x4a4a50, metalness: 0.02, roughness: 0.92 });
     const disc = new THREE.MeshStandardMaterial({ color: 0x3a3a3e, metalness: 0.55, roughness: 0.55 });
-    const caliper = new THREE.MeshStandardMaterial({ color: 0xd8b33a, metalness: 0.5, roughness: 0.35 });
+    const caliper = new THREE.MeshStandardMaterial({ color: 0xb51420, metalness: 0.45, roughness: 0.32 });
+    const accent = new THREE.MeshStandardMaterial({ color: 0xb00d18, metalness: 0.3, roughness: 0.35 });
+    const leather = new THREE.MeshStandardMaterial({ color: 0x7d1118, roughness: 0.78, metalness: 0.02 });
 
     const headOff = new THREE.MeshStandardMaterial({ color: 0x1a1d24, metalness: 0.9, roughness: 0.2 });
     const headOn = new THREE.MeshStandardMaterial({
@@ -197,7 +204,7 @@
 
     return {
       paint, carbon, glass, black, mesh, chrome, titanium, rim, tyre, disc, caliper,
-      headOff, headOn, drl, tail, reverse, alcantara, stitch, screen
+      accent, leather, headOff, headOn, drl, tail, reverse, alcantara, stitch, screen
     };
   }
 
@@ -347,7 +354,7 @@
      4. ASSEMBLAGE COMPLET
      -------------------------------------------------------------- */
   CarModel.build = function (opts) {
-    opts = Object.assign({ color: 0x2f7f3a, matte: false, carbon: true, interior: true }, opts || {});
+    opts = Object.assign({ color: 0x14161a, matte: true, carbon: true, interior: true, livery: true }, opts || {});
     const M = buildMaterials(opts);
     const root = new THREE.Group();
     const body = new THREE.Group();
@@ -402,6 +409,18 @@
     };
     body.add(sideIntake(1), sideIntake(-1));
 
+    /* Livrée : filet rouge le long du bas de caisse, accent sur la lame
+       avant et marquage sur la custode — comme sur la voiture de référence. */
+    if (opts.livery) {
+      for (let sd = -1; sd <= 1; sd += 2) {
+        body.add(new THREE.Mesh(patch(1.10, -1.45, 0.245, 0.275, sd, 0.008, 14, 2), M.accent));
+        body.add(new THREE.Mesh(patch(-0.95, -1.35, 0.62, 0.70, sd, 0.009, 6, 3), M.accent));
+      }
+      const lip = new THREE.Mesh(new THREE.BoxGeometry(1.30, 0.016, 0.06), M.accent);
+      lip.position.set(0, 0.100, 2.40); lip.rotation.x = -0.06;
+      body.add(lip);
+    }
+
     /* écopes de custode (au-dessus, style Aventador) */
     body.add(new THREE.Mesh(patch(-0.34, -0.86, 0.56, 0.66, 1, 0.006, 7, 3), M.black));
     body.add(new THREE.Mesh(patch(-0.34, -0.86, 0.56, 0.66, -1, 0.006, 7, 3), M.black));
@@ -411,22 +430,48 @@
     body.add(new THREE.Mesh(patch(2.42, 2.00, 0.14, 0.42, 1, 0.004, 8, 5), M.mesh));
     body.add(new THREE.Mesh(patch(2.42, 2.00, 0.14, 0.42, -1, 0.004, 8, 5), M.mesh));
 
-    /* splitter avant carbone */
+    /* Bouclier avant SVJ : large bouche noire, splitter proéminent aux
+       extrémités relevées, double étage de dérives latérales. */
     const splitter = new THREE.Group();
-    const sp = new THREE.Mesh(new THREE.BoxGeometry(1.86, 0.035, 0.44), opts.carbon ? M.carbon : M.black);
-    sp.position.set(0, 0.085, 2.18);
-    sp.rotation.x = -0.05;
+    const cf = opts.carbon ? M.carbon : M.black;
+    /* lame principale */
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.040, 0.52), cf);
+    sp.position.set(0, 0.078, 2.16);
+    sp.rotation.x = -0.06;
     splitter.add(sp);
-    /* dérives latérales (canards SVJ) */
+    /* extrémités relevées */
     for (let s = -1; s <= 1; s += 2) {
-      const c = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.10, 0.026), opts.carbon ? M.carbon : M.black);
-      c.position.set(s * 0.83, 0.20, 2.10);
-      c.rotation.set(0.20, s * 0.22, s * 0.10);
+      const tip = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.045, 0.40), cf);
+      tip.position.set(s * 0.86, 0.115, 2.06);
+      tip.rotation.set(-0.06, 0, s * 0.30);
+      splitter.add(tip);
+      /* dérives : deux étages, comme sur la voiture */
+      const c = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.115, 0.028), cf);
+      c.position.set(s * 0.84, 0.215, 2.06);
+      c.rotation.set(0.22, s * 0.24, s * 0.12);
       splitter.add(c);
-      const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.085, 0.024), opts.carbon ? M.carbon : M.black);
-      c2.position.set(s * 0.90, 0.33, 1.99);
-      c2.rotation.set(0.16, s * 0.26, s * 0.08);
+      const c2 = new THREE.Mesh(new THREE.BoxGeometry(0.27, 0.095, 0.026), cf);
+      c2.position.set(s * 0.90, 0.345, 1.95);
+      c2.rotation.set(0.18, s * 0.28, s * 0.10);
       splitter.add(c2);
+      /* joue verticale du bouclier */
+      const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.030, 0.24, 0.34), M.black);
+      cheek.position.set(s * 0.955, 0.26, 1.98);
+      cheek.rotation.y = s * 0.10;
+      splitter.add(cheek);
+    }
+    /* séparateur central de la grande bouche */
+    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.16, 0.30), M.black);
+    nose.position.set(0, 0.26, 2.22);
+    splitter.add(nose);
+    /* lamelles verticales dans les naseaux */
+    for (let s = -1; s <= 1; s += 2) {
+      for (let k = 0; k < 4; k++) {
+        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.13, 0.16), M.mesh);
+        fin.position.set(s * (0.30 + k * 0.145), 0.235, 2.22 - k * 0.035);
+        fin.rotation.y = s * 0.10;
+        splitter.add(fin);
+      }
     }
     body.add(splitter);
 
@@ -446,15 +491,19 @@
       const base = new THREE.Mesh(patch(2.08, 1.84, 0.50, 0.70, side, 0.004, 5, 4), M.headOff);
       g.add(base);
       /* branches du Y */
-      const bar = new THREE.BoxGeometry(0.028, 0.030, 0.30);
+      /* Le Y couché est la signature de la SVJ : deux branches ouvertes
+         vers le haut, réunies par un trait qui plonge vers le nez. */
+      const bar = new THREE.BoxGeometry(0.030, 0.034, 0.42);
       const b1 = new THREE.Mesh(bar, M.drl);
-      b1.position.set(side * 0.86, 0.60, 1.93); b1.rotation.set(0.24, side * 0.20, side * 0.55);
+      b1.position.set(side * 0.855, 0.615, 1.88); b1.rotation.set(0.22, side * 0.18, side * 0.62);
       const b2 = new THREE.Mesh(bar, M.drl);
-      b2.position.set(side * 0.84, 0.53, 1.99); b2.rotation.set(-0.10, side * 0.24, -side * 0.30);
-      const b3 = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.028, 0.22), M.drl);
-      b3.position.set(side * 0.74, 0.50, 2.04); b3.rotation.set(0.05, side * 0.42, side * 0.05);
-      g.add(b1, b2, b3);
-      drls.push(b1, b2, b3);
+      b2.position.set(side * 0.835, 0.505, 1.95); b2.rotation.set(-0.12, side * 0.22, -side * 0.38);
+      const b3 = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.34), M.drl);
+      b3.position.set(side * 0.700, 0.480, 2.03); b3.rotation.set(0.06, side * 0.46, side * 0.06);
+      const b4 = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.026, 0.20), M.drl);
+      b4.position.set(side * 0.905, 0.560, 1.83); b4.rotation.set(0.10, side * 0.14, side * 0.35);
+      g.add(b1, b2, b3, b4);
+      drls.push(b1, b2, b3, b4);
       const proj = new THREE.Mesh(new THREE.SphereGeometry(0.055, 14, 10), M.headOff);
       proj.position.set(side * 0.80, 0.565, 1.99);
       g.add(proj);
@@ -463,11 +512,17 @@
     };
     body.add(mkY(1), mkY(-1));
 
-    /* ---------- capot : évents + jonc ---------- */
+    /* ---------- capot : deux grands évents + nervure centrale ---------- */
     for (let s = -1; s <= 1; s += 2) {
-      const v = new THREE.Mesh(patch(1.90, 1.55, 0.90, 1.00, s, 0.006, 6, 3), M.mesh);
-      body.add(v);
+      body.add(new THREE.Mesh(patch(1.98, 1.46, 0.855, 0.985, s, 0.005, 8, 4), M.black));
+      body.add(new THREE.Mesh(patch(1.94, 1.50, 0.870, 0.975, s, 0.010, 8, 4), M.mesh));
+      /* arête de l'aile, qui souligne le bombé au-dessus de la roue */
+      body.add(new THREE.Mesh(patch(2.05, 1.15, 0.795, 0.815, s, 0.007, 10, 2),
+        opts.carbon ? M.carbon : M.black));
     }
+    /* nervure centrale du capot */
+    body.add(new THREE.Mesh(patch(2.28, 1.20, 0.993, 1.000, 1, 0.008, 10, 2), M.black));
+    body.add(new THREE.Mesh(patch(2.28, 1.20, 0.993, 1.000, -1, 0.008, 10, 2), M.black));
 
     /* ---------- écope de toit SVJ ---------- */
     const scoop = new THREE.Group();
@@ -506,7 +561,7 @@
     /* ---------- aileron SVJ ---------- */
     const wing = new THREE.Group();
     const wingMat = opts.carbon ? M.carbon : M.paint;
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(1.60, 0.042, 0.32), wingMat);
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.046, 0.36), wingMat);
     blade.castShadow = true;
     const flap = new THREE.Group();
     flap.add(blade);
@@ -515,8 +570,8 @@
     wing.add(flap);
     /* joues latérales */
     for (let s = -1; s <= 1; s += 2) {
-      const ep = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.16, 0.34), wingMat);
-      ep.position.set(s * 0.80, 1.075, -2.10);
+      const ep = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.26, 0.46), wingMat);
+      ep.position.set(s * 0.805, 1.085, -2.10);
       wing.add(ep);
       /* montants cintrés */
       const st = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.30, 0.16), wingMat);
@@ -530,13 +585,13 @@
     const tails = [];
     const mkTail = (side) => {
       const g = new THREE.Group();
-      const bar = new THREE.BoxGeometry(0.030, 0.034, 0.24);
+      const bar = new THREE.BoxGeometry(0.034, 0.040, 0.34);
       const t1 = new THREE.Mesh(bar, M.tail);
-      t1.position.set(side * 0.72, 0.78, -2.36); t1.rotation.set(0.10, side * 0.18, side * 0.62);
+      t1.position.set(side * 0.615, 0.760, -2.345); t1.rotation.set(0.08, side * 0.16, side * 0.70);
       const t2 = new THREE.Mesh(bar, M.tail);
-      t2.position.set(side * 0.70, 0.70, -2.38); t2.rotation.set(-0.06, side * 0.20, -side * 0.34);
-      const t3 = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.20), M.tail);
-      t3.position.set(side * 0.58, 0.665, -2.40); t3.rotation.set(0, side * 0.40, side * 0.06);
+      t2.position.set(side * 0.600, 0.640, -2.360); t2.rotation.set(-0.05, side * 0.18, -side * 0.44);
+      const t3 = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.038, 0.30), M.tail);
+      t3.position.set(side * 0.430, 0.700, -2.395); t3.rotation.set(0, side * 0.34, side * 0.04);
       g.add(t1, t2, t3);
       tails.push(t1, t2, t3);
       return g;
@@ -548,12 +603,12 @@
 
     /* ---------- diffuseur ---------- */
     const diff = new THREE.Group();
-    const dBase = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.05, 0.60), opts.carbon ? M.carbon : M.black);
+    const dBase = new THREE.Mesh(new THREE.BoxGeometry(1.50, 0.05, 0.58), opts.carbon ? M.carbon : M.black);
     dBase.position.set(0, 0.30, -2.16); dBase.rotation.x = -0.30;
     diff.add(dBase);
     for (let i = -3; i <= 3; i++) {
-      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.20, 0.56), opts.carbon ? M.carbon : M.black);
-      fin.position.set(i * 0.235, 0.36, -2.18); fin.rotation.x = -0.30;
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.21, 0.54), opts.carbon ? M.carbon : M.black);
+      fin.position.set(i * 0.212, 0.36, -2.18); fin.rotation.x = -0.30;
       diff.add(fin);
     }
     body.add(diff);
@@ -561,16 +616,24 @@
     /* ---------- ligne Gintani : sortie centrale titane ---------- */
     const exhaust = new THREE.Group();
     const tips = [];
+    /* Ligne Gintani : deux tubes de gros diamètre, très écartés et
+       montés haut, sur un fond noir mat — pas de silencieux. */
+    const shroud = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.26, 0.10), M.black);
+    shroud.position.set(0, 0.585, -2.37);
+    exhaust.add(shroud);
     for (let s = -1; s <= 1; s += 2) {
-      const outer = new THREE.Mesh(new THREE.CylinderGeometry(0.082, 0.088, 0.26, 22, 1, true), M.titanium);
+      const outer = new THREE.Mesh(new THREE.CylinderGeometry(0.098, 0.104, 0.30, 24, 1, true), M.titanium);
       outer.rotation.x = Math.PI / 2;
-      outer.position.set(s * 0.105, 0.585, -2.40);
+      outer.position.set(s * 0.185, 0.585, -2.40);
       exhaust.add(outer);
-      const inner = new THREE.Mesh(new THREE.CircleGeometry(0.078, 22), M.black);
-      inner.position.set(s * 0.105, 0.585, -2.30);
+      const lip = new THREE.Mesh(new THREE.TorusGeometry(0.100, 0.011, 8, 24), M.titanium);
+      lip.position.set(s * 0.185, 0.585, -2.545);
+      exhaust.add(lip);
+      const inner = new THREE.Mesh(new THREE.CircleGeometry(0.094, 24), M.black);
+      inner.position.set(s * 0.185, 0.585, -2.32);
       inner.rotation.y = Math.PI;
       exhaust.add(inner);
-      tips.push(new THREE.Vector3(s * 0.105, 0.585, -2.54));
+      tips.push(new THREE.Vector3(s * 0.185, 0.585, -2.60));
     }
     /* collecteur visible sous le capot moteur */
     for (let s = -1; s <= 1; s += 2) {
@@ -678,9 +741,9 @@
       /* sièges baquets carbone */
       for (let s = -1; s <= 1; s += 2) {
         const seat = new THREE.Group();
-        const base = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.10, 0.48), M.alcantara);
+        const base = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.10, 0.48), M.leather);
         base.position.set(0, 0.44, -0.08);
-        const back = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.62, 0.10), M.alcantara);
+        const back = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.62, 0.10), M.leather);
         back.position.set(0, 0.74, -0.32); back.rotation.x = 0.17;
         const bol1 = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.50, 0.10), M.alcantara);
         bol1.position.set(0.20, 0.72, -0.28); bol1.rotation.x = 0.17;
