@@ -30,8 +30,11 @@
       this.inv = 1 / sr;
 
       /* ---- paramètres pilotés depuis le jeu (cibles + valeurs lissées) */
-      this.p = { rpm: 0, thr: 0, load: 0, cut: 0, valve: 1, inside: 0, on: 0, crank: 0 };
-      this.s = { rpm: 0, thr: 0, load: 0, cut: 0, valve: 1, inside: 0, on: 0, crank: 0 };
+      /* `rear` : 1 quand on écoute derrière la voiture (échappement plein
+         pot), 0 devant (l'admission et le bruit mécanique dominent, les
+         aigus de la ligne sont masqués par la carrosserie). */
+      this.p = { rpm: 0, thr: 0, load: 0, cut: 0, valve: 1, inside: 0, on: 0, crank: 0, rear: 1 };
+      this.s = { rpm: 0, thr: 0, load: 0, cut: 0, valve: 1, inside: 0, on: 0, crank: 0, rear: 1 };
 
       /* ---- allumage : 12 cylindres, 2 bancs (V60°) */
       this.firePhase = 0;
@@ -145,6 +148,7 @@
       s.inside += (p.inside - s.inside) * 0.0006;
       s.on += (p.on - s.on) * 0.0008;
       s.crank += (p.crank - s.crank) * 0.002;
+      s.rear += (p.rear - s.rear) * 0.0009;
 
       const rpm = s.rpm;
       const rn = Math.min(1, Math.max(0, (rpm - 800) / 7900));   // régime normalisé
@@ -216,7 +220,7 @@
           const v = r.a1 * r.y1 + r.a2 * r.y2 + r.g * x;
           r.y2 = r.y1; r.y1 = v;
           /* les formants aigus ne montent qu'en charge (le cri du V12) */
-          y += r.hi ? v * (0.35 + 0.95 * s.load * (0.3 + 0.7 * rn)) : v;
+          y += r.hi ? v * (0.35 + 0.95 * s.load * (0.3 + 0.7 * rn)) * (0.30 + 0.70 * s.rear) : v;
         }
         /* aller-retour dans le tube */
         const P = this.pipe[b];
@@ -283,7 +287,7 @@
         const w = 2 * Math.PI * f / this.sr;
         const v = 2 * r * Math.cos(w) * this.inNoise.y1 - r * r * this.inNoise.y2 + nz * (1 - r);
         this.inNoise.y2 = this.inNoise.y1; this.inNoise.y1 = v;
-        const g = 7.5 * s.thr * (0.25 + 0.75 * rn) * s.on * (0.55 + 1.55 * s.inside);
+        const g = 7.5 * s.thr * (0.25 + 0.75 * rn) * s.on * (0.55 + 1.55 * s.inside) * (1.45 - 0.65 * s.rear);
         xL += v * g; xR += v * g * 0.92;
       }
 
@@ -313,7 +317,7 @@
       let v = xL - this.dcL.x + 0.9985 * this.dcL.y; this.dcL.x = xL; this.dcL.y = v; xL = v;
       v = xR - this.dcR.x + 0.9985 * this.dcR.y; this.dcR.x = xR; this.dcR.y = v; xR = v;
       /* passe-bas anti-repliement + effet habitacle (vitres fermées) */
-      const fc = 1 - Math.exp(-2 * Math.PI * (11000 - 8200 * s.inside) * this.inv);
+      const fc = 1 - Math.exp(-2 * Math.PI * ((11000 - 8200 * s.inside) * (0.45 + 0.55 * s.rear)) * this.inv);
       this.lpL += (xL - this.lpL) * fc; this.lpR += (xR - this.lpR) * fc;
 
       /* Niveau : un atmosphérique à l'échappement libre passe d'un
@@ -336,6 +340,8 @@
   /* -----------------------------------------------------------------
      Enveloppe WebAudio : bus, réverbération, pneus, vent, chocs
      ----------------------------------------------------------------- */
+  const U0 = { clamp: function (v, a, b) { return v < a ? a : (v > b ? b : v); } };
+
   const A = {
     ready: false, ctx: null, core: null, node: null,
     master: null, engineBus: null, verbSend: null,
@@ -426,6 +432,7 @@
 
     /* ------ bus moteur ------ */
     const engineBus = ctx.createGain(); engineBus.gain.value = 1;
+    A.engineDist = engineBus;
     engineBus.connect(comp);
     A.engineBus = engineBus;
 
@@ -543,11 +550,24 @@
     if (!A.ready) return;
     const ctx = A.ctx;
 
+    /* Effet Doppler : on décale la fréquence d'allumage elle-même, donc
+       le régime transmis au moteur de synthèse. C'est exact, et gratuit —
+       la hauteur du son EST le régime. */
+    const c = 343;
+    const vr = U0.clamp(st.radialSpeed || 0, -120, 120);
+    const doppler = U0.clamp(c / (c - vr), 0.80, 1.25);
+
     A.post({
-      rpm: st.rpm, thr: st.throttle, load: st.load,
+      rpm: st.rpm * doppler, thr: st.throttle, load: st.load,
       cut: st.cut ? 1 : 0, valve: st.valve === undefined ? 1 : st.valve,
-      inside: st.inside, on: st.engineOn ? 1 : 0, crank: st.crank || 0
+      inside: st.inside, on: st.engineOn ? 1 : 0, crank: st.crank || 0,
+      rear: st.rear === undefined ? 1 : st.rear
     });
+
+    /* atténuation avec la distance d'écoute */
+    const d = st.camDist === undefined ? 6 : st.camDist;
+    const distGain = U0.clamp(1.25 / (1 + Math.pow(d / 7.5, 1.35)), 0.10, 1.0);
+    A.engineDist.gain.setTargetAtTime(distGain, ctx.currentTime, 0.08);
 
     const kmh = st.speed * 3.6;
     const now = ctx.currentTime, tc = 0.06;

@@ -52,7 +52,7 @@
   </div>
 
   <div id="toast"></div>
-  <div id="tip">Appuie sur <b>H</b> pour les commandes</div>
+  <div id="tip">Appuie sur <b>I</b> pour les commandes</div>
 </div>
 
 <!-- ====================== MENUS ====================== -->
@@ -133,22 +133,24 @@
   <div class="menuInner small">
     <h2>COMMANDES</h2>
     <table class="keys">
-      <tr><td>Z / W / ↑</td><td>Accélérer</td></tr>
-      <tr><td>S / ↓</td><td>Freiner · marche arrière</td></tr>
-      <tr><td>Q / A / ←&nbsp;&nbsp;D / →</td><td>Direction</td></tr>
+      <tr><td>W / Z</td><td>Accélérer (progressif)</td></tr>
+      <tr><td>S</td><td>Freiner · marche arrière</td></tr>
+      <tr><td>A &nbsp;·&nbsp; D</td><td>Gauche · droite</td></tr>
+      <tr><td>E &nbsp;·&nbsp; Q</td><td>Rapport supérieur · inférieur</td></tr>
+      <tr><td>M</td><td>Boîte automatique / manuelle</td></tr>
+      <tr><td>N</td><td>Point mort (coup de gaz à l'arrêt)</td></tr>
       <tr><td>Espace</td><td>Frein à main</td></tr>
-      <tr><td>Maj gauche · Ctrl</td><td>Monter · descendre un rapport</td></tr>
-      <tr><td>E</td><td>Boîte auto / séquentielle</td></tr>
-      <tr><td>C</td><td>Changer de caméra</td></tr>
-      <tr><td>Souris (maintien)</td><td>Regarder autour</td></tr>
-      <tr><td>M</td><td>Mode de conduite (Strada/Sport/Corsa)</td></tr>
-      <tr><td>L</td><td>Launch control (frein + gaz)</td></tr>
-      <tr><td>F</td><td>Phares</td></tr>
-      <tr><td>T</td><td>Cycle jour / nuit</td></tr>
-      <tr><td>R</td><td>Remettre la voiture sur ses roues</td></tr>
-      <tr><td>P</td><td>Mode photo</td></tr>
-      <tr><td>H</td><td>Cette aide</td></tr>
-      <tr><td>Échap</td><td>Pause</td></tr>
+      <tr><td>C</td><td>Caméra</td></tr>
+      <tr><td>T</td><td>Antipatinage</td></tr>
+      <tr><td>L</td><td>Phares</td></tr>
+      <tr><td>K</td><td>Démarrer / couper le moteur</td></tr>
+      <tr><td>O</td><td>Mode showroom</td></tr>
+      <tr><td>J</td><td>Heure du jour</td></tr>
+      <tr><td>1 · 2 · 3</td><td>Strada · Sport · Corsa</td></tr>
+      <tr><td>R</td><td>Remettre la voiture en piste</td></tr>
+      <tr><td>H</td><td>Afficher / masquer l'interface</td></tr>
+      <tr><td>I</td><td>Cette aide</td></tr>
+      <tr><td>P · Échap</td><td>Pause</td></tr>
     </table>
     <button id="closeHelp">FERMER</button>
   </div>
@@ -164,7 +166,19 @@
   </div>
 </div>
 
-<div id="photobar" class="hidden">MODE PHOTO — molette : zoom · souris : orbite · P : quitter</div>
+<div id="showroom" class="hidden">
+  <div class="srPanel">
+    <div class="srTitle">SHOWROOM</div>
+    <div id="srPaints" class="swatches"></div>
+    <div class="srRow">
+      <button id="srEngine" class="srBtn">MOTEUR</button>
+      <button id="srLights" class="srBtn">PHARES</button>
+      <button id="srMatte" class="srBtn">MAT / VERNI</button>
+      <button id="srExit" class="srBtn ghost">QUITTER</button>
+    </div>
+    <p class="srHint">Souris : tourner autour · molette : zoom · <b>W</b> : monter dans les tours</p>
+  </div>
+</div>
 
 <script src="vendor/three.min.js"></script>
 <script src="js/util.js"></script>

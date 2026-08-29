@@ -8,28 +8,35 @@
 
   /* ------------------------- livrées ------------------------- */
   const PAINTS = [
-    { name: 'Verde Alceo', hex: 0x3f8f2e },
-    { name: 'Arancio Atlas', hex: 0xd8560f },
-    { name: 'Giallo Orion', hex: 0xefc21a },
-    { name: 'Rosso Efesto', hex: 0x8c1420 },
-    { name: 'Blu Cepheus', hex: 0x14357a },
     { name: 'Nero Nemesis', hex: 0x14161a },
+    { name: 'Rosso Efesto', hex: 0x8c1420 },
+    { name: 'Giallo Orion', hex: 0xefc21a },
+    { name: 'Verde Alceo', hex: 0x3f8f2e },
     { name: 'Bianco Canopus', hex: 0xe8ebee },
-    { name: 'Grigio Acheso', hex: 0x5a5f66 },
-    { name: 'Viola Parsifae', hex: 0x5c2a86 }
+    { name: 'Viola Parsifae', hex: 0x5c2a86 },
+    { name: 'Arancio Atlas', hex: 0xd8560f },
+    { name: 'Blu Cepheus', hex: 0x14357a },
+    { name: 'Grigio Acheso', hex: 0x5a5f66 }
   ];
+
   const TIMES = [
     { name: 'AUBE', t: 0.255 }, { name: 'MATIN', t: 0.33 }, { name: 'MIDI', t: 0.50 },
     { name: 'COUCHER', t: 0.745 }, { name: 'NUIT', t: 0.92 }
   ];
   const MODES = ['STRADA', 'SPORT', 'CORSA'];
-  const QUALS = [{ n: 'BASSE', v: 'low' }, { n: 'MOYENNE', v: 'medium' }, { n: 'HAUTE', v: 'high' }];
+  /* Trois presets qui agissent réellement : ombres, distance d'affichage,
+     post-traitement, résolution interne et densité du décor. */
+  const QUALS = [
+    { n: 'PERFORMANCE', v: 'low', res: 0.78, shadows: false, bloom: false, fog: 0.00090, far: 4200 },
+    { n: 'ÉQUILIBRÉ', v: 'medium', res: 1.00, shadows: true, bloom: true, fog: 0.00058, far: 9000 },
+    { n: 'ULTRA', v: 'high', res: 1.00, shadows: true, bloom: true, fog: 0.00040, far: 14000 }
+  ];
 
   const G = {
-    paint: 5, matte: true, carbon: true, livery: true, timeIdx: 2, mode: 2, quality: 'high',
-    started: false, paused: false, photo: false,
+    paint: 0, matte: true, carbon: true, livery: true, timeIdx: 2, mode: 2, quality: 'high',
+    started: false, paused: false, showroom: false, hudHidden: false,
     cam: 0, camNames: ['POURSUITE', 'CAPOT', 'HABITACLE', 'PARE-CHOCS', 'CINÉMA'],
-    resScale: 1, shadows: true, bloom: true, safe: false, fpsCap: 0, fps: 0,
+    resScale: 1, shadows: true, bloom: true, safe: false, qual: 2, fpsCap: 0, fps: 0,
     t100: null, t100Start: null, vmax: 0, dayNight: false
   };
 
@@ -40,13 +47,19 @@
     throttle: 0, brake: 0, steer: 0, handbrake: 0,
     init: function () {
       const self = this;
+      /* On indexe par CARACTÈRE produit (e.key) et non par position
+         physique (e.code) : sur un clavier AZERTY les touches A et Q ne
+         sont pas où e.code les croit, et la liste de commandes est donnée
+         en lettres. Les touches non alphabétiques restent indexées par
+         code, qui est stable. */
       addEventListener('keydown', function (e) {
         if (e.repeat) return;
-        self.keys[e.code] = true;
-        self.onKey && self.onKey(e.code, e);
+        const id = self.id(e);
+        self.keys[id] = true;
+        self.onKey && self.onKey(id, e);
         if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab'].indexOf(e.code) >= 0) e.preventDefault();
       });
-      addEventListener('keyup', function (e) { self.keys[e.code] = false; });
+      addEventListener('keyup', function (e) { self.keys[self.id(e)] = false; });
       addEventListener('blur', function () { self.keys = {}; });
       const cv = document.getElementById('gl');
       cv.addEventListener('mousedown', function (e) { self.mouse.down = true; });
@@ -60,14 +73,25 @@
         addEventListener('gamepaddisconnected', function () { self.pad = null; });
       } catch (e) { self.padBlocked = true; }
     },
+    /* identifiant stable d'une touche : la lettre si c'en est une */
+    id: function (e) {
+      const k = e.key;
+      if (k && k.length === 1) {
+        const c = k.toLowerCase();
+        if (c >= 'a' && c <= 'z') return c;
+      }
+      return e.code;
+    },
     k: function () { return this.keys; },
     sample: function (dt) {
+      /* W/Z accélère · S freine · A gauche · D droite · flèches aussi.
+         Q reste libre pour le rapport inférieur, comme demandé. */
       const k = this.keys;
       let thr = 0, brk = 0, str = 0, hb = 0;
-      if (k.KeyW || k.KeyZ || k.ArrowUp) thr = 1;
-      if (k.KeyS || k.ArrowDown) brk = 1;
-      if (k.KeyA || k.KeyQ || k.ArrowLeft) str -= 1;
-      if (k.KeyD || k.ArrowRight) str += 1;
+      if (k.w || k.z || k.ArrowUp) thr = 1;
+      if (k.s || k.ArrowDown) brk = 1;
+      if (k.a || k.ArrowLeft) str -= 1;
+      if (k.d || k.ArrowRight) str += 1;
       if (k.Space) hb = 1;
 
       /* Manette : gâchettes analogiques + stick.
@@ -314,7 +338,7 @@
     pills('modes', MODES, G.mode, function (i) {
       G.mode = i; if (App.vehicle) App.vehicle.setDriveMode(i);
     });
-    pills('quality', QUALS.map(function (q) { return q.n; }), 2, function (i) { G.quality = QUALS[i].v; });
+    pills('quality', QUALS.map(function (q) { return q.n; }), 2, function (i) { App.applyQuality(i); });
 
     document.getElementById('optMatte').onchange = function (e) {
       G.matte = e.target.checked;
@@ -369,6 +393,32 @@
     bind('setABS', function (e) { if (App.vehicle) App.vehicle.absOn = e.checked; });
     bind('setALA', function (e) { if (App.vehicle) App.vehicle.alaOn = e.checked; });
     bind('setAuto', function (e) { if (App.vehicle) App.vehicle.autoBox = e.checked; });
+  };
+
+  /* Applique un preset. Avant le lancement il ne fait que noter les
+     choix ; en cours de partie il agit immédiatement sur le rendu.
+     La densité du décor, elle, est fixée à la construction du monde. */
+  App.applyQuality = function (i) {
+    const q = QUALS[i];
+    G.qual = i;
+    G.quality = q.v;
+    G.resScale = q.res;
+    G.shadows = q.shadows;
+    G.bloom = q.bloom;
+    const setRes = document.getElementById('setRes');
+    if (setRes) setRes.value = Math.round(q.res * 100);
+    const cbS = document.getElementById('setShadow'); if (cbS) cbS.checked = q.shadows;
+    const cbB = document.getElementById('setBloom'); if (cbB) cbB.checked = q.bloom;
+    if (this.renderer) {
+      this.renderer.shadowMap.enabled = q.shadows;
+      if (this.fx) this.fx.enabled = q.bloom && !this._fxRejected;
+      this.renderer.toneMappingExposure = (this.fx && this.fx.enabled) ? 1.18 : 1.0;
+      this.camera.far = q.far;
+      this.camera.updateProjectionMatrix();
+      if (this.world) { this.world.fog.density = q.fog; this.world.sun.shadow.needsUpdate = true; }
+      this.resize();
+      this.toast('QUALITÉ ' + q.n);
+    }
   };
 
   /* ---------------------------------------------------------------- */
@@ -434,6 +484,9 @@
 
     this.world = new World(scene, { quality: G.quality });
     this.world.setTime(TIMES[G.timeIdx].t);
+    this.world.fog.density = QUALS[G.qual].fog;
+    this.camera.far = QUALS[G.qual].far;
+    this.camera.updateProjectionMatrix();
 
     this.car = CarModel.build({
       color: PAINTS[G.paint].hex, matte: G.matte, carbon: G.carbon,
@@ -485,6 +538,7 @@
     if (!this.fx.enabled) renderer.toneMappingExposure = 1.0;
     this.effects = new Effects(scene);
     this.hud = new HUD(this.world);
+    this.buildShowroomUI();
 
     /* carte d'environnement issue du ciel : reflets crédibles sur la peinture */
     this.pmrem = new THREE.PMREMGenerator(renderer);
@@ -621,68 +675,115 @@
   };
 
   /* ---------------------------------------------------------------- */
-  App.onKey = function (code, e) {
+  App.onKey = function (key, e) {
     if (!G.started) return;
     const v = this.vehicle;
-    switch (code) {
-      case 'Escape': this.setPause(!G.paused); break;
-      case 'KeyH':
+    switch (key) {
+      /* ---- pause et interface ---- */
+      case 'p': case 'Escape':
+        this.setPause(!G.paused); break;
+      case 'h':
+        G.hudHidden = !G.hudHidden;
+        document.getElementById('hud').classList.toggle('hidden', G.hudHidden || G.showroom);
+        this.toast(G.hudHidden ? 'INTERFACE MASQUÉE' : 'INTERFACE AFFICHÉE');
+        break;
+      case 'i':
         document.getElementById('help').classList.toggle('hidden');
         break;
-      case 'KeyC':
-        G.cam = (G.cam + 1) % G.camNames.length;
-        this.hud.toast('CAMÉRA ' + G.camNames[G.cam], 1.2);
+
+      /* ---- boîte de vitesses ---- */
+      case 'e':
+        if (v.autoBox) { this.toast('BOÎTE EN AUTOMATIQUE — M POUR PASSER EN MANUEL'); }
+        else v.shiftUp();
         break;
-      case 'KeyE':
+      case 'q':
+        if (v.autoBox) { this.toast('BOÎTE EN AUTOMATIQUE — M POUR PASSER EN MANUEL'); }
+        else v.shiftDown();
+        break;
+      case 'm':
         v.autoBox = !v.autoBox;
         document.getElementById('setAuto').checked = v.autoBox;
-        this.hud.toast(v.autoBox ? 'BOÎTE AUTO' : 'BOÎTE SÉQUENTIELLE', 1.4);
+        this.toast(v.autoBox ? 'BOÎTE AUTOMATIQUE' : 'BOÎTE MANUELLE — E / Q');
         break;
-      case 'ShiftLeft': case 'ShiftRight':
-        if (!v.autoBox) v.shiftUp(); break;
-      case 'ControlLeft': case 'ControlRight':
-        if (!v.autoBox) v.shiftDown(); break;
-      case 'KeyM':
-        v.setDriveMode((v.driveMode + 1) % 3);
-        document.querySelectorAll('#modes .pill').forEach(function (el, i) {
-          el.classList.toggle('sel', i === v.driveMode);
-        });
-        this.hud.toast('MODE ' + MODES[v.driveMode], 1.4);
+      case 'n':
+        /* point mort : indispensable pour le coup de gaz à l'arrêt */
+        if (!v.autoBox || v.speed < 3) { v.autoBox = false; v.shiftTo(0);
+          document.getElementById('setAuto').checked = false;
+          this.toast('POINT MORT — MAINTIENS W POUR MONTER DANS LES TOURS'); }
         break;
-      case 'KeyL':
-        v.launch = !v.launch;
-        this.hud.toast(v.launch ? 'LAUNCH CONTROL ARMÉ — FREIN + GAZ' : 'LAUNCH CONTROL COUPÉ', 1.8);
+
+      /* ---- aides et équipements ---- */
+      case 't':
+        v.tcOn = !v.tcOn;
+        document.getElementById('setTC').checked = v.tcOn;
+        this.toast(v.tcOn ? 'ANTIPATINAGE ACTIF' : 'ANTIPATINAGE COUPÉ');
         break;
-      case 'KeyF':
+      case 'l':
         this.lightsOn = !this.lightsOn;
-        this.hud.toast(this.lightsOn ? 'PHARES ALLUMÉS' : 'PHARES ÉTEINTS', 1.1);
+        this.toast(this.lightsOn ? 'PHARES ALLUMÉS' : 'PHARES ÉTEINTS');
         break;
-      case 'KeyT':
+      case 'k':
+        this.engineToggle();
+        break;
+
+      /* ---- caméras et vues ---- */
+      case 'c':
+        G.cam = (G.cam + 1) % G.camNames.length;
+        this.toast('CAMÉRA ' + G.camNames[G.cam]);
+        break;
+      case 'o':
+        this.setShowroom(!G.showroom);
+        break;
+
+      /* ---- monde ---- */
+      case 'j':
         G.timeIdx = (G.timeIdx + 1) % TIMES.length;
         this.world.setTime(TIMES[G.timeIdx].t);
+    this.world.fog.density = QUALS[G.qual].fog;
+    this.camera.far = QUALS[G.qual].far;
+    this.camera.updateProjectionMatrix();
         this.refreshEnv();
         document.querySelectorAll('#times .pill').forEach(function (el, i) {
           el.classList.toggle('sel', i === G.timeIdx);
         });
-        this.hud.toast(TIMES[G.timeIdx].name, 1.2);
+        this.toast(TIMES[G.timeIdx].name);
         break;
-      case 'KeyR': {
+      case '1': case '2': case '3': {
+        const m = parseInt(key, 10) - 1;
+        v.setDriveMode(m);
+        document.querySelectorAll('#modes .pill').forEach(function (el, i) {
+          el.classList.toggle('sel', i === m);
+        });
+        this.toast('MODE ' + MODES[m]);
+        break;
+      }
+
+      /* ---- remise en piste ---- */
+      case 'r': {
         const nr = this.world.nearestRoad(v.pos.x, v.pos.z);
-        let h = 0;
         if (nr) {
           const r = nr.road, n = r.pts.length;
           const a = r.pts[nr.i], b = r.pts[(nr.i + 1) % n];
-          h = Math.atan2(b[0] - a[0], b[1] - a[1]);
-          v.respawn(a[0], a[1], h);
+          v.respawn(a[0], a[1], Math.atan2(b[0] - a[0], b[1] - a[1]));
         } else v.respawn(v.pos.x, v.pos.z, 0);
-        this.hud.toast('VÉHICULE REPLACÉ', 1.2);
+        this.toast('VÉHICULE REPLACÉ');
         break;
       }
-      case 'KeyP':
-        G.photo = !G.photo;
-        document.getElementById('photobar').classList.toggle('hidden', !G.photo);
-        document.getElementById('hud').classList.toggle('hidden', G.photo);
-        break;
+    }
+  };
+
+  /* raccourci : le HUD n'existe pas encore pendant le chargement */
+  App.toast = function (t) { if (this.hud) this.hud.toast(t, 1.6); };
+
+  /* démarrage / coupure moteur — utilisé en jeu et au showroom */
+  App.engineToggle = function () {
+    const v = this.vehicle;
+    if (v.engineOn) {
+      v.engineOn = false;
+      this.toast('MOTEUR COUPÉ');
+    } else {
+      v.startEngine();
+      this.toast('DÉMARRAGE');
     }
   };
 
@@ -706,7 +807,7 @@
 
     if (!G.paused) {
       Input.sample(dt);
-      if (!G.photo) {
+      if (!G.showroom) {
         v.throttle = Input.throttle;
         v.brake = Input.brake;
         v.handbrake = Input.handbrake;
@@ -714,7 +815,14 @@
         if (Input.padUp && !this._padUp && !v.autoBox) v.shiftUp();
         if (Input.padDown && !this._padDown && !v.autoBox) v.shiftDown();
         this._padUp = Input.padUp; this._padDown = Input.padDown;
-      } else { v.throttle = 0; v.brake = 1; v.steerInput = 0; }
+      } else {
+        /* Showroom : la voiture ne bouge pas, mais le moteur reste vivant
+           et l'accélérateur permet de monter dans les tours. */
+        v.brake = 1; v.steerInput = 0;
+        v.autoBox = false;
+        if (v.gear !== 0) v.shiftTo(0);
+        v.throttle = Input.throttle;
+      }
 
       v.update(dt);
       this.world.update(dt, v.pos);
@@ -741,7 +849,7 @@
     const kmh = v.speed * 3.6;
     this.fx.render(this.scene, this.camera, {
       bloom: G.bloom ? (0.42 + night * 0.5) : 0,
-      speedBlur: G.photo ? 0 : U.clamp((kmh - 120) / 700, 0, 0.13),
+      speedBlur: G.showroom ? 0 : U.clamp((kmh - 120) / 700, 0, 0.13),
       time: performance.now() * 0.001,
       exposure: 1.0,
       grain: night > 0.4 ? 0.013 : 0.008
@@ -750,10 +858,58 @@
     /* Le combiné et la carte sont redessinés au plus 60 fois par seconde :
        inutile de les repeindre à 120 Hz, et cela libère du temps CPU. */
     this._hudAcc = (this._hudAcc || 0) + dt;
-    if (!G.paused && !G.photo && this._hudAcc >= 1 / 60) {
+    if (!G.paused && !G.showroom && this._hudAcc >= 1 / 60) {
       this.hud.update(v, this._hudAcc, { t100: G.t100, vmax: G.vmax, fps: G.fps });
       this._hudAcc = 0;
     }
+  };
+
+  /* ------------------------------------------------------------------
+     MODE SHOWROOM
+     Caméra libre autour de la voiture, moteur pilotable, phares, teintes.
+     Chaque bouton affiché agit réellement.
+     ------------------------------------------------------------------ */
+  App.setShowroom = function (on) {
+    G.showroom = on;
+    document.getElementById('showroom').classList.toggle('hidden', !on);
+    document.getElementById('hud').classList.toggle('hidden', on || G.hudHidden);
+    if (on) {
+      const v = this.vehicle;
+      v.throttle = 0; v.brake = 1; v.vel.set(0, 0, 0); v.angVel.set(0, 0, 0);
+      this.camState.dist = 8.5;
+      this.camState.yaw = 0.9;
+      this.camState.pitch = 0.08;
+      this.toast('SHOWROOM — SOURIS POUR TOURNER, MOLETTE POUR ZOOMER');
+    }
+  };
+
+  App.buildShowroomUI = function () {
+    const host = document.getElementById('srPaints');
+    PAINTS.forEach(function (p, i) {
+      const d = document.createElement('div');
+      d.className = 'swatch' + (i === G.paint ? ' sel' : '');
+      d.style.background = '#' + p.hex.toString(16).padStart(6, '0');
+      d.title = p.name;
+      d.onclick = function () {
+        G.paint = i;
+        host.querySelectorAll('.swatch').forEach(function (e) { e.classList.remove('sel'); });
+        d.classList.add('sel');
+        App.car.setPaint(p.hex, G.matte);
+        App.toast(p.name.toUpperCase());
+      };
+      host.appendChild(d);
+    });
+    document.getElementById('srEngine').onclick = function () { App.engineToggle(); };
+    document.getElementById('srLights').onclick = function () {
+      App.lightsOn = !App.lightsOn;
+      App.toast(App.lightsOn ? 'PHARES ALLUMÉS' : 'PHARES ÉTEINTS');
+    };
+    document.getElementById('srMatte').onclick = function () {
+      G.matte = !G.matte;
+      App.car.setPaint(PAINTS[G.paint].hex, G.matte);
+      App.toast(G.matte ? 'FINITION MATE' : 'FINITION VERNIE');
+    };
+    document.getElementById('srExit').onclick = function () { App.setShowroom(false); };
   };
 
   /* --------- transfert de l'état physique vers le modèle 3D --------- */
@@ -859,7 +1015,21 @@
       if (v.wheels[i].grounded) { ground += 0.25; surface = v.wheels[i].surface; }
     }
     const inside = G.cam === 2 ? 1 : 0;
+
+    /* Position d'écoute : la caméra. On en tire la distance, la vitesse
+       radiale (Doppler) et l'orientation avant/arrière. */
+    _v.copy(v.pos).addScaledVector(v.forward, -2.5);      /* sorties d'échappement */
+    _v2.subVectors(this.camera.position, _v);
+    const camDist = _v2.length();
+    _v2.multiplyScalar(1 / Math.max(0.001, camDist));      /* source -> auditeur */
+    const radialSpeed = v.vel.dot(_v2);                    /* > 0 : se rapproche */
+    _v3.subVectors(this.camera.position, v.pos).normalize();
+    const rear = U.clamp(0.5 - 0.5 * _v3.dot(v.forward), 0, 1);
+
     EngineAudio.update(dt, {
+      camDist: inside ? 1.2 : camDist,
+      radialSpeed: inside ? 0 : radialSpeed,
+      rear: inside ? 0.45 : rear,
       rpm: Math.max(v.engineOn ? 700 : 0, v.rpm),
       throttle: v.throttle,
       load: load,
@@ -911,13 +1081,13 @@
     if (Input.mouse.down) {
       cs.yaw -= Input.mouse.dx * 0.0035;
       cs.pitch = U.clamp(cs.pitch - Input.mouse.dy * 0.0030, -0.6, 0.9);
-    } else if (!G.photo) {
+    } else if (!G.showroom) {
       cs.yaw = U.damp(cs.yaw, 0, 4, dt);
       cs.pitch = U.damp(cs.pitch, 0, 4, dt);
     }
     Input.mouse.dx = 0; Input.mouse.dy = 0;
 
-    if (G.photo) {
+    if (G.showroom) {
       cs.dist = U.clamp(cs.dist + Input.mouse.wheel * 0.004, 2.2, 40);
       Input.mouse.wheel = 0;
       const y = cs.yaw, p = cs.pitch;

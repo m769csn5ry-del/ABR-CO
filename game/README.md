@@ -25,20 +25,26 @@ action de l'utilisateur avant de produire du son).
 
 | Touche | Action |
 |---|---|
-| `Z` `W` `↑` | Accélérer |
-| `S` `↓` | Freiner · marche arrière |
-| `Q` `A` `←` / `D` `→` | Direction |
+| `W` / `Z` | Accélérer — **progressif**, la pédale se module |
+| `S` | Freiner · marche arrière |
+| `A` · `D` | Gauche · droite (flèches aussi) |
+| `E` · `Q` | Rapport supérieur · inférieur (en manuel) |
+| `M` | Boîte automatique / manuelle |
+| `N` | Point mort — permet le coup de gaz à l'arrêt |
 | `Espace` | Frein à main |
-| `Maj gauche` / `Ctrl` | Monter / descendre un rapport |
-| `E` | Boîte automatique ↔ séquentielle |
 | `C` | Caméra (poursuite, capot, habitacle, pare-chocs, cinéma) |
-| Souris maintenue | Regarder autour |
-| `M` | Mode de conduite Strada / Sport / Corsa |
-| `L` | Launch control (armer, puis frein + gaz) |
-| `F` phares · `T` heure · `R` replacer · `P` photo · `H` aide · `Échap` pause |
+| `T` | Antipatinage |
+| `L` | Phares · `K` démarrer / couper le moteur |
+| `O` | Mode showroom |
+| `J` | Heure du jour · `1` `2` `3` Strada / Sport / Corsa |
+| `R` | Remettre la voiture en piste |
+| `H` | Afficher / masquer l'interface · `I` aide |
+| `P` · `Échap` | Pause |
 
-Manette compatible : gâchettes analogiques (accélérateur/frein progressifs),
-stick gauche pour la direction, palettes pour les rapports.
+Les touches sont lues par **caractère produit**, pas par position physique :
+un clavier AZERTY donne donc les mêmes lettres que celles imprimées dessus.
+
+Manette compatible hors cadre embarqué : gâchettes analogiques, stick, palettes.
 
 ## Le modèle physique
 
@@ -143,6 +149,45 @@ que laisse le 120 Hz. La limite est donc uniquement graphique : si la cadence
 n'y est pas, baisser la résolution ou couper le post-traitement dans le menu
 pause suffit à la retrouver.
 
+## Mode showroom
+
+Touche `O`. La voiture est immobile, moteur vivant. On tourne autour à la
+souris, on zoome à la molette, on monte dans les tours avec `W`, on démarre
+ou coupe le moteur, on allume les phares, on bascule mat / verni, et on
+choisit la teinte parmi Nero, Rosso, Giallo, Verde, Bianco, Viola — plus
+Arancio, Blu et Grigio. Chaque bouton affiché agit réellement.
+
+## Coup de gaz à l'arrêt
+
+Touche `N` pour le point mort. L'embrayage étant ouvert, le V12 monte alors
+librement dans les tours : à vide il atteint le rupteur en moins d'une
+seconde, avec le rebond staccato de la coupure d'allumage et les
+détonations à la retombée. C'est là que la synthèse s'entend le mieux.
+
+## Écoute spatialisée
+
+Le son n'est pas figé sur la voiture :
+
+- **Effet Doppler** — on décale la fréquence d'allumage elle-même en
+  fonction de la vitesse radiale voiture/caméra. C'est exact et gratuit,
+  puisque la hauteur du son *est* le régime.
+- **Distance** — le bus moteur s'atténue quand la caméra s'éloigne.
+- **Devant / derrière** — de l'arrière on entend la ligne pleine, formants
+  aigus compris ; de face l'admission domine et les aigus sont masqués par
+  la carrosserie. En habitacle, tout est feutré et l'admission monte.
+
+## Trois presets
+
+| | Ombres | Résolution | Post-traitement | Distance | Décor |
+|---|---|---|---|---|---|
+| Performance | non | 78 % | non | 4,2 km | allégé |
+| Équilibré | 2048 | 100 % | oui | 9 km | normal |
+| Ultra | 2048, cadre élargi | 100 % | oui | 14 km | dense |
+
+Ils agissent vraiment : ombres, résolution interne, chaîne de
+post-traitement, plan lointain, densité de brouillard, nombre d'arbres, de
+rochers et finesse du relief.
+
 ## Le monde
 
 4 × 4 km de relief fractal : plaine urbaine, collines, montagnes en périphérie.
@@ -150,6 +195,13 @@ pause suffit à la retrouver.
 - **Rocade** de 6 km avec tunnel, **ligne droite de 3 km** pour la vitesse de
   pointe, **damier urbain** avec trottoirs, **col de montagne** à épingles et
   glissières, bretelles de liaison.
+- **Viaducs** : les tracés sont lissés et à pente limitée, ils surplombent
+  donc naturellement les creux du terrain. Partout où la chaussée passe à
+  plus de 3 m au-dessus du sol, piles, sous-poutre et parapets sont bâtis —
+  les ponts naissent du relief au lieu d'être posés arbitrairement.
+- **Station-service** en bord de rocade : forecourt en enrobé, auvent à
+  bandeau rouge lumineux la nuit, îlots, pompes et boutique vitrée.
+- **Parking** urbain avec places tracées et butées.
 - Tracés en splines, altitudes lissées et pente limitée à 16 % ; le terrain se
   raccorde aux chaussées par des accotements.
 - Ville de ~120 immeubles à façades procédurales (fenêtres allumées la nuit),

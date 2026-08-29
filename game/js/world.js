@@ -69,6 +69,8 @@
     this._buildCity();
     this._buildProps();
     this._buildTunnel();
+    this._buildBridges();
+    this._buildAmenities();
     this._buildSky();
   }
 
@@ -358,7 +360,7 @@
 
   /* ---------------------- maillage du terrain ---------------------- */
   World.prototype._buildTerrain = function () {
-    const N = this.quality === 'low' ? 240 : this.quality === 'medium' ? 340 : 460;
+    const N = this.quality === 'low' ? 230 : this.quality === 'medium' ? 340 : 470;
     const geo = new THREE.PlaneGeometry(SIZE, SIZE, N, N);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position;
@@ -710,7 +712,8 @@
     });
 
     /* arbres hors chaussée */
-    for (let i = 0; i < 2600; i++) {
+    const treeCount = this.quality === 'low' ? 900 : this.quality === 'medium' ? 1800 : 2800;
+    for (let i = 0; i < treeCount; i++) {
       const x = (rng() - 0.5) * SIZE * 0.92;
       const z = (rng() - 0.5) * SIZE * 0.92;
       const y = self.heightAt(x, z);
@@ -728,7 +731,8 @@
 
     /* ---- rochers et buissons : le terrain nu paraissait vide ---- */
     const rocks = [], bushes = [];
-    for (let i = 0; i < 2200; i++) {
+    const scatterCount = this.quality === 'low' ? 700 : this.quality === 'medium' ? 1500 : 2400;
+    for (let i = 0; i < scatterCount; i++) {
       const x = (rng() - 0.5) * SIZE * 0.95;
       const z = (rng() - 0.5) * SIZE * 0.95;
       const y = self.heightAt(x, z);
@@ -839,6 +843,166 @@
     });
     addMerged(boardFaces, this.boardMat, true);
     this.lampPositions = lamps;
+  };
+
+  /* ---------------------- ouvrages d'art ----------------------
+     Les tracés sont lissés et à pente limitée : ils passent donc
+     naturellement au-dessus des creux du terrain. Partout où la chaussée
+     surplombe le sol de plus de 3 m, on bâtit un viaduc — piles,
+     sous-poutre et parapets. Les ponts naissent du relief, ils ne sont
+     pas posés arbitrairement. */
+  World.prototype._buildBridges = function () {
+    const piers = [], decks = [], rails = [];
+    const self = this;
+    let count = 0;
+    this.roads.forEach(function (road) {
+      const n = road.pts.length;
+      const last = road.closed ? n : n - 1;
+      for (let i = 0; i < last; i += 2) {
+        const ci = i % n, ni = (i + 1) % n;
+        const x = road.pts[ci][0], z = road.pts[ci][1], y = road.ys[ci];
+        const gap = y - self.baseHeight(x, z);
+        if (gap < 3) continue;
+        count++;
+        let dx = road.pts[ni][0] - road.pts[ci][0], dz = road.pts[ni][1] - road.pts[ci][1];
+        const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+        const rx = -dz, rz = dx;
+        const ry = Math.atan2(dx, dz);
+        const hw = road.width * 0.5;
+        /* sous-poutre */
+        decks.push({ x: x, y: y - 0.55, z: z, sx: hw * 2.1, sy: 0.9, sz: 11, ry: ry });
+        /* parapets */
+        for (let sd = -1; sd <= 1; sd += 2) {
+          rails.push({
+            x: x + rx * (hw + 0.35), y: y + 0.55, z: z + rz * (hw + 0.35),
+            sx: 0.22, sy: 1.0, sz: 11, ry: ry
+          });
+        }
+        /* piles, une sur quatre stations */
+        if (i % 8 === 0 && gap > 4.5) {
+          for (let sd = -1; sd <= 1; sd += 2) {
+            piers.push({
+              x: x + rx * hw * 0.55, y: y - 1.0 - gap / 2, z: z + rz * hw * 0.55,
+              sx: 1.5, sy: gap, sz: 1.5
+            });
+          }
+        }
+      }
+    });
+    const concrete = new THREE.MeshStandardMaterial({ color: 0x8a8a85, roughness: 0.95 });
+    const railMat = new THREE.MeshStandardMaterial({ color: 0x9a9a95, roughness: 0.85 });
+    const add = (list, mat) => {
+      if (!list.length) return;
+      const m = new THREE.Mesh(mergeGeo(list), mat);
+      m.castShadow = true; m.receiveShadow = true;
+      this.scene.add(m);
+    };
+    add.call(this, piers, concrete);
+    add.call(this, decks, concrete);
+    add.call(this, rails, railMat);
+    this.bridgeSpans = count;
+  };
+
+  /* ---------------------- station-service et parking ---------------------- */
+  World.prototype._buildAmenities = function () {
+    const self = this;
+    const boxes = [], glassBits = [], pumps = [], fascias = [], hoses = [];
+
+    /* --- station-service en bord de rocade --- */
+    const ring = this.roads[0];
+    const si = Math.floor(ring.pts.length * 0.62);
+    const a = ring.pts[si], b = ring.pts[(si + 1) % ring.pts.length];
+    let dx = b[0] - a[0], dz = b[1] - a[1];
+    const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+    const rx = -dz, rz = dx;
+    const ry = Math.atan2(dx, dz);
+    const sx = a[0] + rx * 34, sz = a[1] + rz * 34;
+    const sy = self.heightAt(sx, sz);
+
+    /* forecourt en enrobé, pas en béton blanc */
+    const fore = new THREE.Mesh(new THREE.PlaneGeometry(48, 36),
+      new THREE.MeshStandardMaterial({ map: U.toTexture(U.asphaltCanvas(512, 63), 6, 5, 8), roughness: 0.92 }));
+    fore.rotation.x = -Math.PI / 2;
+    fore.rotation.z = -ry;
+    fore.position.set(sx, sy + 0.10, sz);
+    fore.receiveShadow = true;
+    this.scene.add(fore);
+    /* auvent : dalle blanche + bandeau rouge en périphérie */
+    boxes.push({ x: sx, y: sy + 5.9, z: sz, sx: 26, sy: 0.55, sz: 15, ry: ry });
+    fascias.push({ x: sx, y: sy + 5.35, z: sz, sx: 26.4, sy: 0.62, sz: 15.4, ry: ry });
+    for (let i = -1; i <= 1; i += 2) {
+      for (let j = -1; j <= 1; j += 2) {
+        boxes.push({
+          x: sx + rx * i * 10.5 + dx * j * 5.5, y: sy + 2.9, z: sz + rz * i * 10.5 + dz * j * 5.5,
+          sx: 0.65, sy: 5.4, sz: 0.65
+        });
+      }
+    }
+    /* pompes */
+    for (let i = -1; i <= 1; i += 2) {
+      /* îlot */
+      boxes.push({ x: sx + rx * i * 4.4, y: sy + 0.22, z: sz + rz * i * 4.4, sx: 2.0, sy: 0.30, sz: 7.0, ry: ry });
+      for (let j = -1; j <= 1; j += 2) {
+        const px2 = sx + rx * i * 4.4 + dx * j * 1.9, pz2 = sz + rz * i * 4.4 + dz * j * 1.9;
+        pumps.push({ x: px2, y: sy + 1.15, z: pz2, sx: 1.05, sy: 1.65, sz: 0.85, ry: ry });
+        boxes.push({ x: px2, y: sy + 2.05, z: pz2, sx: 0.95, sy: 0.30, sz: 0.75, ry: ry });
+        /* flexible replié sur le flanc */
+        hoses.push({ x: px2 + rx * 0.55, y: sy + 1.35, z: pz2 + rz * 0.55, sx: 0.10, sy: 1.0, sz: 0.10 });
+      }
+    }
+    /* boutique */
+    boxes.push({ x: sx - dx * 15, y: sy + 2.2, z: sz - dz * 15, sx: 16, sy: 4.4, sz: 9, ry: ry });
+    glassBits.push({ x: sx - dx * 15, y: sy + 2.3, z: sz - dz * 15, sx: 16.3, sy: 2.6, sz: 9.3, ry: ry });
+    /* enseigne sur le toit */
+    fascias.push({ x: sx - dx * 15, y: sy + 5.1, z: sz - dz * 15, sx: 9, sy: 1.5, sz: 0.4, ry: ry });
+    this.stationPos = { x: sx, z: sz };
+
+    /* --- parking en ville, avec places tracées --- */
+    const px = 165, pz = 200;
+    const py = self.heightAt(px, pz);
+    const lotCv = U.canvas(512, 512), lg = lotCv.getContext('2d');
+    lg.drawImage(U.asphaltCanvas(512, 41), 0, 0);
+    lg.strokeStyle = 'rgba(236,236,230,.75)'; lg.lineWidth = 5;
+    for (let r = 0; r < 2; r++) {
+      for (let i = 0; i <= 10; i++) {
+        const x = 26 + i * 46;
+        lg.beginPath(); lg.moveTo(x, 40 + r * 250); lg.lineTo(x, 190 + r * 250); lg.stroke();
+      }
+      lg.beginPath(); lg.moveTo(20, 40 + r * 250); lg.lineTo(486, 40 + r * 250); lg.stroke();
+    }
+    const lot = new THREE.Mesh(new THREE.PlaneGeometry(88, 88),
+      new THREE.MeshStandardMaterial({ map: U.toTexture(lotCv, 1, 1, 8), roughness: 0.9 }));
+    lot.rotation.x = -Math.PI / 2;
+    lot.position.set(px, py + 0.09, pz);
+    lot.receiveShadow = true;
+    this.scene.add(lot);
+    /* butées de parking */
+    for (let r = 0; r < 2; r++) {
+      for (let i = 0; i < 10; i++) {
+        boxes.push({ x: px - 40 + i * 8.2, y: py + 0.20, z: pz - 22 + r * 44, sx: 2.2, sy: 0.28, sz: 0.36 });
+      }
+    }
+    this.parkingPos = { x: px, z: pz };
+
+    const conc = new THREE.MeshStandardMaterial({ color: 0xa2a29c, roughness: 0.92 });
+    const pumpMat = new THREE.MeshStandardMaterial({ color: 0xc8302a, roughness: 0.5, metalness: 0.3 });
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: 0x2a3a4a, roughness: 0.1, metalness: 0.4, transparent: true, opacity: 0.55
+    });
+    const push = (list, mat, shadow) => {
+      if (!list.length) return;
+      const m = new THREE.Mesh(mergeGeo(list), mat);
+      m.castShadow = !!shadow; m.receiveShadow = true;
+      this.scene.add(m);
+    };
+    push.call(this, boxes, conc, true);
+    push.call(this, pumps, pumpMat, true);
+    push.call(this, hoses, new THREE.MeshStandardMaterial({ color: 0x15161a, roughness: 0.9 }), true);
+    this.stationSign = new THREE.MeshStandardMaterial({
+      color: 0xb8202a, emissive: 0xb8202a, emissiveIntensity: 0.3, roughness: 0.55
+    });
+    push.call(this, fascias, this.stationSign, true);
+    push.call(this, glassBits, glassMat, false);
   };
 
   /* ---------------------- tunnel ---------------------- */
@@ -964,9 +1128,11 @@
 
     this.sun = new THREE.DirectionalLight(0xfff1d6, 3.0);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    const sm = this.quality === 'low' ? 1024 : 2048;
+    this.sun.shadow.mapSize.set(sm, sm);
     const cam = this.sun.shadow.camera;
-    cam.left = -95; cam.right = 95; cam.top = 95; cam.bottom = -95;
+    const ext = this.quality === 'high' ? 118 : 88;
+    cam.left = -ext; cam.right = ext; cam.top = ext; cam.bottom = -ext;
     cam.near = 1; cam.far = 460;
     this.sun.shadow.bias = -0.0009;
     this.sun.shadow.normalBias = 0.035;
@@ -1012,6 +1178,7 @@
     if (this.cityMats) this.cityMats.forEach(function (m) { m.emissiveIntensity = night * 1.15; });
     if (this.lampMat) this.lampMat.emissiveIntensity = night * 2.6;
     if (this.boardMat) this.boardMat.emissiveIntensity = 0.2 + night * 1.4;
+    if (this.stationSign) this.stationSign.emissiveIntensity = 0.25 + night * 1.9;
     this.night = night;
     this.envDirty = true;
   };

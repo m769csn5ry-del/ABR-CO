@@ -129,6 +129,7 @@
     this.clutchCap = 1050;                   /* Nm */
     this.shiftTimer = 0; this.shiftTime = 0.055; this.pendingGear = null;
     this.shiftCooldown = 0;
+    this.blip = 0;
     this.autoBox = true;
     this.frontSplit = 0.12;                  /* transfert intégral Haldex */
 
@@ -228,6 +229,13 @@
   Vehicle.prototype.shiftTo = function (g) {
     if (g === this.gear || this.shiftTimer > 0) return;
     if (g > this.gears.length || g < -1) return;
+    /* Rétrogradage : coup de gaz pour amener le moteur au régime du
+       rapport inférieur. Embrayage ouvert pendant le passage, le moteur
+       monte donc librement — c'est le claquement caractéristique. */
+    if (g < this.gear && g > 0 && this.speed > 3) {
+      const ratioNow = this.ratio(this.gear), ratioNext = this.ratio(g);
+      if (ratioNow !== 0) this.blip = U.clamp(ratioNext / ratioNow - 1, 0, 1.2);
+    }
     this.pendingGear = g;
     this.shiftTimer = this.shiftTime;
     /* le régime moteur ne rejoint le nouveau rapport qu'en ~0,3 s :
@@ -377,11 +385,15 @@
     if (this.rpm > this.limiter) { this.cut = true; this.cutT = 0.030; }
     if (this.cutT > 0) { this.cutT -= h; if (this.cutT <= 0) this.cut = false; }
 
+    /* le coup de gaz de rétrogradage s'éteint en ~0,25 s */
+    if (this.blip > 0) this.blip = Math.max(0, this.blip - h * 4);
+
     let Te = 0;
     if (this.engineOn) {
       const full = torqueAt(U.clamp(this.rpm, 0, 9000));
       const drag = 14 + 0.017 * this.rpm;         /* frein moteur (pompage) */
-      Te = (this.cut ? 0 : full * thr) - drag * (1 - thr * 0.85);
+      const thrEff = Math.min(1, thr + this.blip * 0.85);
+      Te = (this.cut ? 0 : full * thrEff) - drag * (1 - thrEff * 0.85);
       /* régulation de ralenti, régime cible élevé juste après le démarrage */
       if (this.startFlare > 0) this.startFlare = Math.max(0, this.startFlare - h / 2.4);
       const idleTarget = this.idle + 1450 * this.startFlare * this.startFlare;
@@ -408,7 +420,7 @@
     if (!this.engineOn) this.omegaE *= Math.exp(-2.4 * h);
     this.rpm = this.omegaE * 30 / Math.PI;
 
-    this.Tclutch = Tclutch; this.thrEff = thr;
+    this.Tclutch = Tclutch; this.thrEff = Math.min(1, thr + this.blip * 0.85);
 
     /* couple à l'arbre de sortie */
     const Tshaft = Tclutch * ratio * this.driveEff;
