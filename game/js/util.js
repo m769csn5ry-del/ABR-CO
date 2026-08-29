@@ -426,6 +426,65 @@
     return geo;
   };
 
+  /* ------------------------------------------------------------------
+     Normales par groupes de lissage.
+
+     computeVertexNormals moyenne les normales de toutes les faces qui
+     partagent un sommet : une arête vive est donc systématiquement
+     arrondie par l'ombrage, et la carrosserie paraît molle quelle que
+     soit sa géométrie. Ici on ne moyenne que les faces dont les normales
+     sont proches — au-delà de l'angle limite, l'arête reste franche.
+     ------------------------------------------------------------------ */
+  U.smoothNormals = function (geo, angleDeg) {
+    const g = geo.index ? geo.toNonIndexed() : geo;
+    const pos = g.attributes.position.array;
+    const vCount = pos.length / 3;
+    const fCount = vCount / 3;
+    const fn = new Float32Array(fCount * 3);
+
+    const ax = new THREE.Vector3(), bx = new THREE.Vector3(), cx = new THREE.Vector3();
+    const e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), nrm = new THREE.Vector3();
+    for (let f = 0; f < fCount; f++) {
+      const i = f * 9;
+      ax.set(pos[i], pos[i + 1], pos[i + 2]);
+      bx.set(pos[i + 3], pos[i + 4], pos[i + 5]);
+      cx.set(pos[i + 6], pos[i + 7], pos[i + 8]);
+      e1.subVectors(bx, ax); e2.subVectors(cx, ax);
+      nrm.crossVectors(e1, e2).normalize();
+      fn[f * 3] = nrm.x; fn[f * 3 + 1] = nrm.y; fn[f * 3 + 2] = nrm.z;
+    }
+
+    /* faces partageant chaque position */
+    const map = new Map();
+    const key = (i) => (Math.round(pos[i] * 8192) + '_' +
+      Math.round(pos[i + 1] * 8192) + '_' + Math.round(pos[i + 2] * 8192));
+    for (let v = 0; v < vCount; v++) {
+      const k = key(v * 3);
+      let list = map.get(k);
+      if (!list) { list = []; map.set(k, list); }
+      list.push((v / 3) | 0);
+    }
+
+    const lim = Math.cos((angleDeg === undefined ? 40 : angleDeg) * Math.PI / 180);
+    const out = new Float32Array(vCount * 3);
+    for (let v = 0; v < vCount; v++) {
+      const f = (v / 3) | 0;
+      const nx = fn[f * 3], ny = fn[f * 3 + 1], nz = fn[f * 3 + 2];
+      let sx = 0, sy = 0, sz = 0;
+      const list = map.get(key(v * 3));
+      for (let k = 0; k < list.length; k++) {
+        const o = list[k] * 3;
+        if (fn[o] * nx + fn[o + 1] * ny + fn[o + 2] * nz >= lim) {
+          sx += fn[o]; sy += fn[o + 1]; sz += fn[o + 2];
+        }
+      }
+      const len = Math.hypot(sx, sy, sz) || 1;
+      out[v * 3] = sx / len; out[v * 3 + 1] = sy / len; out[v * 3 + 2] = sz / len;
+    }
+    g.setAttribute('normal', new THREE.BufferAttribute(out, 3));
+    return g;
+  };
+
   /* profil arrondi type « superellipse » utilisé pour les sections de carrosserie */
   U.roundedSection = function (halfW, top, bottom, n, sharpness, shoulder) {
     const pts = [];

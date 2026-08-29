@@ -35,13 +35,13 @@
     [ 1.350, 0.612, 0.176, 1.049, 0.716, 0.860, 0.668],
     [ 1.200, 0.620, 0.170, 1.049, 0.700, 0.865, 0.702],
     [ 1.050, 0.685, 0.148, 1.035, 0.618, 0.868, 0.742],
-    [ 0.930, 0.860, 0.118, 1.008, 0.520, 0.860, 0.792],
-    [ 0.860, 0.900, 0.108, 0.996, 0.492, 0.800, 0.868],
-    [ 0.560, 0.900, 0.106, 0.986, 0.496, 0.660, 1.072],
-    [ 0.220, 0.900, 0.106, 0.982, 0.510, 0.590, 1.132],
-    [-0.140, 0.906, 0.106, 0.990, 0.518, 0.596, 1.128],
-    [-0.440, 0.920, 0.106, 1.006, 0.520, 0.652, 1.060],
-    [-0.700, 0.930, 0.106, 1.020, 0.512, 0.740, 0.990],
+    [ 0.930, 0.860, 0.118, 0.988, 0.520, 0.850, 0.792],
+    [ 0.860, 0.888, 0.108, 0.960, 0.492, 0.780, 0.868],
+    [ 0.560, 0.878, 0.106, 0.936, 0.496, 0.606, 1.072],
+    [ 0.220, 0.874, 0.106, 0.928, 0.510, 0.532, 1.132],
+    [-0.140, 0.880, 0.106, 0.934, 0.518, 0.538, 1.128],
+    [-0.440, 0.900, 0.106, 0.956, 0.520, 0.596, 1.060],
+    [-0.700, 0.924, 0.106, 1.002, 0.512, 0.708, 0.990],
     [-0.900, 0.870, 0.118, 1.035, 0.566, 0.800, 0.955],
     [-1.050, 0.650, 0.152, 1.049, 0.704, 0.845, 0.940],
     [-1.200, 0.608, 0.174, 1.049, 0.744, 0.868, 0.930],
@@ -106,6 +106,11 @@
      La tension (0,5 = Catmull-Rom classique) est volontairement abaissée :
      une Aventador est faite de facettes et d'arêtes vives, pas de galets. */
   const TENSION = 0.30;
+  /* Points de rupture : la tangente y est annulée, ce qui produit une arête
+     franche au lieu d'un raccord doux. Ce sont les lignes de caractère de
+     la voiture — bas de caisse, ligne d'épaulement, arête de pavillon,
+     sommet d'aile. Sans elles la caisse reste un galet. */
+  const CREASE = [false, false, true, false, true, false, true, true, false];
   function halfPoint(cp, t) {
     const n = cp.length;
     const u = t * (n - 1);
@@ -113,11 +118,13 @@
     if (i > n - 2) i = n - 2;
     const f = u - i;
     const p0 = cp[Math.max(0, i - 1)], p1 = cp[i], p2 = cp[i + 1], p3 = cp[Math.min(n - 1, i + 2)];
+    const t1 = CREASE[i] ? 0 : TENSION;
+    const t2 = CREASE[i + 1] ? 0 : TENSION;
     const f2 = f * f, f3 = f2 * f;
     const h00 = 2 * f3 - 3 * f2 + 1, h10 = f3 - 2 * f2 + f;
     const h01 = -2 * f3 + 3 * f2, h11 = f3 - f2;
     const c = (a, b, cc, d) =>
-      h00 * b + h10 * TENSION * (cc - a) + h01 * cc + h11 * TENSION * (d - b);
+      h00 * b + h10 * t1 * (cc - a) + h01 * cc + h11 * t2 * (d - b);
     return [c(p0[0], p1[0], p2[0], p3[0]), c(p0[1], p1[1], p2[1], p3[1])];
   }
 
@@ -382,7 +389,9 @@
       const z = U.lerp(zFront, zRear, i / N);
       sections.push({ z: z, pts: ringPoints(z) });
     }
-    const shell = new THREE.Mesh(U.loft(sections, true, true), M.paint);
+    /* 38° : les panneaux restent lisses, les arêtes de caractère restent
+       franches — c'est ce qui distingue une carrosserie d'un savon. */
+    const shell = new THREE.Mesh(U.smoothNormals(U.loft(sections, true, true), 38), M.paint);
     shell.castShadow = true; shell.receiveShadow = true;
     body.add(shell);
 

@@ -507,13 +507,15 @@
   function mergeGeo(list, base) {
     base = base || new THREE.BoxGeometry(1, 1, 1);
     const VN = base.attributes.position.count;
-    const IN = base.index.count;
+    /* certaines géométries de three (icosaèdre, cône ouvert…) ne sont pas
+       indexées : on fabrique alors un index séquentiel */
+    const baseIdx = base.index ? base.index.array : null;
+    const IN = baseIdx ? base.index.count : VN;
     const vc = VN * list.length, ic = IN * list.length;
     const pos = new Float32Array(vc * 3), nor = new Float32Array(vc * 3), uv = new Float32Array(vc * 2);
     const idx = new Uint32Array(ic);
     const bp = base.attributes.position.array, bn = base.attributes.normal.array,
-      bu = base.attributes.uv ? base.attributes.uv.array : new Float32Array(VN * 2),
-      bi = base.index.array;
+      bu = base.attributes.uv ? base.attributes.uv.array : new Float32Array(VN * 2);
     const m = new THREE.Matrix4(), nm = new THREE.Matrix3(), v = new V3();
     let vo = 0, io = 0;
     list.forEach(function (b) {
@@ -529,7 +531,7 @@
         uv[(vo + i) * 2] = bu[i * 2] * (b.ur || 1);
         uv[(vo + i) * 2 + 1] = bu[i * 2 + 1] * (b.vr || 1);
       }
-      for (let i = 0; i < IN; i++) idx[io + i] = bi[i] + vo;
+      for (let i = 0; i < IN; i++) idx[io + i] = (baseIdx ? baseIdx[i] : i) + vo;
       vo += VN; io += IN;
     });
     const g = new THREE.BufferGeometry();
@@ -563,12 +565,15 @@
     let placed = 0;
     for (let gx = -3; gx <= 3; gx++) {
       for (let gz = -3; gz <= 3; gz++) {
-        const bx = -120 + gx * 190, bz = -60 + gz * 175;
-        /* 2 à 4 immeubles par îlot, écartés des chaussées */
-        const count = 4 + ((rng() * 4) | 0);
+        /* Le damier des rues est en -120 + i*190 : caler les centres
+           d'îlots sur les mêmes valeurs les plaçait EN PLEINE CHAUSSÉE,
+           et presque tous les immeubles étaient rejetés. Décalage d'un
+           demi-îlot pour viser le cœur des blocs. */
+        const bx = -120 + (gx + 0.5) * 190, bz = -60 + (gz + 0.5) * 175;
+        const count = 7 + ((rng() * 5) | 0);
         for (let k = 0; k < count; k++) {
-          const ox = (rng() - 0.5) * 74;
-          const oz = (rng() - 0.5) * 66;
+          const ox = (rng() - 0.5) * 118;
+          const oz = (rng() - 0.5) * 104;
           const x = bx + ox, z = bz + oz;
           const nr = self.nearestRoad(x, z);
           const w = 14 + rng() * 24, d = 14 + rng() * 22;
@@ -579,22 +584,68 @@
           const h = 14 + Math.pow(rng(), 1.8) * 96;
           const y = self.heightAt(x, z);
           const gi = (rng() * NM) | 0;
-          groups[gi].list.push({
-            x: x, y: y + h / 2, z: z, sx: w, sy: h, sz: d,
-            ur: Math.max(1, Math.round(w / 9)), vr: Math.max(1, Math.round(h / 9))
-          });
-          self._putCollider({ x: x, y: y + h / 2, z: z, hx: w / 2, hy: h / 2, hz: d / 2 });
-          placed++;
-          /* toiture technique */
-          if (rng() > 0.55) {
+
+          /* Une tour n'est pas un parallélépipède : elle se rétrécit par
+             paliers. Deux ou trois volumes empilés suffisent à donner une
+             silhouette, et le rendu reste un seul maillage fusionné. */
+          const tiers = h > 55 ? 3 : (h > 30 ? 2 : 1);
+          let bottom = y, remain = h, tw = w, td = d;
+          for (let t = 0; t < tiers; t++) {
+            const frac = t === tiers - 1 ? 1 : (0.42 + rng() * 0.22);
+            const th = remain * frac;
             groups[gi].list.push({
-              x: x + (rng() - 0.5) * w * 0.4, y: y + h + 2, z: z + (rng() - 0.5) * d * 0.4,
-              sx: 4 + rng() * 6, sy: 4, sz: 4 + rng() * 6, ur: 1, vr: 1
+              x: x, y: bottom + th / 2, z: z, sx: tw, sy: th, sz: td,
+              ur: Math.max(1, Math.round(tw / 9)), vr: Math.max(1, Math.round(th / 9))
+            });
+            if (t === 0) {
+              self._putCollider({ x: x, y: y + h / 2, z: z, hx: tw / 2, hy: h / 2, hz: td / 2 });
+            }
+            /* corniche entre deux paliers */
+            if (t < tiers - 1) {
+              groups[gi].list.push({
+                x: x, y: bottom + th + 0.5, z: z,
+                sx: tw + 1.4, sy: 1.0, sz: td + 1.4, ur: 1, vr: 1
+              });
+            }
+            bottom += th; remain -= th;
+            tw *= 0.74 + rng() * 0.14; td *= 0.74 + rng() * 0.14;
+          }
+          placed++;
+          /* superstructures de toiture */
+          const roofBits = 1 + ((rng() * 3) | 0);
+          for (let k = 0; k < roofBits; k++) {
+            groups[gi].list.push({
+              x: x + (rng() - 0.5) * tw * 1.1, y: y + h + 1.6 + rng() * 2,
+              z: z + (rng() - 0.5) * td * 1.1,
+              sx: 2 + rng() * 5, sy: 3 + rng() * 4, sz: 2 + rng() * 5, ur: 1, vr: 1
+            });
+          }
+          /* mât d'antenne sur les plus hautes */
+          if (h > 70 && rng() > 0.4) {
+            groups[gi].list.push({
+              x: x, y: y + h + 9, z: z, sx: 0.5, sy: 18, sz: 0.5, ur: 1, vr: 1
             });
           }
         }
       }
     }
+    /* Dalle de sol par îlot : sans elle les immeubles poussent sur une
+       pelouse, ce qui ruine la lecture de la ville. */
+    const pads = [];
+    for (let gx = -3; gx <= 3; gx++) {
+      for (let gz = -3; gz <= 3; gz++) {
+        const bx = -120 + (gx + 0.5) * 190, bz = -60 + (gz + 0.5) * 175;
+        const by = self.heightAt(bx, bz);
+        pads.push({ x: bx, y: by + 0.06, z: bz, sx: 177, sy: 0.30, sz: 162, ur: 18, vr: 16 });
+      }
+    }
+    const padTex = U.toTexture(U.noiseCanvas(256, 132, 34, 21, true), 1, 1, 8);
+    const padMesh = new THREE.Mesh(mergeGeo(pads), new THREE.MeshStandardMaterial({
+      map: padTex, color: 0x9a9a94, roughness: 0.94, metalness: 0.0
+    }));
+    padMesh.receiveShadow = true;
+    this.scene.add(padMesh);
+
     this.cityMats = [];
     const cityGroup = new THREE.Group();
     groups.forEach(function (g) {
@@ -675,6 +726,81 @@
       if (rng() > 0.45) crowns.push({ x: x, y: y + h * 1.02, z: z, sx: cw * 0.62, sy: h * 0.55, sz: cw * 0.62, ry: rng() * 6.28 });
     }
 
+    /* ---- rochers et buissons : le terrain nu paraissait vide ---- */
+    const rocks = [], bushes = [];
+    for (let i = 0; i < 2200; i++) {
+      const x = (rng() - 0.5) * SIZE * 0.95;
+      const z = (rng() - 0.5) * SIZE * 0.95;
+      const y = self.heightAt(x, z);
+      if (y < 1.5) continue;
+      const nr = self.nearestRoad(x, z);
+      if (nr && nr.dist < nr.road.width * 0.5 + 5) continue;
+      /* pente locale : les rochers affleurent surtout dans les dévers */
+      const slope = Math.abs(self.heightAt(x + 5, z) - y) + Math.abs(self.heightAt(x, z + 5) - y);
+      if (slope > 2.2 || y > 120) {
+        const r = 0.8 + rng() * 3.4;
+        rocks.push({
+          x: x, y: y + r * 0.32, z: z, sx: r, sy: r * (0.5 + rng() * 0.5), sz: r * (0.7 + rng() * 0.6),
+          rx: rng() * 0.5, ry: rng() * 6.28, rz: rng() * 0.5
+        });
+      } else if (rng() > 0.45) {
+        const r = 0.6 + rng() * 1.5;
+        bushes.push({ x: x, y: y + r * 0.4, z: z, sx: r, sy: r * 0.85, sz: r, ry: rng() * 6.28 });
+      }
+    }
+
+    /* ---- mobilier de voirie : panneaux, feux, glissières de ville ---- */
+    const signPoles = [], signPlates = [], lightHeads = [];
+    this.roads.forEach(function (road, ri) {
+      if (!road.urban && road.name !== 'Rocade') return;
+      const n = road.pts.length;
+      for (let i = 0; i < n; i += 26) {
+        const ci = i, ni = (i + 1) % n;
+        let dx = road.pts[ni][0] - road.pts[ci][0], dz = road.pts[ni][1] - road.pts[ci][1];
+        const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+        const rx = -dz, rz = dx;
+        const x = road.pts[ci][0], z = road.pts[ci][1], y = road.ys[ci];
+        const off = road.width * 0.5 + 1.9;
+        const sd = (i / 26) % 2 ? 1 : -1;
+        const px = x + rx * off * sd, pz = z + rz * off * sd;
+        signPoles.push({ x: px, y: y + 1.25, z: pz, sx: 0.09, sy: 2.5, sz: 0.09 });
+        signPlates.push({
+          x: px, y: y + 2.55, z: pz, sx: 0.70, sy: 0.70, sz: 0.05,
+          ry: Math.atan2(dx, dz)
+        });
+        /* feu tricolore aux abords des carrefours urbains */
+        if (road.urban && self.otherRoadNear(x, z, ri, road.width * 0.5 + 16)) {
+          signPoles.push({ x: px, y: y + 2.9, z: pz, sx: 0.10, sy: 5.8, sz: 0.10 });
+          signPoles.push({
+            x: px - rx * 1.6 * sd, y: y + 5.7, z: pz - rz * 1.6 * sd,
+            sx: 3.4, sy: 0.11, sz: 0.11, ry: Math.atan2(rz, rx)
+          });
+          lightHeads.push({
+            x: px - rx * 3.1 * sd, y: y + 5.35, z: pz - rz * 3.1 * sd,
+            sx: 0.26, sy: 0.78, sz: 0.26
+          });
+        }
+      }
+    });
+
+    /* ---- panneaux publicitaires le long de la rocade ---- */
+    const boardFrames = [], boardFaces = [];
+    const ring = this.roads[0];
+    for (let i = 0; i < ring.pts.length; i += 34) {
+      const ni = (i + 1) % ring.pts.length;
+      let dx = ring.pts[ni][0] - ring.pts[i][0], dz = ring.pts[ni][1] - ring.pts[i][1];
+      const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+      const rx = -dz, rz = dx;
+      const sd = (i / 34) % 2 ? 1 : -1;
+      const bx = ring.pts[i][0] + rx * 17 * sd, bz = ring.pts[i][1] + rz * 17 * sd;
+      const by = self.heightAt(bx, bz);
+      const ry = Math.atan2(dx, dz);
+      boardFrames.push({ x: bx, y: by + 3.0, z: bz, sx: 0.42, sy: 6.0, sz: 0.42 });
+      boardFrames.push({ x: bx, y: by + 6.4, z: bz, sx: 8.6, sy: 0.35, sz: 0.35, ry: ry });
+      boardFaces.push({ x: bx, y: by + 8.3, z: bz, sx: 8.2, sy: 3.4, sz: 0.22, ry: ry });
+      self._putCollider({ x: bx, y: by + 4, z: bz, r: 0.5, hy: 4 });
+    }
+
     const addMerged = (list, mat, shadow, base) => {
       if (!list.length) return null;
       const m = new THREE.Mesh(mergeGeo(list, base), mat);
@@ -693,6 +819,25 @@
     addMerged(lamps, this.lampMat, false);
     addMerged(trunks, bark, true);
     addMerged(crowns, leaf, true, new THREE.ConeGeometry(0.5, 1, 7, 1));
+
+    const rockMat = new THREE.MeshStandardMaterial({ color: 0x6a6660, roughness: 0.98, flatShading: true });
+    const bushMat = new THREE.MeshStandardMaterial({ color: 0x3d4f2c, roughness: 0.97, flatShading: true });
+    addMerged(rocks, rockMat, true, new THREE.IcosahedronGeometry(0.5, 0));
+    addMerged(bushes, bushMat, true, new THREE.IcosahedronGeometry(0.5, 0));
+    addMerged(signPoles, metal, true);
+    addMerged(signPlates, new THREE.MeshStandardMaterial({
+      color: 0xd8d8d2, roughness: 0.55, metalness: 0.15, side: THREE.DoubleSide
+    }), true);
+    this.trafficMat = new THREE.MeshStandardMaterial({
+      color: 0x14151a, emissive: 0x1c8f34, emissiveIntensity: 1.6, roughness: 0.5
+    });
+    addMerged(lightHeads, this.trafficMat, false);
+    addMerged(boardFrames, metal, true);
+    this.boardMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1c22, emissive: 0x2a3550, emissiveIntensity: 0.25,
+      roughness: 0.7, side: THREE.DoubleSide
+    });
+    addMerged(boardFaces, this.boardMat, true);
     this.lampPositions = lamps;
   };
 
@@ -866,6 +1011,7 @@
     /* éclairages urbains */
     if (this.cityMats) this.cityMats.forEach(function (m) { m.emissiveIntensity = night * 1.15; });
     if (this.lampMat) this.lampMat.emissiveIntensity = night * 2.6;
+    if (this.boardMat) this.boardMat.emissiveIntensity = 0.2 + night * 1.4;
     this.night = night;
     this.envDirty = true;
   };

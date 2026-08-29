@@ -127,7 +127,7 @@
       const rr = Math.exp(-Math.PI * bw / this.sr);
       const w = 2 * Math.PI * f / this.sr;
       r.a1 = 2 * rr * Math.cos(w); r.a2 = -rr * rr;
-      r.env = 1; r.g = intensity * (big ? 1.5 : 0.85);
+      r.env = 1; r.g = intensity * (big ? 0.62 : 0.34);
       r.dec = Math.exp(-1 / (this.sr * (big ? 0.075 : 0.013)));
       r.y1 = 0; r.y2 = 0;
     }
@@ -283,7 +283,7 @@
         const w = 2 * Math.PI * f / this.sr;
         const v = 2 * r * Math.cos(w) * this.inNoise.y1 - r * r * this.inNoise.y2 + nz * (1 - r);
         this.inNoise.y2 = this.inNoise.y1; this.inNoise.y1 = v;
-        const g = 11 * s.thr * (0.25 + 0.75 * rn) * s.on * (0.55 + 1.55 * s.inside);
+        const g = 7.5 * s.thr * (0.25 + 0.75 * rn) * s.on * (0.55 + 1.55 * s.inside);
         xL += v * g; xR += v * g * 0.92;
       }
 
@@ -301,7 +301,9 @@
       }
 
       /* --------- saturation : la ligne titane « déchire » en charge --------- */
-      const dr = 1.0 + 3.4 * s.load * (0.35 + 0.65 * rn);
+      /* Au-delà de ~2, tanh transforme la bouffée en créneau : ce n'est
+         plus du grain, c'est de la distorsion. On reste sous ce seuil. */
+      const dr = 0.9 + 1.25 * s.load * (0.35 + 0.65 * rn);
       const norm = 1 / Math.tanh(dr);
       xL = Math.tanh(xL * dr) * norm;
       xR = Math.tanh(xR * dr) * norm;
@@ -317,8 +319,11 @@
       /* Niveau : un atmosphérique à l'échappement libre passe d'un
          grondement discret au ralenti à un cri assourdissant à 8 500.
          ~22 dB d'écart entre les deux extrêmes. */
-      const loud = Math.pow(0.08 + 0.92 * s.load * (0.30 + 0.70 * rn), 0.8) * (0.50 + 0.50 * rn);
-      const g = 0.56 * loud * (0.45 + 0.55 * s.valve);
+      /* ~20 dB entre le ralenti et la pleine charge, crête visée bien en
+         dessous du plein échelle : la chaîne de sortie doit avoir de la
+         marge, sinon elle écrête avant même le limiteur. */
+      const loud = Math.pow(0.10 + 0.90 * s.load * (0.30 + 0.70 * rn), 0.75) * (0.55 + 0.45 * rn);
+      const g = 0.155 * loud * (0.55 + 0.45 * s.valve);
       /* coupe-bas à ~65 Hz : on retire le boum inutile */
       const hp = 0.9915;
       let oL = this.lpL - this.hpL.x + hp * this.hpL.y; this.hpL.x = this.lpL; this.hpL.y = oL;
@@ -334,7 +339,7 @@
   const A = {
     ready: false, ctx: null, core: null, node: null,
     master: null, engineBus: null, verbSend: null,
-    volume: 0.8, inside: 0, tunnel: 0,
+    volume: 0.62, inside: 0, tunnel: 0,
     _sq: null, _wind: null, _road: null, _grav: null,
     _last: { rpm: 0 }
   };
@@ -396,13 +401,28 @@
     A.ctx = ctx;
 
     /* ------ chaîne maître ------ */
+    /* Étage de sortie en deux temps : un compresseur doux qui tient
+       l'ensemble, puis un limiteur rapide qui n'intervient que sur les
+       crêtes. L'ancien réglage (seuil -13 dB, ratio 4) écrasait tout en
+       permanence : le moteur était noyé et l'ensemble pompait. */
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -13; comp.knee.value = 22;
-    comp.ratio.value = 4; comp.attack.value = 0.004; comp.release.value = 0.19;
+    comp.threshold.value = -22; comp.knee.value = 14;
+    comp.ratio.value = 2.4; comp.attack.value = 0.008; comp.release.value = 0.28;
+
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.value = -2.0; limiter.knee.value = 0;
+    limiter.ratio.value = 20; limiter.attack.value = 0.0015; limiter.release.value = 0.09;
+
+    /* rattrapage après compression : le signal est volontairement gravé
+       bas à la source pour garder de la marge, il faut le remonter ici */
+    const makeup = ctx.createGain();
+    makeup.gain.value = 4.2;
+
     const master = ctx.createGain();
     master.gain.value = A.volume;
-    comp.connect(master); master.connect(ctx.destination);
-    A.master = master; A.comp = comp;
+    comp.connect(makeup); makeup.connect(limiter);
+    limiter.connect(master); master.connect(ctx.destination);
+    A.master = master; A.comp = comp; A.limiter = limiter; A.makeup = makeup;
 
     /* ------ bus moteur ------ */
     const engineBus = ctx.createGain(); engineBus.gain.value = 1;
@@ -501,7 +521,7 @@
     const f = ctx.createBiquadFilter();
     f.type = 'lowpass'; f.frequency.value = 160 + 700 * Math.min(1, force);
     const g = ctx.createGain();
-    const amp = Math.min(0.85, 0.12 + force * 0.75);
+    const amp = Math.min(0.42, 0.07 + force * 0.38);
     g.gain.setValueAtTime(amp, t);
     g.gain.exponentialRampToValueAtTime(0.0001, t + 0.16 + force * 0.35);
     s.connect(f); f.connect(g); g.connect(A.comp);
@@ -533,30 +553,30 @@
     const now = ctx.currentTime, tc = 0.06;
 
     /* vent : croît avec le carré de la vitesse, étouffé dans l'habitacle */
-    const wind = Math.min(0.34, Math.pow(kmh / 340, 2.1) * 0.42) * (st.inside ? 0.5 : 1);
+    const wind = Math.min(0.15, Math.pow(kmh / 340, 2.1) * 0.19) * (st.inside ? 0.5 : 1);
     A._wind.gain.gain.setTargetAtTime(wind, now, tc);
     A._wind.filter.frequency.setTargetAtTime(420 + kmh * 3.4, now, tc);
 
     /* roulement : dépend du revêtement */
     const rough = st.surface === 'grass' ? 1.55 : st.surface === 'dirt' ? 1.9 : 1;
-    const road = Math.min(0.22, (kmh / 300) * 0.20) * rough * st.wheelsOnGround * (st.inside ? 0.75 : 1);
+    const road = Math.min(0.105, (kmh / 300) * 0.095) * rough * st.wheelsOnGround * (st.inside ? 0.75 : 1);
     A._road.gain.gain.setTargetAtTime(road, now, tc);
     A._road.filter.frequency.setTargetAtTime(180 + kmh * 3.2, now, tc);
 
     /* crissement : uniquement sur asphalte et sous glissement réel */
     const sq = st.surface === 'asphalt'
-      ? Math.min(0.30, Math.max(0, st.slip - 0.16) * 0.55) * Math.min(1, kmh / 12)
+      ? Math.min(0.17, Math.max(0, st.slip - 0.16) * 0.32) * Math.min(1, kmh / 12)
       : 0;
     A._sq.gain.gain.setTargetAtTime(sq, now, 0.045);
     A._sq2.gain.gain.setTargetAtTime(sq * 0.55, now, 0.045);
     A._sq.filter.frequency.setTargetAtTime(1150 + st.slip * 900 + kmh * 1.4, now, 0.08);
 
     /* gravier / herbe */
-    const gr = st.surface !== 'asphalt' ? Math.min(0.26, (kmh / 160) * 0.22) * st.wheelsOnGround : 0;
+    const gr = st.surface !== 'asphalt' ? Math.min(0.13, (kmh / 160) * 0.11) * st.wheelsOnGround : 0;
     A._grav.gain.gain.setTargetAtTime(gr, now, 0.07);
 
     /* réverbération : forte sous un tunnel, présente en ville */
-    A.verbSend.gain.setTargetAtTime(0.05 + st.tunnel * 0.85, now, 0.25);
+    A.verbSend.gain.setTargetAtTime(0.035 + st.tunnel * 0.42, now, 0.25);
   };
 
   global.EngineAudio = A;
