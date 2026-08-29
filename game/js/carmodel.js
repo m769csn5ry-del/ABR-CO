@@ -24,12 +24,12 @@
         Les stations proches des essieux rentrent le bas de caisse
         (wFloor ≈ 0,61) et remontent l'épaulement au-dessus du sommet
         du pneu : c'est ce qui creuse les passages de roue.          */
-    [ 2.470, 0.330, 0.196, 0.396, 0.272, 0.190, 0.330],
-    [ 2.390, 0.480, 0.166, 0.578, 0.282, 0.330, 0.362],
-    [ 2.270, 0.664, 0.134, 0.780, 0.296, 0.492, 0.414],
-    [ 2.120, 0.798, 0.110, 0.906, 0.322, 0.652, 0.482],
-    [ 1.950, 0.868, 0.100, 0.995, 0.362, 0.772, 0.552],
-    [ 1.800, 0.845, 0.112, 1.030, 0.470, 0.815, 0.610],
+    [ 2.470, 0.610, 0.168, 0.792, 0.300, 0.648, 0.418],
+    [ 2.380, 0.712, 0.140, 0.878, 0.312, 0.744, 0.452],
+    [ 2.260, 0.798, 0.120, 0.940, 0.330, 0.812, 0.496],
+    [ 2.120, 0.846, 0.108, 0.976, 0.348, 0.842, 0.534],
+    [ 1.950, 0.868, 0.100, 0.995, 0.368, 0.852, 0.566],
+    [ 1.800, 0.845, 0.112, 1.030, 0.470, 0.848, 0.606],
     [ 1.650, 0.660, 0.150, 1.049, 0.640, 0.840, 0.632],
     [ 1.500, 0.620, 0.170, 1.049, 0.700, 0.855, 0.650],
     [ 1.350, 0.612, 0.176, 1.049, 0.716, 0.860, 0.668],
@@ -77,9 +77,12 @@
      ligne médiane est nettement en contrebas des bosses d'ailes : sans ce
      décrochement, le dessus n'est qu'un dôme. */
   function hoodDip(z) {
-    const f = Math.max(0, 1 - Math.pow((z - 1.80) / 0.86, 2));
-    const r = Math.max(0, 1 - Math.pow((z + 1.22) / 0.72, 2));
-    return f * 0.070 + r * 0.042;
+    const f = Math.max(0, 1 - Math.pow((z - 1.86) / 0.78, 2));
+    /* Vallée du capot moteur, très creusée : ce sont les arcs-boutants
+       qui relient le pavillon aux hanches — la signature de l'Aventador
+       vue de trois quarts arrière. */
+    const r = Math.max(0, 1 - Math.pow((z + 0.86) / 0.66, 2));
+    return f * 0.086 + Math.pow(r, 0.7) * 0.082;
   }
 
   /* Points de contrôle de la demi-section droite (9 points).
@@ -97,7 +100,7 @@
       [wS, yS],
       [wT + (wS - wT) * 0.46, yS + (yT - yS) * 0.60],
       [wT, yT - (yT - yS) * 0.06],
-      [wT * 0.64, yT],          /* bosse d'aile */
+      [wT * 0.66, yT],          /* bosse d'aile / arête d'arc-boutant */
       [0, yT - dip]             /* creux médian */
     ];
   }
@@ -134,7 +137,11 @@
     return new THREE.Vector3(p[0] * (side < 0 ? -1 : 1), p[1], z);
   }
 
-  const RING = 15;                       /* points par demi-section */
+  /* 10 points seulement : la section devient quasi polygonale entre les
+     points de contrôle. Combiné aux points de rupture et à l'ombrage par
+     groupes de lissage, cela donne les facettes de la vraie voiture —
+     avec 15 points la surface se rearrondissait entre chaque arête. */
+  const RING = 10;
 
   function ringPoints(z) {
     const cp = halfControls(stationAt(z));
@@ -477,17 +484,28 @@
     body.add(new THREE.Mesh(patch(-0.34, -0.86, 0.56, 0.66, -1, 0.006, 7, 3), M.black));
 
     /* ---------- boucliers ---------- */
+    const cfPre = opts.carbon ? M.carbon : M.black;
     /* Bandeau noir sur toute la largeur du bouclier, puis naseaux creusés :
        vu de face, la SVJ est une lame noire surmontée du nez peint. */
+    /* Vu de face, la SVJ est une lame noire surmontée du nez peint : tout
+       ce qui est sous la ligne de phares est bouclier, avec une bouche
+       centrale et deux écopes trapézoïdales à lamelles. */
     for (let sd = -1; sd <= 1; sd += 2) {
-      body.add(new THREE.Mesh(patch(2.44, 1.96, 0.045, 0.32, sd, 0.003, 10, 6), M.black));
-      body.add(new THREE.Mesh(patch(2.38, 2.04, 0.12, 0.29, sd, 0.011, 8, 5), M.mesh));
+      body.add(new THREE.Mesh(patch(2.46, 1.88, 0.030, 0.40, sd, 0.003, 12, 7), M.black));
+      /* bouche centrale creusée */
+      body.add(new THREE.Mesh(patch(2.40, 2.06, 0.08, 0.24, sd, 0.012, 8, 5), M.mesh));
+      /* écope latérale trapézoïdale */
+      body.add(new THREE.Mesh(patch(2.24, 1.94, 0.26, 0.39, sd, 0.010, 7, 4), M.mesh));
+      /* lame horizontale qui coupe la bouche en deux */
+      const blade2 = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.045, 0.16), cfPre);
+      blade2.position.set(0, 0.255, 2.36);
+      body.add(blade2);
     }
 
     /* Bouclier avant SVJ : large bouche noire, splitter proéminent aux
        extrémités relevées, double étage de dérives latérales. */
     const splitter = new THREE.Group();
-    const cf = opts.carbon ? M.carbon : M.black;
+    const cf = cfPre;
     /* lame principale */
     const sp = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.040, 0.52), cf);
     sp.position.set(0, 0.078, 2.16);
@@ -542,24 +560,31 @@
     const drls = [];
     const mkY = (side) => {
       const g = new THREE.Group();
-      const base = new THREE.Mesh(patch(2.08, 1.84, 0.50, 0.70, side, 0.004, 5, 4), M.headOff);
+      /* Le boîtier est une grande surface sombre qui enveloppe le coin
+         d'aile et file vers l'arrière ; les branches lumineuses vivent
+         DEDANS. Des barres posées sur la carrosserie ne ressemblent à
+         rien — c'est le creux sombre qui fait l'optique. */
+      g.add(new THREE.Mesh(patch(2.20, 1.52, 0.42, 0.86, side, 0.002, 10, 7), M.black));
+      const base = new THREE.Mesh(patch(2.14, 1.62, 0.46, 0.80, side, 0.008, 9, 6), M.headOff);
       g.add(base);
+      g.add(new THREE.Mesh(patch(2.10, 1.58, 0.795, 0.845, side, 0.013, 8, 2),
+        opts.carbon ? M.carbon : M.paint));
       /* branches du Y */
       /* Le Y couché est la signature de la SVJ : deux branches ouvertes
          vers le haut, réunies par un trait qui plonge vers le nez. */
-      const bar = new THREE.BoxGeometry(0.030, 0.034, 0.42);
+      const bar = new THREE.BoxGeometry(0.026, 0.030, 0.46);
       const b1 = new THREE.Mesh(bar, M.drl);
-      b1.position.set(side * 0.855, 0.615, 1.88); b1.rotation.set(0.22, side * 0.18, side * 0.62);
+      b1.position.set(side * 0.845, 0.586, 1.90); b1.rotation.set(0.16, side * 0.24, side * 0.50);
       const b2 = new THREE.Mesh(bar, M.drl);
-      b2.position.set(side * 0.835, 0.505, 1.95); b2.rotation.set(-0.12, side * 0.22, -side * 0.38);
-      const b3 = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.34), M.drl);
-      b3.position.set(side * 0.700, 0.480, 2.03); b3.rotation.set(0.06, side * 0.46, side * 0.06);
-      const b4 = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.026, 0.20), M.drl);
-      b4.position.set(side * 0.905, 0.560, 1.83); b4.rotation.set(0.10, side * 0.14, side * 0.35);
+      b2.position.set(side * 0.858, 0.500, 1.92); b2.rotation.set(-0.10, side * 0.26, -side * 0.30);
+      const b3 = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.030, 0.40), M.drl);
+      b3.position.set(side * 0.735, 0.492, 2.08); b3.rotation.set(0.04, side * 0.52, side * 0.04);
+      const b4 = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.024, 0.26), M.drl);
+      b4.position.set(side * 0.900, 0.545, 1.76); b4.rotation.set(0.08, side * 0.16, side * 0.28);
       g.add(b1, b2, b3, b4);
       drls.push(b1, b2, b3, b4);
-      const proj = new THREE.Mesh(new THREE.SphereGeometry(0.055, 14, 10), M.headOff);
-      proj.position.set(side * 0.80, 0.565, 1.99);
+      const proj = new THREE.Mesh(new THREE.SphereGeometry(0.052, 14, 10), M.headOff);
+      proj.position.set(side * 0.800, 0.548, 1.98);
       g.add(proj);
       headlights.push(proj);
       return g;
@@ -615,23 +640,34 @@
     /* ---------- aileron SVJ ---------- */
     const wing = new THREE.Group();
     const wingMat = opts.carbon ? M.carbon : M.paint;
-    const blade = new THREE.Mesh(new THREE.BoxGeometry(1.62, 0.046, 0.36), wingMat);
+    /* L'aileron SVJ est porté par deux pylônes verticaux plantés au ras
+       de la poupe, la pale bien au-dessus du capot moteur — et non par
+       des jambettes courtes noyées dans la carrosserie. */
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.050, 0.40), wingMat);
     blade.castShadow = true;
     const flap = new THREE.Group();
     flap.add(blade);
-    flap.position.set(0, 1.075, -2.10);
-    flap.rotation.x = -0.13;
+    /* bord de fuite relevé */
+    const gurney = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.055, 0.022), wingMat);
+    gurney.position.set(0, 0.030, -0.19);
+    flap.add(gurney);
+    flap.position.set(0, 1.168, -2.14);
+    flap.rotation.x = -0.11;
     wing.add(flap);
-    /* joues latérales */
     for (let s = -1; s <= 1; s += 2) {
-      const ep = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.26, 0.46), wingMat);
-      ep.position.set(s * 0.805, 1.085, -2.10);
+      /* joue latérale */
+      const ep = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.30, 0.50), wingMat);
+      ep.position.set(s * 0.828, 1.178, -2.14);
       wing.add(ep);
-      /* montants cintrés */
-      const st = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.30, 0.16), wingMat);
-      st.position.set(s * 0.52, 0.94, -2.02);
-      st.rotation.x = 0.30;
-      wing.add(st);
+      /* pylône vertical */
+      const py = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.34, 0.24), wingMat);
+      py.position.set(s * 0.455, 1.010, -2.10);
+      py.rotation.x = 0.12;
+      wing.add(py);
+      /* embase sur le capot moteur */
+      const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.30), wingMat);
+      foot.position.set(s * 0.455, 0.858, -2.06);
+      wing.add(foot);
     }
     body.add(wing);
 
@@ -1034,7 +1070,7 @@
         blending: THREE.AdditiveBlending, depthWrite: false
       }));
       sp.position.set(s * 0.80, 0.565, 2.02);
-      sp.scale.set(0.9, 0.9, 1);
+      sp.scale.set(0.55, 0.55, 1);
       body.add(sp);
       halos.push(sp);
     });
@@ -1077,7 +1113,7 @@
         P.headlights.forEach(function (h) { h.material = on ? M.headOn : M.headOff; });
         const p = on ? (night ? 150 : 55) : 0;
         beamL.intensity = p; beamR.intensity = p;
-        halos.forEach(function (h) { h.material.opacity = on ? (night ? 0.75 : 0.3) : 0; });
+        halos.forEach(function (h) { h.material.opacity = (on && night) ? 0.42 : 0; });
       },
       /* ALA : volet d'aileron ouvert (traînée réduite) / fermé (appui max) */
       setALA: function (open) {
