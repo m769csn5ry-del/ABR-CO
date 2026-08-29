@@ -282,6 +282,38 @@
     return g;
   }
 
+  /* ------------------------------------------------------------------
+     Panneau découpé à un contour exact.
+
+     Les nappes posées sur la carrosserie (patch) suivent la surface mais
+     n'ont que des contours rectangulaires : impossible d'obtenir une
+     écope hexagonale ou un feu en flèche. Ici on dessine le contour point
+     par point et on l'extrude — c'est du panneau, pas de la décalcomanie.
+     ------------------------------------------------------------------ */
+  function panel(pts, depth, mat, bevel) {
+    const sh = new THREE.Shape();
+    sh.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) sh.lineTo(pts[i][0], pts[i][1]);
+    sh.closePath();
+    const g = new THREE.ExtrudeGeometry(sh, {
+      depth: depth === undefined ? 0.02 : depth,
+      bevelEnabled: !!bevel, bevelSize: 0.005, bevelThickness: 0.005, bevelSegments: 1,
+      curveSegments: 1
+    });
+    const m = new THREE.Mesh(g, mat);
+    m.castShadow = true; m.receiveShadow = true;
+    return m;
+  }
+
+  /* hexagone allongé : le motif récurrent de la marque */
+  function hexPts(w, h, cut) {
+    const c = cut === undefined ? 0.30 : cut;
+    return [
+      [-w / 2, 0], [-w / 2 + w * c, h / 2], [w / 2 - w * c, h / 2],
+      [w / 2, 0], [w / 2 - w * c, -h / 2], [-w / 2 + w * c, -h / 2]
+    ];
+  }
+
   /* --------------------------- ROUE --------------------------- */
   function buildWheel(M, tyreW, rimR, tyreR, spokes) {
     const g = new THREE.Group();
@@ -447,20 +479,42 @@
     body.add(new THREE.Mesh(patch(1.185, 1.160, 0.80, 1.00, -1, 0.004, 1, 8), M.black));
 
     /* ---------- écopes latérales hexagonales ---------- */
+    /* Écope latérale : hexagone découpé au contour, encadrement carbone
+       en relief, fond noir en retrait et lamelles verticales. Une nappe
+       rectangulaire posée sur le flanc ne pouvait pas donner cette forme. */
     const sideIntake = (side) => {
       const g = new THREE.Group();
-      /* encadrement carbone puis fond noir : l'écope est un creux, pas un
-         simple aplat sur le flanc */
-      g.add(new THREE.Mesh(patch(-0.24, -1.02, 0.31, 0.53, side, 0.009, 9, 5),
-        opts.carbon ? M.carbon : M.black));
-      g.add(new THREE.Mesh(patch(-0.28, -0.98, 0.34, 0.50, side, 0.004, 9, 5), M.black));
-      /* lamelles */
+      const cx = side * 0.955, cy = 0.455, cz = -0.62;
+      const put = (m, dx) => {
+        m.rotation.y = side * Math.PI / 2;
+        m.position.set(cx + side * dx, cy, cz);
+        g.add(m);
+      };
+      /* fond noir, enfoncé */
+      put(panel(hexPts(0.86, 0.40, 0.26), 0.02, M.black), -0.085);
+      /* encadrement carbone en relief */
+      const ring = new THREE.Shape();
+      const outer = hexPts(0.98, 0.50, 0.26), inner = hexPts(0.86, 0.40, 0.26);
+      ring.moveTo(outer[0][0], outer[0][1]);
+      for (let i = 1; i < outer.length; i++) ring.lineTo(outer[i][0], outer[i][1]);
+      ring.closePath();
+      const hole = new THREE.Path();
+      hole.moveTo(inner[0][0], inner[0][1]);
+      for (let i = 1; i < inner.length; i++) hole.lineTo(inner[i][0], inner[i][1]);
+      hole.closePath();
+      ring.holes.push(hole);
+      const rg = new THREE.ExtrudeGeometry(ring, {
+        depth: 0.05, bevelEnabled: false, curveSegments: 1
+      });
+      const rm = new THREE.Mesh(rg, opts.carbon ? M.carbon : M.black);
+      rm.castShadow = true;
+      rm.rotation.y = side * Math.PI / 2;
+      rm.position.set(cx + side * 0.006, cy, cz);
+      g.add(rm);
+      /* lamelles verticales dans le creux */
       for (let i = 0; i < 5; i++) {
-        const z = U.lerp(-0.38, -0.97, i / 4);
-        const p = surfacePoint(z, 0.42, side);
-        const f = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.20, 0.045), M.mesh);
-        f.position.copy(p).x += 0.012 * side;
-        f.rotation.z = side * 0.15;
+        const f = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.30, 0.028), M.mesh);
+        f.position.set(cx - side * 0.045, cy, cz - 0.30 + i * 0.15);
         g.add(f);
       }
       return g;
@@ -675,15 +729,29 @@
     const tails = [];
     const mkTail = (side) => {
       const g = new THREE.Group();
-      const bar = new THREE.BoxGeometry(0.034, 0.040, 0.34);
-      const t1 = new THREE.Mesh(bar, M.tail);
-      t1.position.set(side * 0.615, 0.760, -2.345); t1.rotation.set(0.08, side * 0.16, side * 0.70);
-      const t2 = new THREE.Mesh(bar, M.tail);
-      t2.position.set(side * 0.600, 0.640, -2.360); t2.rotation.set(-0.05, side * 0.18, -side * 0.44);
-      const t3 = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.038, 0.30), M.tail);
-      t3.position.set(side * 0.430, 0.700, -2.395); t3.rotation.set(0, side * 0.34, side * 0.04);
-      g.add(t1, t2, t3);
-      tails.push(t1, t2, t3);
+      /* Feu en flèche : un contour unique découpé, comme sur la voiture,
+         au lieu de trois barreaux posés côte à côte. */
+      const arrow = [
+        [0, 0.075], [0.30, 0.150], [0.34, 0.098], [0.075, 0], [0.34, -0.098],
+        [0.30, -0.150], [0, -0.075], [-0.02, 0]
+      ];
+      /* L'extrusion part du plan z=0 vers +Z : la face visible depuis
+         l'arrière est donc celle d'origine, sans rotation. Le miroir se
+         fait par l'échelle seule — rotation ET échelle se seraient
+         annulées d'un côté. */
+      const lens = panel(arrow, 0.045, M.tail, true);
+      lens.scale.x = side;
+      lens.position.set(side * 0.335, 0.706, -2.392);
+      g.add(lens);
+      tails.push(lens);
+      /* embase noire en retrait */
+      const backing = panel([
+        [-0.03, 0.19], [0.38, 0.19], [0.40, 0.02], [0.12, -0.02],
+        [0.40, -0.06], [0.38, -0.19], [-0.03, -0.19]
+      ], 0.02, M.black);
+      backing.scale.x = side;
+      backing.position.set(side * 0.335, 0.706, -2.404);
+      g.add(backing);
       return g;
     };
     body.add(mkTail(1), mkTail(-1));
