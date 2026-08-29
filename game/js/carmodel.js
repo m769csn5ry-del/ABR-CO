@@ -24,24 +24,26 @@
         Les stations proches des essieux rentrent le bas de caisse
         (wFloor ≈ 0,61) et remontent l'épaulement au-dessus du sommet
         du pneu : c'est ce qui creuse les passages de roue.          */
-    [ 2.470, 0.610, 0.168, 0.792, 0.300, 0.648, 0.418],
-    [ 2.380, 0.712, 0.140, 0.878, 0.312, 0.744, 0.452],
-    [ 2.260, 0.798, 0.120, 0.940, 0.330, 0.812, 0.496],
-    [ 2.120, 0.846, 0.108, 0.976, 0.348, 0.842, 0.534],
-    [ 1.950, 0.868, 0.100, 0.995, 0.368, 0.852, 0.566],
+    [ 2.470, 0.500, 0.168, 0.664, 0.290, 0.576, 0.392],
+    [ 2.415, 0.700, 0.150, 0.868, 0.298, 0.740, 0.414],
+    [ 2.340, 0.796, 0.132, 0.944, 0.308, 0.808, 0.446],
+    [ 2.260, 0.826, 0.120, 0.972, 0.318, 0.834, 0.476],
+    [ 2.120, 0.852, 0.108, 0.996, 0.338, 0.856, 0.518],
+    [ 1.950, 0.868, 0.100, 0.995, 0.362, 0.856, 0.554],
+    [ 1.870, 0.858, 0.106, 1.012, 0.410, 0.852, 0.578],
     [ 1.800, 0.845, 0.112, 1.030, 0.470, 0.848, 0.606],
     [ 1.650, 0.660, 0.150, 1.049, 0.640, 0.840, 0.632],
     [ 1.500, 0.620, 0.170, 1.049, 0.700, 0.855, 0.650],
     [ 1.350, 0.612, 0.176, 1.049, 0.716, 0.860, 0.668],
     [ 1.200, 0.620, 0.170, 1.049, 0.700, 0.865, 0.702],
     [ 1.050, 0.685, 0.148, 1.035, 0.618, 0.868, 0.742],
-    [ 0.930, 0.860, 0.118, 0.988, 0.520, 0.850, 0.792],
-    [ 0.860, 0.888, 0.108, 0.960, 0.492, 0.780, 0.868],
-    [ 0.560, 0.878, 0.106, 0.936, 0.496, 0.606, 1.072],
-    [ 0.220, 0.874, 0.106, 0.928, 0.510, 0.532, 1.132],
-    [-0.140, 0.880, 0.106, 0.934, 0.518, 0.538, 1.128],
-    [-0.440, 0.900, 0.106, 0.956, 0.520, 0.596, 1.060],
-    [-0.700, 0.924, 0.106, 1.002, 0.512, 0.708, 0.990],
+    [ 0.930, 0.860, 0.118, 0.988, 0.552, 0.850, 0.792],
+    [ 0.860, 0.888, 0.108, 0.960, 0.566, 0.782, 0.868],
+    [ 0.560, 0.884, 0.106, 0.968, 0.604, 0.520, 1.072],
+    [ 0.220, 0.882, 0.106, 0.962, 0.622, 0.452, 1.132],
+    [-0.140, 0.888, 0.106, 0.968, 0.628, 0.460, 1.128],
+    [-0.440, 0.908, 0.106, 0.985, 0.606, 0.520, 1.060],
+    [-0.700, 0.924, 0.106, 1.002, 0.546, 0.706, 0.990],
     [-0.900, 0.870, 0.118, 1.035, 0.566, 0.800, 0.955],
     [-1.050, 0.650, 0.152, 1.049, 0.704, 0.845, 0.940],
     [-1.200, 0.608, 0.174, 1.049, 0.744, 0.868, 0.930],
@@ -49,9 +51,10 @@
     [-1.500, 0.608, 0.174, 1.049, 0.744, 0.885, 0.920],
     [-1.650, 0.652, 0.156, 1.049, 0.692, 0.890, 0.918],
     [-1.800, 0.840, 0.152, 1.038, 0.566, 0.892, 0.916],
-    [-2.020, 0.858, 0.240, 1.000, 0.516, 0.880, 0.902],
-    [-2.280, 0.752, 0.362, 0.918, 0.540, 0.826, 0.868],
-    [-2.470, 0.590, 0.484, 0.792, 0.560, 0.690, 0.826]
+    [-1.900, 0.852, 0.190, 1.024, 0.536, 0.888, 0.910],
+    [-2.020, 0.866, 0.240, 1.014, 0.516, 0.896, 0.902],
+    [-2.280, 0.812, 0.398, 0.992, 0.548, 0.890, 0.856],
+    [-2.470, 0.762, 0.548, 0.912, 0.588, 0.868, 0.802]
   ];
 
 
@@ -422,11 +425,18 @@
     root.add(body);
 
     /* ---------- caisse ---------- */
+    /* On loft directement sur les stations décrites, sans les rééchantillonner.
+       Interpoler 62 coupes le long d'une spline rendait la surface
+       continûment courbe : la voiture restait lisse quelles que soient les
+       arêtes des sections. En reliant les stations telles quelles, chaque
+       bande devient une facette — c'est le dessin réel de la voiture. Les
+       intervalles trop longs sont subdivisés pour éviter les cassures
+       grossières là où le galbe change vite. */
     const sections = [];
-    const zFront = 2.470, zRear = -2.470, N = 62;
-    for (let i = 0; i <= N; i++) {
-      const z = U.lerp(zFront, zRear, i / N);
-      sections.push({ z: z, pts: ringPoints(z) });
+    for (let i = 0; i < STATIONS.length; i++) {
+      const z0 = STATIONS[i][0];
+      sections.push({ z: z0, pts: ringPoints(z0) });
+      /* aucune subdivision : les stations SONT les arêtes du dessin */
     }
     /* 38° : les panneaux restent lisses, les arêtes de caractère restent
        franches — c'est ce qui distingue une carrosserie d'un savon. */
@@ -440,8 +450,8 @@
     const wsL = new THREE.Mesh(patch(1.14, 0.30, 0.81, 1.00, -1, 0.014, 14, 7), M.glass);
     body.add(wsR, wsL);
     /* custodes latérales */
-    body.add(new THREE.Mesh(patch(0.64, -0.42, 0.55, 0.745, 1, 0.012, 10, 5), M.glass));
-    body.add(new THREE.Mesh(patch(0.64, -0.42, 0.55, 0.745, -1, 0.012, 10, 5), M.glass));
+    body.add(new THREE.Mesh(patch(0.64, -0.42, 0.625, 0.752, 1, 0.012, 10, 5), M.glass));
+    body.add(new THREE.Mesh(patch(0.64, -0.42, 0.625, 0.752, -1, 0.012, 10, 5), M.glass));
     /* lunette / capot moteur vitré */
     body.add(new THREE.Mesh(patch(-0.46, -0.92, 0.82, 1.00, 1, 0.010, 8, 5), M.glass));
     body.add(new THREE.Mesh(patch(-0.46, -0.92, 0.82, 1.00, -1, 0.010, 8, 5), M.glass));
@@ -552,18 +562,20 @@
     /* La face avant est plate : on y découpe les ouvertures au contour,
        comme sur la voiture. Une nappe rectangulaire ne pouvait donner ni
        la bouche hexagonale ni les écopes trapézoïdales. */
-    const FZ = 2.452;                       /* plan de la face avant */
-    const putFront = (m, depth, y, x) => {
-      m.position.set(x || 0, y, FZ - depth);
-      body.add(m);
-      return m;
-    };
+    /* Le bouclier n'est pas un plan : c'est une face centrale et deux
+       joues orientées vers l'extérieur. Trois facettes valent mieux qu'un
+       aplat, qui se noyait dans le galbe du nez. */
+    const mouthZ = 2.462, cheekZ = 2.352;
 
     /* bouche centrale hexagonale, creusée */
-    putFront(panel(hexPts(0.80, 0.255, 0.26), 0.10, M.mesh), 0.10, 0.262);
-    /* encadrement carbone de la bouche */
     (function () {
-      const outer = hexPts(0.92, 0.335, 0.26), inner = hexPts(0.80, 0.255, 0.26);
+      const m = panel(hexPts(0.74, 0.235, 0.26), 0.11, M.mesh);
+      m.position.set(0, 0.258, mouthZ - 0.11);
+      body.add(m);
+    })();
+    /* encadrement carbone et lame horizontale */
+    (function () {
+      const outer = hexPts(0.86, 0.315, 0.26), inner = hexPts(0.74, 0.235, 0.26);
       const sh = new THREE.Shape();
       sh.moveTo(outer[0][0], outer[0][1]);
       for (let i = 1; i < outer.length; i++) sh.lineTo(outer[i][0], outer[i][1]);
@@ -574,35 +586,33 @@
       hl.closePath();
       sh.holes.push(hl);
       const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, {
-        depth: 0.05, bevelEnabled: false, curveSegments: 1
+        depth: 0.055, bevelEnabled: false, curveSegments: 1
       }), cfPre);
       m.castShadow = true;
-      m.position.set(0, 0.262, FZ - 0.05);
+      m.position.set(0, 0.258, mouthZ - 0.055);
       body.add(m);
+      const bl = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.036, 0.13), cfPre);
+      bl.position.set(0, 0.258, mouthZ - 0.062);
+      body.add(bl);
     })();
-    /* lame horizontale au travers de la bouche */
-    (function () {
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.038, 0.14), cfPre);
-      b.position.set(0, 0.262, FZ - 0.055);
-      body.add(b);
-    })();
-    /* écopes latérales trapézoïdales, à lamelles verticales */
+
+    /* joues : écopes trapézoïdales tournées vers l'extérieur */
     for (let sd = -1; sd <= 1; sd += 2) {
-      const trap = [
-        [-0.245, -0.115], [0.235, -0.145], [0.255, 0.105], [-0.225, 0.135]
-      ];
-      const cxF = sd * 0.665;
-      const inlet = panel(trap, 0.09, M.mesh);
-      inlet.scale.x = sd;
-      putFront(inlet, 0.09, 0.255, cxF);
-      const surround = panel([
-        [-0.285, -0.150], [0.275, -0.185], [0.298, 0.140], [-0.262, 0.175]
-      ], 0.045, cfPre);
-      surround.scale.x = sd;
-      putFront(surround, 0.045, 0.255, cxF);
+      const cxF = sd * 0.640, ang = sd * 0.26;
+      const place = (pts, depth, mat, back) => {
+        const m = panel(pts, depth, mat);
+        m.rotation.y = ang;
+        const d = depth + back;
+        m.position.set(cxF + Math.sin(ang) * d, 0.252, cheekZ - Math.cos(ang) * d);
+        body.add(m);
+      };
+      place([[-0.275, -0.165], [0.275, -0.165], [0.298, 0.155], [-0.298, 0.155]], 0.05, cfPre, 0);
+      place([[-0.235, -0.130], [0.235, -0.130], [0.255, 0.120], [-0.255, 0.120]], 0.09, M.mesh, 0.014);
       for (let k = -1; k <= 1; k++) {
-        const finF = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.21, 0.07), M.mesh);
-        finF.position.set(cxF + k * 0.135, 0.255, FZ - 0.05);
+        const finF = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.20, 0.07), M.mesh);
+        finF.rotation.y = ang;
+        finF.position.set(cxF + Math.cos(ang) * k * 0.13 + Math.sin(ang) * 0.05,
+          0.252, cheekZ - Math.cos(ang) * 0.05 + Math.sin(ang) * k * 0.13);
         body.add(finF);
       }
     }
@@ -612,14 +622,14 @@
     const splitter = new THREE.Group();
     const cf = cfPre;
     /* lame principale */
-    const sp = new THREE.Mesh(new THREE.BoxGeometry(1.92, 0.040, 0.52), cf);
-    sp.position.set(0, 0.078, 2.16);
+    const sp = new THREE.Mesh(new THREE.BoxGeometry(1.88, 0.038, 0.40), cf);
+    sp.position.set(0, 0.094, 2.13);
     sp.rotation.x = -0.06;
     splitter.add(sp);
     /* extrémités relevées */
     for (let s = -1; s <= 1; s += 2) {
-      const tip = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.045, 0.40), cf);
-      tip.position.set(s * 0.86, 0.115, 2.06);
+      const tip = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.042, 0.30), cf);
+      tip.position.set(s * 0.86, 0.126, 2.06);
       tip.rotation.set(-0.06, 0, s * 0.30);
       splitter.add(tip);
       /* dérives : deux étages, comme sur la voiture */
@@ -657,27 +667,29 @@
          d'aile et file vers l'arrière ; les branches lumineuses vivent
          DEDANS. Des barres posées sur la carrosserie ne ressemblent à
          rien — c'est le creux sombre qui fait l'optique. */
-      g.add(new THREE.Mesh(patch(2.20, 1.52, 0.42, 0.86, side, 0.002, 10, 7), M.black));
-      const base = new THREE.Mesh(patch(2.14, 1.62, 0.46, 0.80, side, 0.008, 9, 6), M.headOff);
+      g.add(new THREE.Mesh(patch(2.34, 1.56, 0.36, 0.84, side, 0.002, 12, 8), M.black));
+      const base = new THREE.Mesh(patch(2.30, 1.66, 0.40, 0.78, side, 0.008, 11, 7), M.headOff);
       g.add(base);
-      g.add(new THREE.Mesh(patch(2.10, 1.58, 0.795, 0.845, side, 0.013, 8, 2),
+      g.add(new THREE.Mesh(patch(2.26, 1.62, 0.775, 0.840, side, 0.013, 9, 2),
         opts.carbon ? M.carbon : M.paint));
       /* branches du Y */
       /* Le Y couché est la signature de la SVJ : deux branches ouvertes
          vers le haut, réunies par un trait qui plonge vers le nez. */
-      const bar = new THREE.BoxGeometry(0.026, 0.030, 0.46);
+      /* Le Y doit se lire DE FACE : les branches sont posées sur la
+         surface avant de l'aile, pas sur son dessus. */
+      const bar = new THREE.BoxGeometry(0.030, 0.034, 0.40);
       const b1 = new THREE.Mesh(bar, M.drl);
-      b1.position.set(side * 0.845, 0.586, 1.90); b1.rotation.set(0.16, side * 0.24, side * 0.50);
+      b1.position.set(side * 0.862, 0.520, 2.055); b1.rotation.set(0.10, side * 0.42, side * 0.52);
       const b2 = new THREE.Mesh(bar, M.drl);
-      b2.position.set(side * 0.858, 0.500, 1.92); b2.rotation.set(-0.10, side * 0.26, -side * 0.30);
-      const b3 = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.030, 0.40), M.drl);
-      b3.position.set(side * 0.735, 0.492, 2.08); b3.rotation.set(0.04, side * 0.52, side * 0.04);
-      const b4 = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.024, 0.26), M.drl);
-      b4.position.set(side * 0.900, 0.545, 1.76); b4.rotation.set(0.08, side * 0.16, side * 0.28);
+      b2.position.set(side * 0.876, 0.432, 2.045); b2.rotation.set(-0.08, side * 0.44, -side * 0.34);
+      const b3 = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.032, 0.34), M.drl);
+      b3.position.set(side * 0.735, 0.428, 2.220); b3.rotation.set(0.02, side * 0.72, side * 0.05);
+      const b4 = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.026, 0.24), M.drl);
+      b4.position.set(side * 0.912, 0.492, 1.930); b4.rotation.set(0.06, side * 0.30, side * 0.30);
       g.add(b1, b2, b3, b4);
       drls.push(b1, b2, b3, b4);
       const proj = new THREE.Mesh(new THREE.SphereGeometry(0.052, 14, 10), M.headOff);
-      proj.position.set(side * 0.800, 0.548, 1.98);
+      proj.position.set(side * 0.828, 0.470, 2.140);
       g.add(proj);
       headlights.push(proj);
       return g;
@@ -771,22 +783,22 @@
     const gurney = new THREE.Mesh(new THREE.BoxGeometry(1.66, 0.055, 0.022), wingMat);
     gurney.position.set(0, 0.030, -0.19);
     flap.add(gurney);
-    flap.position.set(0, 1.168, -2.14);
+    flap.position.set(0, 1.118, -2.15);
     flap.rotation.x = -0.11;
     wing.add(flap);
     for (let s = -1; s <= 1; s += 2) {
       /* joue latérale */
       const ep = new THREE.Mesh(new THREE.BoxGeometry(0.028, 0.30, 0.50), wingMat);
-      ep.position.set(s * 0.828, 1.178, -2.14);
+      ep.position.set(s * 0.828, 1.128, -2.15);
       wing.add(ep);
       /* pylône vertical */
       const py = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.34, 0.24), wingMat);
-      py.position.set(s * 0.455, 1.010, -2.10);
+      py.position.set(s * 0.455, 0.978, -2.11);
       py.rotation.x = 0.12;
       wing.add(py);
       /* embase sur le capot moteur */
       const foot = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.05, 0.30), wingMat);
-      foot.position.set(s * 0.455, 0.858, -2.06);
+      foot.position.set(s * 0.455, 0.848, -2.07);
       wing.add(foot);
     }
     body.add(wing);
@@ -830,7 +842,7 @@
     /* Diffuseur : une plaque dont les canaux sont réellement ajourés,
        avec les cloisons derrière. Une boîte plus des ailettes posées
        devant ne creusait rien. */
-    const dW = 1.46, dH = 0.30;
+    const dW = 1.46, dH = 0.255;
     const face = new THREE.Shape();
     face.moveTo(-dW / 2, -dH / 2);
     face.lineTo(dW / 2, -dH / 2);
@@ -851,18 +863,18 @@
       depth: 0.30, bevelEnabled: false, curveSegments: 1
     }), opts.carbon ? M.carbon : M.black);
     dm.castShadow = true;
-    dm.position.set(0, 0.335, -2.40);
+    dm.position.set(0, 0.322, -2.36);
     dm.rotation.x = -0.24;
     diff.add(dm);
     /* fond des canaux */
     const dBack = new THREE.Mesh(new THREE.BoxGeometry(dW, dH, 0.03), M.black);
-    dBack.position.set(0, 0.335, -2.13);
+    dBack.position.set(0, 0.322, -2.11);
     dBack.rotation.x = -0.24;
     diff.add(dBack);
     /* cloisons verticales prolongées vers l'arrière */
     for (let i = -3; i <= 3; i++) {
       const st = new THREE.Mesh(new THREE.BoxGeometry(0.026, dH * 0.92, 0.34), opts.carbon ? M.carbon : M.black);
-      st.position.set(i * 0.255 + 0.1275, 0.335, -2.25);
+      st.position.set(i * 0.255 + 0.1275, 0.322, -2.23);
       st.rotation.x = -0.24;
       diff.add(st);
     }

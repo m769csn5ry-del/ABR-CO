@@ -217,6 +217,23 @@ ce qui permet de tourner à 200 Hz sans coût.
 
 ## La voiture
 
+La carrosserie est jugée sur **silhouette** : un outil de rendu isole la
+voiture et la photographie de profil, de face, de dessus et de dos en
+quasi-orthographique. Corriger une forme en regardant des vues de trois
+quarts ne marche pas — les erreurs de proportion s'y cachent.
+
+Deux décisions structurent le dessin :
+
+- **Le loft suit exactement les stations décrites, sans les
+  rééchantillonner.** Interpoler des dizaines de coupes le long d'une
+  spline rendait la surface continûment courbe : la voiture restait lisse
+  quelles que soient les arêtes des sections. En reliant les stations
+  telles quelles, chaque travée devient une facette — c'est le dessin réel
+  de la voiture.
+- **Le bouclier avant est fait de trois facettes orientées** (une face
+  centrale, deux joues tournées vers l'extérieur) plutôt que d'un aplat,
+  qui se noyait dans le galbe du nez.
+
 Carrosserie construite par *loft* : vingt-sept sections transversales cotées sur
 les dimensions réelles (4 943 × 2 098 × 1 136 mm, empattement 2 700 mm), reliées
 par une spline d'Hermite à tension abaissée — une Aventador est faite de facettes
