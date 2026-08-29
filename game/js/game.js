@@ -836,7 +836,9 @@
 
     /* clignotement des phares selon l'heure */
     const night = this.world.night;
-    this.car.setHeadlights(this.lightsOn || night > 0.35, night > 0.35);
+    _v.subVectors(this.camera.position, v.pos);
+    const seenFromFront = _v.dot(v.forward) > 0.35 * _v.length();
+    this.car.setHeadlights(this.lightsOn || night > 0.35, night > 0.35, seenFromFront);
 
     if (this.world.envDirty) this.refreshEnv();
 

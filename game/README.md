@@ -229,6 +229,22 @@ du capot et du capot moteur sous les bosses d'ailes, comme sur la voiture.
 Les jonctions d'ouvrants — montants de portes, seuils, ligne de capot — sont
 dessinées ; sans elles la carrosserie se lit comme un bloc.
 
+### Panneaux découpés
+
+Les détails ne sont plus des nappes rectangulaires posées sur la peau, mais
+des **contours tracés point par point puis extrudés** — la seule façon
+d'obtenir un hexagone, une flèche ou un canal ajouré. Sont traités ainsi :
+
+- l'**écope latérale** : hexagone creusé, encadrement carbone en relief
+  obtenu par un contour percé, fond enfoncé de 8 cm, lamelles verticales ;
+- le **bouclier avant** : bouche centrale hexagonale à encadrement carbone
+  et lame horizontale, écopes latérales trapézoïdales à lamelles ;
+- le **capot moteur** : deux grands panneaux de grille hexagonale encadrés
+  de carbone, séparés par une nervure centrale, couvre-culasses visibles ;
+- le **diffuseur** : plaque dont les cinq canaux sont réellement ajourés,
+  avec cloisons prolongées vers l'arrière ;
+- les **feux arrière** : flèche d'un seul tenant sur embase noire.
+
 Y sont greffés : bouclier avant à grande bouche noire, splitter à extrémités
 relevées et double étage de dérives, optiques en Y couché, capot à deux grands
 évents et nervure centrale, écopes latérales à lamelles, écope de toit, capot

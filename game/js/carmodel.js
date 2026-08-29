@@ -544,16 +544,67 @@
     /* Vu de face, la SVJ est une lame noire surmontée du nez peint : tout
        ce qui est sous la ligne de phares est bouclier, avec une bouche
        centrale et deux écopes trapézoïdales à lamelles. */
+    /* Masse noire enveloppante sur tout le bas de face */
     for (let sd = -1; sd <= 1; sd += 2) {
       body.add(new THREE.Mesh(patch(2.46, 1.88, 0.030, 0.40, sd, 0.003, 12, 7), M.black));
-      /* bouche centrale creusée */
-      body.add(new THREE.Mesh(patch(2.40, 2.06, 0.08, 0.24, sd, 0.012, 8, 5), M.mesh));
-      /* écope latérale trapézoïdale */
-      body.add(new THREE.Mesh(patch(2.24, 1.94, 0.26, 0.39, sd, 0.010, 7, 4), M.mesh));
-      /* lame horizontale qui coupe la bouche en deux */
-      const blade2 = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.045, 0.16), cfPre);
-      blade2.position.set(0, 0.255, 2.36);
-      body.add(blade2);
+    }
+
+    /* La face avant est plate : on y découpe les ouvertures au contour,
+       comme sur la voiture. Une nappe rectangulaire ne pouvait donner ni
+       la bouche hexagonale ni les écopes trapézoïdales. */
+    const FZ = 2.452;                       /* plan de la face avant */
+    const putFront = (m, depth, y, x) => {
+      m.position.set(x || 0, y, FZ - depth);
+      body.add(m);
+      return m;
+    };
+
+    /* bouche centrale hexagonale, creusée */
+    putFront(panel(hexPts(0.80, 0.255, 0.26), 0.10, M.mesh), 0.10, 0.262);
+    /* encadrement carbone de la bouche */
+    (function () {
+      const outer = hexPts(0.92, 0.335, 0.26), inner = hexPts(0.80, 0.255, 0.26);
+      const sh = new THREE.Shape();
+      sh.moveTo(outer[0][0], outer[0][1]);
+      for (let i = 1; i < outer.length; i++) sh.lineTo(outer[i][0], outer[i][1]);
+      sh.closePath();
+      const hl = new THREE.Path();
+      hl.moveTo(inner[0][0], inner[0][1]);
+      for (let i = 1; i < inner.length; i++) hl.lineTo(inner[i][0], inner[i][1]);
+      hl.closePath();
+      sh.holes.push(hl);
+      const m = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, {
+        depth: 0.05, bevelEnabled: false, curveSegments: 1
+      }), cfPre);
+      m.castShadow = true;
+      m.position.set(0, 0.262, FZ - 0.05);
+      body.add(m);
+    })();
+    /* lame horizontale au travers de la bouche */
+    (function () {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.038, 0.14), cfPre);
+      b.position.set(0, 0.262, FZ - 0.055);
+      body.add(b);
+    })();
+    /* écopes latérales trapézoïdales, à lamelles verticales */
+    for (let sd = -1; sd <= 1; sd += 2) {
+      const trap = [
+        [-0.245, -0.115], [0.235, -0.145], [0.255, 0.105], [-0.225, 0.135]
+      ];
+      const cxF = sd * 0.665;
+      const inlet = panel(trap, 0.09, M.mesh);
+      inlet.scale.x = sd;
+      putFront(inlet, 0.09, 0.255, cxF);
+      const surround = panel([
+        [-0.285, -0.150], [0.275, -0.185], [0.298, 0.140], [-0.262, 0.175]
+      ], 0.045, cfPre);
+      surround.scale.x = sd;
+      putFront(surround, 0.045, 0.255, cxF);
+      for (let k = -1; k <= 1; k++) {
+        const finF = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.21, 0.07), M.mesh);
+        finF.position.set(cxF + k * 0.135, 0.255, FZ - 0.05);
+        body.add(finF);
+      }
     }
 
     /* Bouclier avant SVJ : large bouche noire, splitter proéminent aux
@@ -587,18 +638,6 @@
       splitter.add(cheek);
     }
     /* séparateur central de la grande bouche */
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.16, 0.30), M.black);
-    nose.position.set(0, 0.26, 2.22);
-    splitter.add(nose);
-    /* lamelles verticales dans les naseaux */
-    for (let s = -1; s <= 1; s += 2) {
-      for (let k = 0; k < 4; k++) {
-        const fin = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.13, 0.16), M.mesh);
-        fin.position.set(s * (0.30 + k * 0.145), 0.235, 2.22 - k * 0.035);
-        fin.rotation.y = s * 0.10;
-        splitter.add(fin);
-      }
-    }
     body.add(splitter);
 
     /* bas de caisse / jupes */
@@ -669,25 +708,52 @@
 
     /* ---------- capot moteur : grille hexagonale + V12 visible ---------- */
     const deck = new THREE.Group();
-    const hex = new THREE.CylinderGeometry(0.052, 0.052, 0.012, 6);
-    for (let r = -3; r <= 3; r++) {
-      for (let c = -4; c <= 4; c++) {
-        const x = c * 0.098 + (r % 2 ? 0.049 : 0);
-        const z = -0.72 + r * 0.088;
-        if (Math.abs(x) > 0.62) continue;
-        const h = new THREE.Mesh(hex, M.mesh);
-        const p = surfacePoint(z, 1.0, 1);
-        h.position.set(x, p.y + 0.012 - Math.abs(x) * 0.045, z);
-        h.rotation.x = Math.PI / 2 - 0.10;
-        h.rotation.z = Math.abs(x) * 0.05;
-        deck.add(h);
+    /* Le capot moteur n'est pas un semis de pastilles : ce sont deux
+       grands panneaux de grille hexagonale encadrés de carbone, séparés
+       par une nervure centrale, avec le V12 visible en dessous. */
+    const deckY = 0.965, deckZ = -0.815;
+    for (let sd = -1; sd <= 1; sd += 2) {
+      const grid = panel(hexPts(0.62, 0.50, 0.24), 0.02, M.mesh);
+      grid.rotation.x = -Math.PI / 2 + 0.10;
+      grid.position.set(sd * 0.335, deckY - 0.035, deckZ);
+      deck.add(grid);
+
+      /* encadrement carbone en relief */
+      const outer = hexPts(0.72, 0.60, 0.24), inner = hexPts(0.62, 0.50, 0.24);
+      const sh = new THREE.Shape();
+      sh.moveTo(outer[0][0], outer[0][1]);
+      for (let i = 1; i < outer.length; i++) sh.lineTo(outer[i][0], outer[i][1]);
+      sh.closePath();
+      const hl = new THREE.Path();
+      hl.moveTo(inner[0][0], inner[0][1]);
+      for (let i = 1; i < inner.length; i++) hl.lineTo(inner[i][0], inner[i][1]);
+      hl.closePath();
+      sh.holes.push(hl);
+      const ring = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, {
+        depth: 0.04, bevelEnabled: false, curveSegments: 1
+      }), opts.carbon ? M.carbon : M.paint);
+      ring.castShadow = true;
+      ring.rotation.x = -Math.PI / 2 + 0.10;
+      ring.position.set(sd * 0.335, deckY - 0.035, deckZ);
+      deck.add(ring);
+
+      /* barreaux de grille */
+      for (let k = -2; k <= 2; k++) {
+        const bar = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.02, 0.44), M.mesh);
+        bar.position.set(sd * 0.335 + k * 0.115, deckY - 0.012, deckZ);
+        deck.add(bar);
       }
     }
+    /* nervure centrale peinte */
+    const spine = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.05, 0.66), M.paint);
+    spine.position.set(0, deckY - 0.030, deckZ);
+    deck.add(spine);
+
     body.add(deck);
     /* couvre-culasses / plénum entrevus */
     for (let s = -1; s <= 1; s += 2) {
-      const cam = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.10, 0.60), M.chrome);
-      cam.position.set(s * 0.24, 0.80, -0.78);
+      const cam = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.11, 0.62), M.chrome);
+      cam.position.set(s * 0.30, 0.845, -0.815);
       deck.add(cam);
     }
 
@@ -761,13 +827,44 @@
 
     /* ---------- diffuseur ---------- */
     const diff = new THREE.Group();
-    const dBase = new THREE.Mesh(new THREE.BoxGeometry(1.50, 0.05, 0.58), opts.carbon ? M.carbon : M.black);
-    dBase.position.set(0, 0.30, -2.16); dBase.rotation.x = -0.30;
-    diff.add(dBase);
+    /* Diffuseur : une plaque dont les canaux sont réellement ajourés,
+       avec les cloisons derrière. Une boîte plus des ailettes posées
+       devant ne creusait rien. */
+    const dW = 1.46, dH = 0.30;
+    const face = new THREE.Shape();
+    face.moveTo(-dW / 2, -dH / 2);
+    face.lineTo(dW / 2, -dH / 2);
+    face.lineTo(dW / 2 - 0.06, dH / 2);
+    face.lineTo(-dW / 2 + 0.06, dH / 2);
+    face.closePath();
+    for (let i = -2; i <= 2; i++) {
+      const cw = 0.20, cx = i * 0.255;
+      const hl = new THREE.Path();
+      hl.moveTo(cx - cw / 2, -dH / 2 + 0.045);
+      hl.lineTo(cx + cw / 2, -dH / 2 + 0.045);
+      hl.lineTo(cx + cw / 2, dH / 2 - 0.045);
+      hl.lineTo(cx - cw / 2, dH / 2 - 0.045);
+      hl.closePath();
+      face.holes.push(hl);
+    }
+    const dm = new THREE.Mesh(new THREE.ExtrudeGeometry(face, {
+      depth: 0.30, bevelEnabled: false, curveSegments: 1
+    }), opts.carbon ? M.carbon : M.black);
+    dm.castShadow = true;
+    dm.position.set(0, 0.335, -2.40);
+    dm.rotation.x = -0.24;
+    diff.add(dm);
+    /* fond des canaux */
+    const dBack = new THREE.Mesh(new THREE.BoxGeometry(dW, dH, 0.03), M.black);
+    dBack.position.set(0, 0.335, -2.13);
+    dBack.rotation.x = -0.24;
+    diff.add(dBack);
+    /* cloisons verticales prolongées vers l'arrière */
     for (let i = -3; i <= 3; i++) {
-      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.024, 0.21, 0.54), opts.carbon ? M.carbon : M.black);
-      fin.position.set(i * 0.212, 0.36, -2.18); fin.rotation.x = -0.30;
-      diff.add(fin);
+      const st = new THREE.Mesh(new THREE.BoxGeometry(0.026, dH * 0.92, 0.34), opts.carbon ? M.carbon : M.black);
+      st.position.set(i * 0.255 + 0.1275, 0.335, -2.25);
+      st.rotation.x = -0.24;
+      diff.add(st);
     }
     body.add(diff);
 
@@ -1175,13 +1272,16 @@
       },
       setTailOn: function (on) { M.tail.emissiveIntensity = on ? 1.0 : 0.06; },
       setReverse: function (on) { M.reverse.emissiveIntensity = on ? 3.2 : 0.0; },
-      setHeadlights: function (on, night) {
+      setHeadlights: function (on, night, seenFromFront) {
         M.drl.emissiveIntensity = on ? 3.2 : 1.1;
         M.headOn.emissiveIntensity = on ? 4.0 : 0;
         P.headlights.forEach(function (h) { h.material = on ? M.headOn : M.headOff; });
         const p = on ? (night ? 150 : 55) : 0;
         beamL.intensity = p; beamR.intensity = p;
-        halos.forEach(function (h) { h.material.opacity = (on && night) ? 0.42 : 0; });
+        /* Le halo est un panneau toujours face caméra : sans cette
+           condition il traversait la carrosserie et brillait derrière. */
+        const show = on && night && seenFromFront !== false;
+        halos.forEach(function (h) { h.material.opacity = show ? 0.42 : 0; });
       },
       /* ALA : volet d'aileron ouvert (traînée réduite) / fermé (appui max) */
       setALA: function (open) {
