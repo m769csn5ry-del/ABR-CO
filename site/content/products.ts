@@ -112,6 +112,80 @@ export const products: Product[] = [
     releaseYear: 2024,
     featured: true,
   },
+  // ─── Classiques ──────────────────────────────────────────────────
+  {
+    slug: 'air-jordan-1-high-og-chicago',
+    brand: 'Jordan',
+    model: 'Air Jordan 1 Retro High OG',
+    colorway: 'Chicago — White / Varsity Red / Black',
+    condition: 'neuf',
+    priceCents: 42000,
+    sizes: [
+      { eu: 41, stock: 1 }, { eu: 42, stock: 1 }, { eu: 43, stock: 2 },
+      { eu: 44, stock: 1 }, { eu: 45, stock: 1 }, { eu: 46, stock: 0 },
+    ],
+    // À remplir : '/produits/air-jordan-1-high-og-chicago-1.jpg', etc.
+    images: [],
+    description:
+      "La silhouette de 1985 dans le coloris qui l'a fixée. Cuir pleine fleur blanc, empiècements rouges, col montant noir. Deux points à surveiller dans le temps : le cuir marque à la flexion de la pointe, et l'intercalaire blanche jaunit au stockage — les deux se traitent, mais mieux vaut agir tôt.",
+    inspection: [
+      'Étiquette de boîte cohérente avec le modèle et la pointure',
+      'Numérotation identique sur les deux chaussures',
+      'Cuir sans pli de port, grain régulier',
+      'Intercalaire blanche non oxydée',
+      'Wings et Swoosh nets, piqûres régulières',
+    ],
+    releaseYear: 2022,
+  },
+  {
+    slug: 'air-jordan-3-white-cement',
+    brand: 'Jordan',
+    model: 'Air Jordan 3 Retro',
+    colorway: 'White Cement — White / Fire Red / Cement Grey',
+    condition: 'neuf',
+    priceCents: 24000,
+    sizes: [
+      { eu: 40, stock: 1 }, { eu: 41, stock: 2 }, { eu: 42, stock: 1 },
+      { eu: 43, stock: 1 }, { eu: 44, stock: 2 }, { eu: 45, stock: 1 },
+    ],
+    // À remplir : '/produits/air-jordan-3-white-cement-1.jpg', etc.
+    images: [],
+    description:
+      "Cuir blanc tumbled, empiècements éléphant sur la pointe et le talon, unité Air visible, Jumpman sur la languette. L'imprimé éléphant est une impression sur cuir, pas une matière : un nettoyage abrasif l'efface définitivement. C'est la paire qu'on nous confie le plus souvent après une mauvaise manipulation.",
+    inspection: [
+      'Étiquette de boîte conforme au modèle',
+      'Imprimé éléphant net, sans zone effacée',
+      'Unité Air intacte, aucune perte de pression',
+      'Cuir tumbled sans marque de manipulation',
+      'Intercalaire blanche non jaunie',
+    ],
+    releaseYear: 2023,
+  },
+  {
+    slug: 'air-jordan-4-bred',
+    brand: 'Jordan',
+    model: 'Air Jordan 4 Retro',
+    colorway: 'Bred — Black / Fire Red / Cement Grey',
+    condition: 'tres-bon-etat',
+    priceCents: 28000,
+    compareAtCents: 34000,
+    sizes: [
+      { eu: 42, stock: 1 }, { eu: 43, stock: 1 }, { eu: 44, stock: 1 },
+    ],
+    // À remplir : '/produits/air-jordan-4-bred-1.jpg', etc.
+    images: [],
+    description:
+      "Nubuck noir, filets latéraux en mesh, œillets en plastique moulé, semelle rouge et grise. Paire portée, passée par l'atelier avant mise en vente : nubuck rebrossé, filets dépoussiérés à basse pression, intercalaire dégrisée. Les marques restantes sont listées ci-dessous, sans retouche photo.",
+    inspection: [
+      'Portée : légère marque de flexion sur la pointe droite',
+      'Nubuck rebrossé en atelier, teinte homogène',
+      'Filets latéraux intacts, aucun fil tiré',
+      'Œillets plastique sans fissure',
+      'Intercalaire dégrisée, blanc homogène',
+      'Lacets remplacés par des neufs',
+    ],
+    releaseYear: 2024,
+  },
   {
     slug: 'new-balance-990v6-grey',
     brand: 'New Balance',
