@@ -64,6 +64,17 @@ jobs:
           rm -rf app/api
           npx next build
           test -f out/index.html || { echo "::error::export vide"; exit 1; }
+
+          # Garde-fou : `next/image` en mode `unoptimized` ne préfixe pas le
+          # basePath de lui-même. Toute image servie depuis public/ doit donc
+          # porter le préfixe, sinon elle renvoie 404 une fois en ligne.
+          mauvais=$(grep -rhoE 'src="/[a-z][^"]*\.(jpg|jpeg|png|webp|avif)"' out --include='*.html' \
+                    | grep -v "\"$PAGES_BASE_PATH/" | sort -u || true)
+          if [ -n "$mauvais" ]; then
+            echo "::error::images sans le préfixe $PAGES_BASE_PATH :"; echo "$mauvais"; exit 1
+          fi
+          echo "Images : préfixe de déploiement correct"
+
           echo "Export : $(du -sh out | cut -f1), $(find out -name '*.html' | wc -l) pages"
 
       - name: Publier dans gh-pages/neuf

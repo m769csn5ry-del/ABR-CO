@@ -19,6 +19,12 @@ const basePath = process.env.PAGES_BASE_PATH ?? '';
 
 const config: NextConfig = {
   reactStrictMode: true,
+
+  /* `next/image` en mode `unoptimized` n'ajoute PAS le basePath au `src`
+     (contrairement aux icônes de métadonnées). On l'expose donc au client
+     pour le préfixer nous-mêmes — sinon toute image de `public/` renvoie
+     un 404 sur GitHub Pages. */
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   poweredByHeader: false,
   outputFileTracingRoot: __dirname,
 

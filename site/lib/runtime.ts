@@ -40,3 +40,20 @@ export async function postJson(
     return { ok: false, message: 'Connexion impossible. Réessaie dans un instant.' };
   }
 }
+
+/**
+ * Préfixe un chemin de `public/` par le basePath du déploiement.
+ *
+ * Nécessaire parce que `next/image` en mode `unoptimized` (export statique)
+ * laisse le `src` tel quel : sans ce préfixe, `/produits/x.jpg` est demandé
+ * à la racine du domaine et renvoie 404 sous GitHub Pages.
+ * Les URL absolues et les blob/data sont laissées intactes.
+ */
+export function asset(path: string): string {
+  if (/^(https?:)?\/\//.test(path) || path.startsWith('data:') || path.startsWith('blob:')) {
+    return path;
+  }
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
+  if (!base) return path;
+  return `${base}${path.startsWith('/') ? '' : '/'}${path}`;
+}

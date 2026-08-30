@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { classNames } from '@/lib/format';
+import { asset } from '@/lib/runtime';
 
 /* ------------------------------------------------------------------ *
  * Emplacement visuel.
@@ -52,7 +53,7 @@ export function Visual({
     return (
       <div className={classNames('relative overflow-hidden bg-paper-sunk', className)}>
         <Image
-          src={src}
+          src={asset(src)}
           alt={alt}
           fill
           sizes={sizes}

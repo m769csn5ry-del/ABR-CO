@@ -58,13 +58,62 @@ Tout le contenu commercial est isolé dans `content/`. **Aucun composant à touc
 Aucune photo n'est fournie. Chaque emplacement affiche un **visuel de substitution
 explicitement marqué** (schéma technique de semelle, `components/media/Visual.tsx`).
 
-Pour les remplacer : dépose tes images dans `public/produits/` et renseigne le champ
-`images` du produit (`['/produits/ma-paire-1.jpg', ...]`). Dès qu'un chemin est présent,
-le substitut disparaît et `next/image` prend le relais. Idem pour `before` / `after`
-dans `content/beforeafter.ts`.
+**1. Dépose les fichiers** dans `site/public/` :
 
-Style photographique visé (documenté dans `DESIGN.md`) : studio, fond minéral continu,
-lumière latérale douce, paire de trois quarts ou de profil strict, ombre courte.
+```
+site/public/produits/990v6-gris-1.jpg      ← photos des paires
+site/public/avant-apres/cuir-blanc-avant.jpg
+site/public/avant-apres/cuir-blanc-apres.jpg
+```
+
+**2. Renseigne le chemin** dans `content/` — et rien d'autre. Dès qu'un chemin est
+présent, le substitut disparaît de lui-même et `next/image` prend le relais.
+
+```ts
+// content/products.ts
+{
+  slug: 'new-balance-990v6-grey',
+  images: [
+    '/produits/990v6-gris-1.jpg',   // vue principale
+    '/produits/990v6-gris-2.jpg',   // profil intérieur
+    '/produits/990v6-gris-3.jpg',   // semelle
+  ],
+}
+```
+
+```ts
+// content/beforeafter.ts
+{
+  id: 'cuir-blanc-plis',
+  before: '/avant-apres/cuir-blanc-avant.jpg',
+  after:  '/avant-apres/cuir-blanc-apres.jpg',
+}
+```
+
+Le chemin commence par `/` et **ne contient pas** `public/` ni le nom du dépôt :
+`/produits/x.jpg`, pas `/public/produits/x.jpg` ni `/ABR-CO/neuf/produits/x.jpg`.
+Le préfixe de déploiement est ajouté automatiquement (`asset()` dans `lib/runtime.ts`).
+
+**Format attendu**
+
+| | |
+| --- | --- |
+| Proportions | **4:5 vertical** — c'est le cadre des cartes, de la galerie et de l'avant/après |
+| Taille | 1200 × 1500 px suffit ; au-delà on alourdit sans gain visible |
+| Format | JPEG pour les photos, WebP si tu peux. PNG seulement pour du détourage |
+| Poids | vise moins de 300 Ko par image |
+| Nombre | 1 à 4 par paire. La galerie affiche autant de vignettes qu'il y a d'entrées |
+| Avant / après | **cadrage strictement identique** entre les deux, sinon la comparaison ne veut rien dire |
+
+Le zoom de la fiche produit ne s'active que sur de vraies photos — il reste inerte
+sur les substituts, où il n'aurait rien à montrer.
+
+**Style visé** (documenté dans `DESIGN.md`) : studio, fond minéral continu, lumière
+latérale douce, paire de trois quarts ou de profil strict, ombre portée courte.
+Pas de mise en scène lifestyle, pas de rue, pas de modèle.
+
+**3. Publie** : `git add`, `git commit`, `git push`. Le workflow reconstruit et met
+le site en ligne tout seul.
 
 ---
 
