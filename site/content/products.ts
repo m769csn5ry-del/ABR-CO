@@ -8,6 +8,110 @@
 import type { Product } from '@/lib/types';
 
 export const products: Product[] = [
+  // ─── Sélection maison ────────────────────────────────────────────
+  // Les quatre paires ci-dessous sont les modèles réels de la boutique.
+  // Il ne manque que les photos : dépose les fichiers dans
+  // public/produits/ sous les noms indiqués, puis remplis `images`.
+  {
+    slug: 'dior-b22-gris-bleu',
+    brand: 'Dior',
+    model: 'B22',
+    colorway: 'Gris / Bleu ciel',
+    condition: 'neuf',
+    priceCents: 115000,
+    sizes: [
+      { eu: 40, stock: 1 }, { eu: 41, stock: 1 }, { eu: 42, stock: 2 },
+      { eu: 43, stock: 1 }, { eu: 44, stock: 1 }, { eu: 45, stock: 0 },
+    ],
+    // À remplir : '/produits/dior-b22-gris-bleu-1.jpg', etc.
+    images: [],
+    description:
+      "Assemblage de cuir de veau gris, de mesh technique bleu ciel et de panneaux translucides, sur une semelle compensée signée DIOR. Le B22 mélange quatre matières sur une seule tige : c'est ce qui en fait l'intérêt, et ce qui impose un entretien matière par matière.",
+    inspection: [
+      'Étiquette de boîte cohérente avec le modèle et la pointure',
+      'Numérotation identique sur les deux chaussures',
+      'Mesh translucide sans accroc ni jaunissement',
+      'Marquage de semelle net, sans bavure',
+      'Cuir sans pli de port, aucune trace de sol',
+    ],
+    releaseYear: 2023,
+    featured: true,
+  },
+  {
+    slug: 'chanel-runner-blanc-argent',
+    brand: 'Chanel',
+    model: 'Runner',
+    colorway: 'Blanc / Argent',
+    condition: 'neuf',
+    priceCents: 105000,
+    sizes: [
+      { eu: 36, stock: 1 }, { eu: 37, stock: 2 }, { eu: 38, stock: 1 },
+      { eu: 39, stock: 1 }, { eu: 40, stock: 0 },
+    ],
+    // À remplir : '/produits/chanel-runner-blanc-argent-1.jpg', etc.
+    images: [],
+    description:
+      "Cuir de veau blanc et empiècements en cuir métallisé argent, CC brodé sur le flanc, semelle bicolore blanc et noir. Le métallisé est la partie fragile : il marque au frottement et ne se rattrape pas au nettoyage classique.",
+    inspection: [
+      'Étiquette et boîte conformes au modèle',
+      'Cuir métallisé sans micro-rayure ni écaillage',
+      'CC brodé régulier, fils non tirés',
+      'Semelle vierge, aucune trace de port',
+      'Sac à poussière d\'origine fourni',
+    ],
+    releaseYear: 2024,
+    featured: true,
+  },
+  {
+    slug: 'prada-americas-cup-marine',
+    brand: 'Prada',
+    model: "America's Cup",
+    colorway: 'Bleu marine / Gris',
+    condition: 'neuf',
+    priceCents: 78000,
+    sizes: [
+      { eu: 40, stock: 1 }, { eu: 41, stock: 1 }, { eu: 42, stock: 2 },
+      { eu: 43, stock: 1 }, { eu: 44, stock: 1 }, { eu: 45, stock: 1 },
+    ],
+    // À remplir : '/produits/prada-americas-cup-marine-1.jpg', etc.
+    images: [],
+    description:
+      "Cuir verni bleu marine sur mesh gris, semelle en gomme blanche à débordement, languette Linea Rossa. Silhouette de pont de bateau des années 1990, restée au catalogue sans retouche majeure. Le verni se nettoie facilement, la gomme blanche beaucoup moins.",
+    inspection: [
+      'Étiquette de boîte cohérente avec le modèle et la pointure',
+      'Cuir verni sans micro-fissure ni marque de pliure',
+      'Mesh gris uniforme, aucune décoloration',
+      'Semelle gomme blanche non oxydée',
+      'Lacets et sockliner d\'origine en place',
+    ],
+    releaseYear: 2024,
+    featured: true,
+  },
+  {
+    slug: 'hermes-bouncing-blanc',
+    brand: 'Hermès',
+    model: 'Bouncing',
+    colorway: 'Blanc / Noir',
+    condition: 'neuf',
+    priceCents: 79000,
+    sizes: [
+      { eu: 39, stock: 1 }, { eu: 40, stock: 1 }, { eu: 41, stock: 2 },
+      { eu: 42, stock: 1 }, { eu: 43, stock: 1 }, { eu: 44, stock: 0 },
+    ],
+    // À remplir : '/produits/hermes-bouncing-blanc-1.jpg', etc.
+    images: [],
+    description:
+      "Veau blanc et chèvre velours, H découpé sur le talon et repris en relief sous la semelle. Semelle striée en gomme, montage souple. Le velours de chèvre est la matière la plus délicate du lot : brossage à sec uniquement, jamais d'eau.",
+    inspection: [
+      'Boîte, sac et étiquette conformes',
+      'Veau blanc sans marque de manipulation',
+      'Chèvre velours au poil uniforme, non lustré',
+      'H de semelle net, arêtes vives',
+      'Semelle striée sans trace de sol',
+    ],
+    releaseYear: 2024,
+    featured: true,
+  },
   {
     slug: 'new-balance-990v6-grey',
     brand: 'New Balance',
@@ -29,7 +133,6 @@ export const products: Product[] = [
       'Mousse intérieure intacte, aucune trace de port',
     ],
     releaseYear: 2022,
-    featured: true,
   },
   {
     slug: 'asics-gel-1130-cream',
@@ -53,7 +156,6 @@ export const products: Product[] = [
       'Semelle propre, aucune usure du crampon',
     ],
     releaseYear: 2023,
-    featured: true,
   },
   {
     slug: 'salomon-xt-6-black',
@@ -76,7 +178,6 @@ export const products: Product[] = [
       'Boîte d\'origine présente',
     ],
     releaseYear: 2023,
-    featured: true,
   },
   {
     slug: 'nike-air-max-1-obsidian',
@@ -121,7 +222,6 @@ export const products: Product[] = [
       'Boîte et papier de soie présents',
     ],
     releaseYear: 2024,
-    featured: true,
   },
   {
     slug: 'nike-dunk-low-panda',
