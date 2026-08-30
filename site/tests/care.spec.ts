@@ -141,7 +141,7 @@ test.describe('Atelier', () => {
     await page.getByRole('button', { name: 'Voir le suivi' }).click();
     await expect(page.getByText(/ressemble à NF-/)).toBeVisible();
 
-    await gotoReady(page, '/suivi/NF-A1B2C3');
+    await gotoReady(page, '/suivi?ref=NF-A1B2C3');
     await expect(page.getByText(/Aucun dossier pour NF-A1B2C3/)).toBeVisible();
   });
 

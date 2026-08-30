@@ -1,4 +1,8 @@
 import type { MetadataRoute } from 'next';
+
+/* Requis par `output: export` : ces routes doivent être figées
+   à la construction, elles n'ont de toute façon rien de dynamique. */
+export const dynamic = 'force-static';
 import { site } from '@/content/site';
 
 export default function robots(): MetadataRoute.Robots {

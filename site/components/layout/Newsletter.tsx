@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
+import { postJson } from '@/lib/runtime';
 
 /* Inscription à la lettre. Le formulaire est réel et validé côté client,
    puis posté sur /api/newsletter. Tant qu'aucun prestataire d'emailing
@@ -21,21 +22,12 @@ export function Newsletter() {
       return;
     }
     setState({ kind: 'sending' });
-    try {
-      const res = await fetch('/api/newsletter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = (await res.json()) as { message?: string };
-      setState(
-        res.ok
-          ? { kind: 'done', message: data.message ?? 'Inscription enregistrée.' }
-          : { kind: 'error', message: data.message ?? 'Envoi impossible pour le moment.' },
-      );
-    } catch {
-      setState({ kind: 'error', message: 'Envoi impossible : vérifie ta connexion.' });
-    }
+    const { ok, message } = await postJson(
+      '/api/newsletter',
+      { email },
+      "L'inscription n'est pas encore active : le service d'envoi n'est pas raccordé. Rien n'a été enregistré.",
+    );
+    setState({ kind: ok ? 'done' : 'error', message });
   }
 
   return (

@@ -1,0 +1,161 @@
+# Publie le site NEUF sur GitHub Pages, dans le sous-dossier /neuf/.
+#
+# Pages est déjà servi depuis la branche `gh-pages` (l'app Orga occupe la
+# racine). Ce workflow construit l'export statique de site/ et le synchronise
+# dans gh-pages/neuf/, sans toucher au reste.
+#
+# L'export statique n'a pas de serveur : les routes d'API sont retirées avant
+# la construction et l'interface bascule sur NEXT_PUBLIC_DEMO_STATIC, qui
+# affiche exactement les mêmes messages « non raccordé ». Rien n'est simulé.
+
+name: Publier NEUF
+
+on:
+  push:
+    branches: [main, claude/install-resources-skills-v7lu5j]
+    paths:
+      - 'site/**'
+      - '.github/workflows/site-neuf.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  BASE_PATH: /ABR-CO/neuf
+
+jobs:
+  publier:
+    name: Construire et synchroniser
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.sync.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+
+      - name: Installer
+        working-directory: site
+        run: npm ci
+
+      - name: Vérifier les types
+        working-directory: site
+        run: npm run typecheck
+
+      - name: Construire l'export statique
+        working-directory: site
+        env:
+          STATIC_EXPORT: '1'
+          PAGES_BASE_PATH: ${{ env.BASE_PATH }}
+          NEXT_PUBLIC_DEMO_STATIC: '1'
+        run: |
+          set -euo pipefail
+          # Pages ne sert que des fichiers : pas de route d'API dans l'export.
+          rm -rf app/api
+          npx next build
+          test -f out/index.html || { echo "::error::export vide"; exit 1; }
+          echo "Export : $(du -sh out | cut -f1), $(find out -name '*.html' | wc -l) pages"
+
+      - name: Publier dans gh-pages/neuf
+        id: sync
+        run: |
+          set -euo pipefail
+          sha="${GITHUB_SHA::7}"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+          git fetch origin gh-pages --depth=1
+          git worktree add ../pages origin/gh-pages --detach
+          git -C ../pages checkout -B gh-pages
+
+          mkdir -p ../pages/neuf
+          # `--delete` limité à neuf/ : la racine (app Orga) n'est pas touchée.
+          rsync -a --delete site/out/ ../pages/neuf/
+          touch ../pages/.nojekyll
+          echo "$sha" > ../pages/neuf/version.txt
+
+          cd ../pages
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Rien de neuf à publier."
+            exit 0
+          fi
+          git commit -qm "Publie NEUF $sha"
+          git push origin gh-pages
+
+  verifier:
+    name: Vérifier le site en ligne
+    needs: publier
+    runs-on: ubuntu-latest
+    permissions:
+      pages: read
+    steps:
+      - name: Attendre puis contrôler
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ATTENDU: ${{ needs.publier.outputs.sha }}
+        run: |
+          set -uo pipefail
+
+          racine=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+                     -H "Accept: application/vnd.github+json" \
+                     "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages" \
+                   | jq -r '.html_url // ""')
+          racine="${racine%/}"
+          [ -n "$racine" ] || { echo "::error::Pages inactif"; exit 1; }
+          base="$racine/neuf"
+          echo "Base : $base"
+
+          for i in $(seq 1 30); do
+            vu=$(curl -sSL --max-time 20 "$base/version.txt" 2>/dev/null | tr -d '[:space:]' || true)
+            [ "$vu" = "$ATTENDU" ] && { echo "En ligne : $vu (tentative $i)"; break; }
+            echo "  … en ligne : '${vu:-rien}', attendu '$ATTENDU' (tentative $i)"
+            sleep 10
+          done
+          [ "$vu" = "$ATTENDU" ] || { echo "::error::le site n'a pas repris $ATTENDU"; exit 1; }
+
+          fail=0
+          check () {
+            code=$(curl -sSL -o /dev/null -w '%{http_code}' --max-time 30 "$1" || echo 000)
+            if [ "$code" = "$2" ]; then echo "  OK   $3 ($code)"
+            else echo "::error::$3 — attendu $2, reçu $code ($1)"; fail=1; fi
+          }
+          check "$base/"                                200 "accueil"
+          check "$base/shop/"                           200 "catalogue"
+          check "$base/shop/new-balance-990v6-grey/"    200 "fiche produit"
+          check "$base/nettoyage/"                      200 "atelier"
+          check "$base/nettoyage/commande/"             200 "parcours de commande"
+          check "$base/avant-apres/"                    200 "avant / après"
+          check "$base/faq/"                            200 "FAQ"
+
+          # L'app Orga doit rester intacte à la racine.
+          check "$racine/"                              200 "app Orga (racine préservée)"
+
+          html=$(curl -sSL --max-time 30 "$base/")
+          for m in 'Neuve, ou comme neuve' 'Shopper les sneakers' 'Nettoyer ma paire'; do
+            case "$html" in
+              *"$m"*) echo "  OK   présent : $m" ;;
+              *) echo "::error::absent de la page servie : $m"; fail=1 ;;
+            esac
+          done
+
+          # Le catalogue doit être dans le HTML servi, sinon il n'est pas indexable.
+          n=$(curl -sSL --max-time 30 "$base/shop/" | grep -o '<article' | wc -l)
+          if [ "$n" -ge 10 ]; then echo "  OK   $n fiches dans le HTML du catalogue"
+          else echo "::error::catalogue non prérendu ($n articles)"; fail=1; fi
+
+          [ "$fail" = "0" ] || exit 1
+          { echo "## NEUF est en ligne"; echo ""; echo "**$base/**"; echo ""
+            echo "Commit \`$ATTENDU\`."; } >> "$GITHUB_STEP_SUMMARY"

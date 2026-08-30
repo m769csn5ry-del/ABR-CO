@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Choice, Field, Input, Select, Textarea } from '@/components/ui/Field';
 import { IconCheck } from '@/components/ui/Icon';
@@ -9,6 +9,7 @@ import { PhotoUpload, type UploadedPhoto } from './PhotoUpload';
 import { CARE_ISSUES, CARE_MATERIALS, services, serviceBySlug } from '@/content/services';
 import { site } from '@/content/site';
 import { classNames, delay, price } from '@/lib/format';
+import { postJson } from '@/lib/runtime';
 
 /* ------------------------------------------------------------------ *
  * Parcours de commande d'entretien — neuf étapes.
@@ -74,9 +75,16 @@ const EMPTY: State = {
 
 type Errors = Partial<Record<keyof State, string>>;
 
-export function CareWizard({ initialService = '' }: { initialService?: string }) {
+export function CareWizard() {
   const [step, setStep] = useState(0);
-  const [state, setState] = useState<State>({ ...EMPTY, service: initialService });
+  const [state, setState] = useState<State>(EMPTY);
+
+  /* La landing envoie ?prestation=deep-clean. Lu après montage pour que la
+     page reste entièrement prérendue (cf. ShopBrowser). */
+  useEffect(() => {
+    const asked = new URLSearchParams(window.location.search).get('prestation') ?? '';
+    if (serviceBySlug(asked)) setState((s) => ({ ...s, service: asked }));
+  }, []);
   const [errors, setErrors] = useState<Errors>({});
   const [submitState, setSubmitState] = useState<
     { kind: 'idle' | 'sending' } | { kind: 'blocked' | 'error' | 'done'; message: string }
@@ -140,11 +148,10 @@ export function CareWizard({ initialService = '' }: { initialService?: string })
 
   async function submit() {
     setSubmitState({ kind: 'sending' });
-    try {
-      const res = await fetch('/api/entretien', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+    {
+      const { ok, message } = await postJson(
+        '/api/entretien',
+        {
           service: state.service,
           brand: state.brand,
           model: state.model,
@@ -161,16 +168,10 @@ export function CareWizard({ initialService = '' }: { initialService?: string })
             postalCode: state.postalCode,
             city: state.city,
           },
-        }),
-      });
-      const data = (await res.json()) as { message?: string };
-      setSubmitState(
-        res.ok
-          ? { kind: 'done', message: data.message ?? 'Demande enregistrée.' }
-          : { kind: 'blocked', message: data.message ?? 'Envoi impossible pour le moment.' },
+        },
+        "L'atelier n'est pas encore raccordé : ta demande n'a pas été enregistrée et aucun montant n'a été débité. Il manque la boîte de réception et le stockage des photos.",
       );
-    } catch {
-      setSubmitState({ kind: 'error', message: 'Connexion impossible. Réessaie dans un instant.' });
+      setSubmitState({ kind: ok ? 'done' : 'blocked', message });
     }
   }
 

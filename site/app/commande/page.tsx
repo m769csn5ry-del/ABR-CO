@@ -7,6 +7,7 @@ import { Field, Input, Select } from '@/components/ui/Field';
 import { useCart } from '@/lib/cart';
 import { site } from '@/content/site';
 import { price, delay } from '@/lib/format';
+import { postJson } from '@/lib/runtime';
 
 /* Tunnel de commande.
  *
@@ -66,19 +67,13 @@ export default function CheckoutPage() {
     setNotice(null);
     if (!validate()) return;
     setSending(true);
-    try {
-      const res = await fetch('/api/commande', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lines: cart.lines, promo: cart.promo, customer: form }),
-      });
-      const data = (await res.json()) as { message?: string };
-      setNotice(data.message ?? 'Le paiement est indisponible pour le moment.');
-    } catch {
-      setNotice('Connexion impossible. Réessaie dans un instant.');
-    } finally {
-      setSending(false);
-    }
+    const { message } = await postJson(
+      '/api/commande',
+      { lines: cart.lines, promo: cart.promo, customer: form },
+      "Le paiement n'est pas encore raccordé. Aucune commande n'a été créée et aucun montant n'a été débité.",
+    );
+    setNotice(message);
+    setSending(false);
   }
 
   if (!cart.ready) {

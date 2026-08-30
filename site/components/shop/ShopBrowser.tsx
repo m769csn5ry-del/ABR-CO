@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ProductCard } from './ProductCard';
 import { Choice, Select } from '@/components/ui/Field';
 import { Button } from '@/components/ui/Button';
@@ -32,11 +32,21 @@ const CONDITIONS: Condition[] = ['neuf', 'neuf-sans-boite', 'tres-bon-etat'];
 const PRICE_MAX = Math.max(...products.map((p) => p.priceCents));
 const PRICE_MIN = Math.min(...products.map((p) => p.priceCents));
 
-export function ShopBrowser({ initialOnlyInStock = false }: { initialOnlyInStock?: boolean }) {
+export function ShopBrowser() {
   const [selectedBrands, setBrands] = useState<string[]>([]);
   const [selectedSizes, setSizes] = useState<number[]>([]);
   const [selectedConditions, setConditions] = useState<Condition[]>([]);
-  const [onlyInStock, setOnlyInStock] = useState(initialOnlyInStock);
+  const [onlyInStock, setOnlyInStock] = useState(false);
+
+  /* Le lien « En stock » du pied de page arrive avec ?dispo=en-stock.
+     On le lit APRÈS montage : `useSearchParams` ferait sortir toute la grille
+     du prérendu, et le catalogue ne serait plus dans le HTML servi — donc
+     plus indexable. */
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('dispo') === 'en-stock') {
+      setOnlyInStock(true);
+    }
+  }, []);
   const [maxPrice, setMaxPrice] = useState(PRICE_MAX);
   const [sort, setSort] = useState<Sort>('recent');
   const [panelOpen, setPanelOpen] = useState(false);

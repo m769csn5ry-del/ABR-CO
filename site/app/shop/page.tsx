@@ -9,13 +9,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/shop' },
 };
 
-export default async function ShopPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ dispo?: string }>;
-}) {
-  const { dispo } = await searchParams;
-
+export default function ShopPage() {
   return (
     <div className="shell py-14 lg:py-20">
       <header className="mb-14 border-b border-mineral-line pb-10 lg:mb-16">
@@ -26,7 +20,7 @@ export default async function ShopPage({
         </p>
       </header>
 
-      <ShopBrowser initialOnlyInStock={dispo === 'en-stock'} />
+      <ShopBrowser />
     </div>
   );
 }

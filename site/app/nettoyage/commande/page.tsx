@@ -1,24 +1,15 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { CareWizard } from '@/components/care/CareWizard';
-import { serviceBySlug } from '@/content/services';
 
 export const metadata: Metadata = {
   title: 'Commander un nettoyage',
   description:
     "Décris ta paire en neuf étapes : prestation, modèle, matière, points à traiter, photos, dépôt ou envoi.",
   alternates: { canonical: '/nettoyage/commande' },
-  robots: { index: true, follow: true },
 };
 
-export default async function CareOrderPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ prestation?: string }>;
-}) {
-  const { prestation } = await searchParams;
-  const initial = prestation && serviceBySlug(prestation) ? prestation : '';
-
+export default function CareOrderPage() {
   return (
     <div className="shell py-12 lg:py-16">
       <nav aria-label="Fil d'Ariane" className="mb-8 text-small text-mineral">
@@ -39,7 +30,7 @@ export default async function CareOrderPage({
       </p>
 
       <div className="mt-14">
-        <CareWizard initialService={initial} />
+        <CareWizard />
       </div>
     </div>
   );

@@ -65,7 +65,9 @@ jobs:
           git -C ../site checkout -B gh-pages
 
           # `--delete` : un fichier retiré de todo/ doit disparaître du site.
-          rsync -a --delete --exclude '.git' --exclude 'README.md' todo/ ../site/
+          # `--exclude neuf` : le site NEUF vit dans gh-pages/neuf/ et ne doit
+          # pas être emporté par la synchronisation de l'app Orga.
+          rsync -a --delete --exclude '.git' --exclude 'README.md' --exclude 'neuf' todo/ ../site/
           touch ../site/.nojekyll
           # sert de témoin : la vérification attend de voir CE commit en ligne.
           echo "$sha" > ../site/version.txt

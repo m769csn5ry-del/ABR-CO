@@ -21,6 +21,7 @@ export const ROUTES = [
   '/compte/entretiens',
   '/compte/adresses',
   '/suivi',
+  '/suivi?ref=NF-A1B2C3',
   '/mentions-legales',
   '/cgv',
   '/confidentialite',

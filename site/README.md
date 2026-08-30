@@ -7,6 +7,17 @@ restauration, sous une seule marque. Next.js 15 (App Router), TypeScript, Tailwi
 l'atelier remet les tiennes à neuf. La couleur signature (verdigris) désigne partout la
 branche atelier, l'encre la branche boutique — le visiteur apprend le code en une section.
 
+**Le site en ligne : https://m769csn5ry-del.github.io/ABR-CO/neuf/**
+
+Cette démonstration est un export statique publié automatiquement par
+`.github/workflows/site-neuf.yml` à chaque modification de `site/`. GitHub Pages
+ne sert que des fichiers : les routes d'API en sont retirées et l'interface
+bascule sur `NEXT_PUBLIC_DEMO_STATIC`, qui affiche exactement les mêmes messages
+« non raccordé ». Rien n'y est simulé — aucune commande, aucun paiement.
+
+Pour un vrai déploiement (Vercel, Node), la construction par défaut conserve les
+routes d'API et le rendu serveur : voir « Ce qui reste à brancher ».
+
 ---
 
 ## Démarrer

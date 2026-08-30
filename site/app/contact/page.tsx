@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { site } from '@/content/site';
+import { postJson } from '@/lib/runtime';
 import { classNames } from '@/lib/format';
 
 /* Le formulaire est réel et validé. L'envoi passe par /api/contact, qui
@@ -32,20 +33,12 @@ export default function ContactPage() {
     if (Object.keys(next).length > 0) return;
 
     setStatus({ kind: 'sending' });
-    try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      });
-      const data = (await res.json()) as { message?: string };
-      setStatus({
-        kind: res.ok ? 'ok' : 'ko',
-        message: data.message ?? 'Envoi impossible pour le moment.',
-      });
-    } catch {
-      setStatus({ kind: 'ko', message: 'Connexion impossible. Réessaie dans un instant.' });
-    }
+    const { ok, message } = await postJson(
+      '/api/contact',
+      form,
+      "Le formulaire n'est pas encore raccordé à une boîte de réception. Ton message n'a pas été envoyé.",
+    );
+    setStatus({ kind: ok ? 'ok' : 'ko', message });
   }
 
   return (
