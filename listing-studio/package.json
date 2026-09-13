@@ -1,0 +1,16 @@
+{
+  "name": "listing-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Listing Studio — génération, optimisation et présentation d'annonces de location courte durée.",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "test": "node tests/run.js"
+  },
+  "optionalDependencies": {
+    "@anthropic-ai/sdk": "^0.72.0"
+  },
+  "engines": { "node": ">=18" }
+}

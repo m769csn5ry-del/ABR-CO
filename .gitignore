@@ -1,2 +1,4 @@
 node_modules/
 .DS_Store
+listing-studio/node_modules
+listing-studio/.env
