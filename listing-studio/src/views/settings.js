@@ -213,7 +213,7 @@ function wire(outlet, tab){
 
   outlet.querySelector('#probeAi')?.addEventListener('click', async (e) => {
     e.currentTarget.classList.add('loading');
-    await ai.init();
+    await ai.init({ force:true });
     toast('Connexion testée.');
     draw(outlet, 'ia');
   });

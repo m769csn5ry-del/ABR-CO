@@ -1,4 +1,4 @@
-# Publie Orga sur GitHub Pages.
+# Publie les applications du dépôt sur GitHub Pages.
 #
 # Pages est servi depuis la branche `gh-pages` (c'est sa création qui a activé
 # Pages : un workflow n'a pas le droit de créer le site lui-même — le jeton
@@ -8,14 +8,18 @@
 # Le contenu de `todo/` est placé à la RACINE de `gh-pages` : l'app est servie sur
 # /ABR-CO/ et non /ABR-CO/todo/, ce qui garde la portée du service worker et les
 # chemins du manifeste corrects.
+#
+# Listing Studio est publié dans le sous-dossier /listing-studio/ : routage par
+# fragment d'URL, chemins relatifs, aucune règle de réécriture nécessaire.
 
-name: Publier Orga
+name: Publier les apps
 
 on:
   push:
     branches: [main]
     paths:
       - 'todo/**'
+      - 'listing-studio/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -50,6 +54,17 @@ jobs:
             || { echo "::error::la police display n'est pas encastrée"; exit 1; }
           echo "Paquet complet : $(du -sh todo | cut -f1)"
 
+          for f in listing-studio/index.html listing-studio/src/main.js \
+                   listing-studio/assets/css/base.css; do
+            [ -f "$f" ] || { echo "::error::fichier manquant : $f"; exit 1; }
+          done
+          grep -q 'src/main.js' listing-studio/index.html \
+            || { echo "::error::Listing Studio : le script principal n'est pas lié"; exit 1; }
+          if grep -rqE 'fonts\.(googleapis|gstatic)\.com' listing-studio/index.html; then
+            echo "::error::Listing Studio : appel à un hébergeur de polices"; exit 1
+          fi
+          echo "Listing Studio : $(du -sh listing-studio | cut -f1)"
+
       - name: Publier sur gh-pages
         id: sync
         run: |
@@ -65,7 +80,16 @@ jobs:
           git -C ../site checkout -B gh-pages
 
           # `--delete` : un fichier retiré de todo/ doit disparaître du site.
-          rsync -a --delete --exclude '.git' --exclude 'README.md' todo/ ../site/
+          # Les sous-sites publiés à côté (listing-studio/, neuf/) sont préservés.
+          rsync -a --delete --exclude '.git' --exclude 'README.md' \
+                --exclude 'listing-studio' --exclude 'neuf' todo/ ../site/
+
+          # Listing Studio vit dans son sous-dossier ; ni le serveur, ni les
+          # tests, ni les dépendances n'ont à être publiés.
+          rsync -a --delete \
+                --exclude 'server' --exclude 'tests' --exclude 'node_modules' \
+                --exclude 'package.json' --exclude '.env' \
+                listing-studio/ ../site/listing-studio/
           touch ../site/.nojekyll
           # sert de témoin : la vérification attend de voir CE commit en ligne.
           echo "$sha" > ../site/version.txt
@@ -122,6 +146,9 @@ jobs:
           check "$base/sw.js"                200 "service worker"
           check "$base/icons/icon-180.png"   200 "icône 180"
           check "$base/icons/icon-512.png"   200 "icône 512"
+          check "$base/listing-studio/"                    200 "Listing Studio"
+          check "$base/listing-studio/src/main.js"         200 "Listing Studio — script"
+          check "$base/listing-studio/assets/css/base.css" 200 "Listing Studio — styles"
 
           html=$(curl -sSL --max-time 30 "$base/")
           for m in 'rel="manifest"' 'apple-mobile-web-app-capable' 'Bodoni Moda' 'data-tab="today"'; do
@@ -137,6 +164,8 @@ jobs:
           esac
 
           [ "$fail" = "0" ] || { echo "::error::vérification en ligne en échec"; exit 1; }
-          { echo "## L'app répond en ligne"; echo ""; echo "**$base/**"; echo ""
-            echo "Commit \`$ATTENDU\` — page, manifeste, service worker et icônes vérifiés."
+          { echo "## Les apps répondent en ligne"; echo ""
+            echo "- Orga : **$base/**"
+            echo "- Listing Studio : **$base/listing-studio/**"; echo ""
+            echo "Commit \`$ATTENDU\` — pages, manifeste, service worker, icônes et scripts vérifiés."
           } >> "$GITHUB_STEP_SUMMARY"

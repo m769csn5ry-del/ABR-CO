@@ -19,8 +19,8 @@ import { sleep } from '../core/util.js';
 let mode = 'local';
 let lastError = null;
 
-export async function init(){
-  const h = await server.probe();
+export async function init({ force = false } = {}){
+  const h = await server.probe({ force });
   mode = server.isConfigured() ? 'server' : 'local';
   emit('ai:mode', { mode, health: h });
   return { mode, health: h };
