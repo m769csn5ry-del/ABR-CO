@@ -1,12 +1,12 @@
 /* Parcours de création d'une annonce — coquille, navigation par étapes,
    sauvegarde automatique et liaison des formulaires. */
 
-import { $, esc, debounce, num } from '../core/util.js';
+import { $, esc, debounce } from '../core/util.js';
 import { icon } from '../core/icons.js';
 import { go } from '../core/router.js';
 import { renderTopbar } from './shell.js';
 import { toast, saved } from '../core/toast.js';
-import { confirm } from '../core/modal.js';
+
 import * as svc from '../data/projects.js';
 import { emit } from '../core/events.js';
 

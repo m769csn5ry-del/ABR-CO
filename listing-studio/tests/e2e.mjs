@@ -8,10 +8,17 @@
  * devant un client.
  */
 
-import { chromium } from 'playwright-core';
 import { spawn } from 'node:child_process';
+import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+/* playwright-core peut vivre hors du projet : PLAYWRIGHT_MODULES pointe alors
+   sur le dossier node_modules qui le contient. */
+const pw = process.env.PLAYWRIGHT_MODULES
+  ? createRequire(path.join(process.env.PLAYWRIGHT_MODULES, 'noop.js'))('playwright-core')
+  : (await import('playwright-core'));
+const chromium = pw.chromium || pw.default?.chromium;
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(HERE, '..');

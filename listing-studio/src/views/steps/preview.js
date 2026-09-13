@@ -4,7 +4,6 @@ import { esc } from '../../core/util.js';
 import { icon } from '../../core/icons.js';
 import { MODES, simulationHTML, photoUrlMap } from '../preview.js';
 import { resolve } from '../../platforms/index.js';
-import { toast } from '../../core/toast.js';
 
 export default function stepPreview(host, ctx){
   const project = ctx.project;

@@ -3,12 +3,12 @@
 import { esc, num, words, copy } from '../../core/util.js';
 import { icon } from '../../core/icons.js';
 import { TONES } from '../../data/options.js';
-import { copyBlock, callout, emptyState, sectionTitle } from '../components.js';
+import { copyBlock, callout, sectionTitle } from '../components.js';
 import * as svc from '../../data/projects.js';
 import * as ai from '../../ai/engine.js';
 import { toast, failed } from '../../core/toast.js';
 import { MISSING_MARK } from '../../ai/local/generator.js';
-import { composeAll, labelOf } from '../../platforms/index.js';
+import { composeAll } from '../../platforms/index.js';
 
 export default function stepContent(host, ctx){
   const project = ctx.project;

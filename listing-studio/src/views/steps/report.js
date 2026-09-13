@@ -1,6 +1,5 @@
 /* Étape 11 — Rapport client. */
 
-import { esc, dateFR } from '../../core/util.js';
 import { icon } from '../../core/icons.js';
 import * as svc from '../../data/projects.js';
 import { buildReportModel, renderReportHTML } from '../../report/report.js';

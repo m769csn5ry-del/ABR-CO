@@ -1,6 +1,6 @@
 /* Étape 4 — Ordre des photos (recommandation + glisser-déposer). */
 
-import { esc, num } from '../../core/util.js';
+import { esc } from '../../core/util.js';
 import { icon } from '../../core/icons.js';
 import { emptyState, callout, scoreBadge } from '../components.js';
 import * as svc from '../../data/projects.js';

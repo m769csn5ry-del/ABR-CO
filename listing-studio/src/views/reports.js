@@ -1,6 +1,6 @@
 /* Rapports enregistrés. */
 
-import { esc, num, dateFR } from '../core/util.js';
+import { esc, dateFR } from '../core/util.js';
 import { icon } from '../core/icons.js';
 import { emptyState, scoreBadge } from './components.js';
 import * as svc from '../data/projects.js';

@@ -4,6 +4,7 @@ import { esc, copy, num } from '../../core/util.js';
 import { icon } from '../../core/icons.js';
 import { callout, copyBlock } from '../components.js';
 import * as ex from '../../export/index.js';
+import { printElement } from '../../export/index.js';
 import * as svc from '../../data/projects.js';
 import { resolve, labelOf } from '../../platforms/index.js';
 import { toast, failed } from '../../core/toast.js';
@@ -129,15 +130,9 @@ async function exportPdf(project, photos){
     footer:`<button class="btn" data-close2>Fermer</button><button class="btn primary" data-print>Imprimer / Enregistrer en PDF</button>`,
     onMount(handle){
       handle.el.querySelector('[data-close2]').onclick = () => handle.close();
-      handle.el.querySelector('[data-print]').onclick = () => {
-        const { printElement } = window.__lsExport || {};
-        const el = handle.el.querySelector('.report');
-        if (printElement) printElement(el, { title:`Rapport — ${project.name}` });
-        else window.print();
-      };
+      handle.el.querySelector('[data-print]').onclick = () =>
+        printElement(handle.el.querySelector('.report'), { title:`Rapport — ${project.name}` });
     },
   });
-  const exportMod = await import('../../export/index.js');
-  window.__lsExport = exportMod;
   void h;
 }

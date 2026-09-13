@@ -16,7 +16,7 @@ const NAV = [
   ]},
   { group:'Production', items:[
     { id:'listings',  label:'Mes annonces',      icon:'listings',  href:'#/projects', count:() => svc.listProjects().length },
-    { id:'photos',    label:'Bibliothèque',      icon:'photos',    href:'#/library' },
+    { id:'photos',    label:'Bibliothèque photos', icon:'photos',  href:'#/library' },
     { id:'templates', label:'Templates',         icon:'templates', href:'#/templates' },
   ]},
   { group:'Relation client', items:[

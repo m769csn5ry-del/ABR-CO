@@ -5,10 +5,10 @@
  * comme simulation, destinée à montrer le travail à un prospect.
  */
 
-import { esc, num, money, words } from '../core/util.js';
-import { icon } from '../core/icons.js';
+import { esc, num, money } from '../core/util.js';
+
 import { photoUrl } from '../data/projects.js';
-import { amenityLabel } from '../data/options.js';
+
 import { adapter, labelOf } from '../platforms/index.js';
 
 export const MODES = [

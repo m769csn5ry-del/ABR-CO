@@ -8,7 +8,6 @@ import { photoUrl } from '../data/projects.js';
 import { photoCategory, PHOTO_CATEGORIES, clientStatus } from '../data/options.js';
 import { renderTopbar } from './shell.js';
 import { openModal } from '../core/modal.js';
-import { go } from '../core/router.js';
 
 const TABS = [
   { id:'photos',    label:'Photos' },

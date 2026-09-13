@@ -1,6 +1,6 @@
 /* Mode démo — génère un projet fictif complet pour une présentation client. */
 
-import { esc, num } from '../core/util.js';
+import { esc } from '../core/util.js';
 import { icon } from '../core/icons.js';
 import * as svc from '../data/projects.js';
 import { renderTopbar } from './shell.js';

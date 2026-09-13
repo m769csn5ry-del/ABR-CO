@@ -90,8 +90,6 @@ export default function stepPhotos(host, ctx){
       const url = await photoUrl(p);
       if (!url) continue;
       const img = await new Promise(res => { const im = new Image(); im.onload = () => res(im); im.src = url; });
-      const { default: engineRef } = { default: null };
-      void engineRef;
       const ai = await import('../../ai/engine.js');
       const a = await ai.analyzePhoto(img, { filename:p.filename });
       svc.db.photoAnalyses.removeWhere(x => x.photoId === p.id);

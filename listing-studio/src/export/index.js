@@ -3,8 +3,11 @@
    ajoutée à l'export, et les projets de démonstration restent marqués. */
 
 import { composeAll, adapter, resolve } from '../platforms/index.js';
-import { download, slug, dateFR, money } from '../core/util.js';
+import { download, slug, dateFR } from '../core/util.js';
 import { PART_LABELS } from '../scoring/listingScore.js';
+
+/** Un projet non encore enregistré n'a pas de date : ne pas planter l'export. */
+const iso = (ts) => { const d = new Date(ts); return isNaN(d) ? null : d.toISOString(); };
 
 const DEMO_BANNER = '*** PROJET DE DÉMONSTRATION — informations fictives, à ne pas publier ***';
 
@@ -42,8 +45,8 @@ export function toJSON(project, { photos = [], platform = 'all' } = {}){
     project:{
       id: project.id, name: project.name, status: project.status,
       clientId: project.clientId, templateId: project.templateId,
-      createdAt: new Date(project.createdAt).toISOString(),
-      updatedAt: new Date(project.updatedAt).toISOString(),
+      createdAt: iso(project.createdAt),
+      updatedAt: iso(project.updatedAt),
     },
     property: project.property,
     positioning: project.positioning,

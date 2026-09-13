@@ -6,7 +6,7 @@ import { TEMPLATE_CATEGORIES } from '../data/templates.js';
 import { tone as toneOf, audience as audienceOf, styleOf, highlight } from '../data/options.js';
 import * as svc from '../data/projects.js';
 import { renderTopbar } from './shell.js';
-import { openModal, confirm, promptText } from '../core/modal.js';
+import { openModal, confirm } from '../core/modal.js';
 import { toast } from '../core/toast.js';
 import { go } from '../core/router.js';
 import { labelOf } from '../platforms/index.js';

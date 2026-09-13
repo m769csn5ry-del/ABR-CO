@@ -7,7 +7,7 @@
  */
 
 import { TONES, AUDIENCES, tone as toneOf, audience as audienceOf, PLANS } from '../../data/options.js';
-import { trimTo, words, num } from '../../core/util.js';
+import { words, num } from '../../core/util.js';
 
 const norm = (s) => String(s || '').toLowerCase()
   .normalize('NFD').replace(/[\u0300-\u036f]/g, '');

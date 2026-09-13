@@ -1,6 +1,6 @@
 /* « Mes annonces » — liste, recherche, filtres, actions projet. */
 
-import { esc, num, relTime } from '../core/util.js';
+import { esc, relTime } from '../core/util.js';
 import { icon } from '../core/icons.js';
 import { emptyState, scoreBadge, projectCard } from './components.js';
 import { PROJECT_STATUSES, projectStatus } from '../data/options.js';

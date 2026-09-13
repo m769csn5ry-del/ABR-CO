@@ -1,14 +1,13 @@
 /* CRM simple — clients et projets associés. */
 
-import { esc, num, initials } from '../core/util.js';
+import { esc, num } from '../core/util.js';
 import { icon } from '../core/icons.js';
 import { emptyState, clientRow } from './components.js';
-import { CLIENT_STATUSES, clientStatus } from '../data/options.js';
+import { CLIENT_STATUSES } from '../data/options.js';
 import * as svc from '../data/projects.js';
 import { renderTopbar } from './shell.js';
 import { openModal, confirm } from '../core/modal.js';
 import { toast } from '../core/toast.js';
-import { go } from '../core/router.js';
 
 let q = '';
 

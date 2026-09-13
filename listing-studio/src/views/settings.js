@@ -107,7 +107,9 @@ const marque = (u, s) => `
     </section>
   </div>`;
 
-const plan = (u) => `
+const plan = (u) => {
+  const current = planOf(u.plan);
+  return `
   <div class="price-grid">
     ${PLANS.map(p => `<div class="price-card ${u.plan === p.id ? 'feat' : ''}">
       ${u.plan === p.id ? '<span class="badge brand" style="position:absolute;top:-11px;left:24px">Plan actif</span>' : ''}
@@ -116,13 +118,16 @@ const plan = (u) => `
       <div class="muted" style="font-size:13px">${p.projects === Infinity ? 'Projets illimités' : `${p.projects} projets actifs`}</div>
       <ul>${p.features.map(f => `<li>${icon('check')}<span>${esc(f)}</span></li>`).join('')}</ul>
       ${p.locked.length ? `<div class="dim" style="font-size:12px;margin-bottom:14px">Non inclus : ${esc(p.locked.join(', '))}</div>` : ''}
-      <button class="btn ${u.plan === p.id ? '' : 'primary'} block" data-plan="${p.id}" ${u.plan === p.id ? 'disabled' : ''}>
-        ${u.plan === p.id ? 'Plan actuel' : `Passer au plan ${esc(p.label)}`}</button>
+      <button class="btn ${u.plan === p.id ? '' : (p.price > current.price ? 'primary' : '')} block"
+        data-plan="${p.id}" ${u.plan === p.id ? 'disabled' : ''}>
+        ${u.plan === p.id ? 'Plan actuel'
+          : p.price > current.price ? `Passer au plan ${esc(p.label)}` : `Revenir au plan ${esc(p.label)}`}</button>
     </div>`).join('')}
   </div>
   <div class="callout warn" style="margin-top:18px">${icon('info')}<div>
     Aucun paiement n’est branché : le changement de plan ne fait que débloquer les fonctions dans l’application,
     le temps que le socle produit soit finalisé.</div></div>`;
+};
 
 const ia = () => {
   const mode = ai.describeMode();

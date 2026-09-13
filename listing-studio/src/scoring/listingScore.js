@@ -5,7 +5,7 @@
  * client. Aucune note n'est aléatoire.
  */
 
-import { AMENITIES, amenity } from '../data/options.js';
+import { amenity } from '../data/options.js';
 import { words, clamp, round, avg } from '../core/util.js';
 import { MISSING_MARK } from '../ai/local/generator.js';
 import { coverage } from '../photos/coverage.js';

@@ -1,6 +1,6 @@
 /* Panneau assistant IA — conversation et actions appliquées au projet. */
 
-import { $, esc, uid } from '../core/util.js';
+import { $, esc } from '../core/util.js';
 import { icon } from '../core/icons.js';
 import { respond, SUGGESTIONS } from '../ai/local/assistant.js';
 import { shorten, lengthen } from '../ai/local/rewrite.js';
