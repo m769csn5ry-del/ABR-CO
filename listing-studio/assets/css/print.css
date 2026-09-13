@@ -1,0 +1,23 @@
+/* Impression — sert de chemin d'export PDF (impression système « Enregistrer en PDF »).
+   Seule la zone marquée `data-print` est imprimée. */
+@page{size:A4;margin:14mm 12mm}
+
+@media print{
+  body{background:#fff !important}
+  .sidebar,.topbar,.assistant,.assistant-fab,.toasts,.no-print,.modal-foot,.scrim{display:none !important}
+  .app,.app.with-assistant{display:block !important}
+  .main{padding:0 !important;max-width:none !important}
+  .modal-root.on{position:static;display:block}
+  .modal-back{display:none}
+  .modal{margin:0;max-width:none;width:100%;box-shadow:none;border-radius:0;max-height:none;animation:none}
+  .modal-body{padding:0;overflow:visible;max-height:none}
+  .report{border:0;border-radius:0}
+  .report-head{
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+    background:#14544A !important;color:#fff !important;
+  }
+  .report-sec{break-inside:avoid;page-break-inside:avoid}
+  .card,.photo-card,.report-prio .p{break-inside:avoid}
+  a[href]::after{content:""}
+  .badge,.demo-tag,.score-ring .fg,.bar-line .track>i{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
