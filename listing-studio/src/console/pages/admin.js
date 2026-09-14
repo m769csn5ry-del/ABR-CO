@@ -198,7 +198,7 @@ function options(){
         </span>
         <label class="switch">
           <input type="checkbox" data-flag="${esc(f.key)}" ${f.enabled ? 'checked' : ''}>
-          <span></span>
+          <span class="track"></span>
         </label>
       </div>`).join('')}
     </div></div>

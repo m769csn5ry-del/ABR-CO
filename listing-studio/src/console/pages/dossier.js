@@ -18,8 +18,9 @@ import * as M from '../../domain/money.js';
 import { METRICS } from '../../domain/performance.js';
 import { STATUS_LABELS, STATUS_FLOW } from '../../domain/commission.js';
 import { trail } from '../../domain/audit.js';
+import { auditDraft, deliveryDraft, paymentDraft } from '../../domain/outreach.js';
 import {
-  stageFlow, scoreBlock, axesList, problemList, fmt, dash, formModal,
+  stageFlow, scoreBlock, axesList, problemList, fmt, dash, formModal, perDay,
 } from '../ui.js';
 
 const TABS = [
@@ -28,6 +29,7 @@ const TABS = [
   { id:'optimisation', label:'Optimisation' },
   { id:'performances', label:'Performances' },
   { id:'finances',     label:'Finances' },
+  { id:'messages',     label:'Messages' },
   { id:'journal',      label:'Journal' },
 ];
 
@@ -79,7 +81,7 @@ export function render(params){
   </div>`;
 
   wirePrimary(d);
-  ({ fiche, analyse, optimisation, performances, finances, journal })[tab](d, st);
+  ({ fiche, analyse, optimisation, performances, finances, messages, journal })[tab](d, st);
 }
 
 const reload = (id, tab) => go(`/dossier/${id}/${tab}`, { replace:true });
@@ -214,6 +216,7 @@ function analyse(d){
         </p>
       </div>
       <div class="row" style="gap:8px">
+        <a class="btn sm" href="#/rapport/${esc(d.id)}">Rapport client</a>
         ${ws.allows('analysis:run') ? '<button class="btn sm" id="rerun">Relancer</button>' : ''}
         ${ws.allows('dossier:write') ? '<button class="btn primary sm" id="optimize">Générer la version optimisée</button>' : ''}
       </div>
@@ -374,10 +377,10 @@ function performances(d){
           <thead><tr><th>Indicateur</th><th class="num">Avant / jour</th><th class="num">Après / jour</th><th class="num">Écart</th></tr></thead>
           <tbody>${cmp.metrics.map(m => `<tr>
             <td>${esc(m.label)}</td>
-            <td class="num">${num(m.beforePerDay)}</td>
-            <td class="num">${num(m.afterPerDay)}</td>
+            <td class="num">${perDay(m.beforePerDay)}</td>
+            <td class="num">${perDay(m.afterPerDay)}</td>
             <td class="num"><span class="badge ${m.improved ? 'ok' : 'bad'}">
-              ${m.delta >= 0 ? '+' : ''}${num(m.delta)}${m.deltaPct === null ? '' : ` (${m.deltaPct >= 0 ? '+' : ''}${num(m.deltaPct)} %)`}
+              ${m.delta >= 0 ? '+' : ''}${perDay(m.delta)}${m.deltaPct === null ? '' : ` (${m.deltaPct >= 0 ? '+' : ''}${num(m.deltaPct)} %)`}
             </span></td></tr>`).join('')}</tbody>
         </table></div>
         <div class="callout ${cmp.reliability === 'good' ? 'ok' : cmp.reliability === 'indicative' ? 'warn' : 'bad'}" style="margin-top:14px">
@@ -526,6 +529,54 @@ function commissionCard(c){
       </p>
     </div>
   </section>`;
+}
+
+/* ---------- Onglet : messages ---------- */
+/* Les brouillons sont construits à partir de l'état réel du dossier. Rien
+   n'est envoyé : aucun service de messagerie n'est connecté. */
+function messages(d){
+  const client = d.clientId ? db.clients.find(d.clientId) : null;
+  const com = svc.commissionsOf(d.id).find(c => c.status === 'due' || c.status === 'overdue');
+  const drafts = [
+    { id:'audit',    label:'Envoi de l’audit',
+      when:'dès que l’analyse est faite', draft: auditDraft(d, client?.name) },
+    { id:'delivery', label:'Remise de la version optimisée',
+      when:'quand une version est générée', draft: deliveryDraft(d, client?.name) },
+    { id:'payment',  label:'Relance de règlement',
+      when:'quand une commission est exigible',
+      draft: com ? paymentDraft(com, client?.name) : null },
+  ];
+
+  $('#tabBody').innerHTML = `
+  <div class="callout plain">
+    Ces messages sont rédigés à partir des chiffres du dossier. Aucun n’est
+    envoyé : relisez, copiez, envoyez depuis votre propre messagerie.
+    ${client ? '' : ' Rattachez un client au dossier pour personnaliser l’adresse.'}
+  </div>
+
+  ${drafts.map(x => `<section class="card" style="margin-top:var(--gap)">
+    <div class="card-head">
+      <div>
+        <h3>${esc(x.label)}</h3>
+        <p class="muted" style="font-size:12.2px;margin-top:2px">
+          ${x.draft ? esc(x.draft.reason) : `Disponible ${esc(x.when)}.`}
+        </p>
+      </div>
+      ${x.draft ? `<button class="btn sm" data-copy="${esc(x.id)}">Copier</button>` : ''}
+    </div>
+    ${x.draft ? `<div class="card-body">
+      <div class="field"><span>Objet</span>
+        <div class="compare-text" style="max-height:none">${esc(x.draft.subject)}</div></div>
+      <div class="field" style="margin-top:10px"><span>Message</span>
+        <div class="compare-text" id="body-${esc(x.id)}">${esc(x.draft.body)}</div></div>
+    </div>` : ''}
+  </section>`).join('')}`;
+
+  $('#tabBody').querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', async () => {
+    const x = drafts.find(y => y.id === b.dataset.copy);
+    await copy(`${x.draft.subject}\n\n${x.draft.body}`);
+    saved('Message copié');
+  }));
 }
 
 /* ---------- Onglet : journal ---------- */

@@ -145,6 +145,49 @@ fiabilité (suffisante, indicative, insuffisante) selon la durée d'observation 
 le volume. Une réserve de causalité accompagne systématiquement l'écart :
 saisonnalité, prix et concurrence évoluent en parallèle.
 
+## Automatisations
+
+`src/domain/automations.js` — six règles qui agissent sur l'état réel :
+analyser une annonce importée, préparer le brouillon d'optimisation, calculer
+la commission d'une transaction saisie, signaler une commission échue, clôturer
+un dossier réglé, rédiger les relances des prospects sans nouvelle.
+
+Chaque règle ne s'exécute que si son état de départ est vrai : elle est donc
+rejouable sans effet de bord. Les exécutions sont sérialisées — deux passages
+simultanés liraient les mêmes cibles avant que l'un n'écrive. Chaque passage
+laisse une trace datée avec ce qu'il a fait et sur quoi.
+
+Quatre décisions restent humaines par construction, quelle que soit la
+configuration : valider une version optimisée, déclarer une annonce publiée,
+rendre une commission exigible, la marquer encaissée. La liste est affichée
+telle quelle dans le centre d'automatisation.
+
+Déclenchement : un changement de dossier, de transaction, de commission, de
+prospect ou de contrat programme un passage groupé (400 ms de regroupement),
+plus un passage à l'ouverture de la console.
+
+## Messages
+
+`src/domain/outreach.js` rédige les relances de prospects, l'envoi d'audit, la
+remise d'une version optimisée et la relance de règlement. Chaque texte est
+construit sur des données réelles : quand une donnée manque, la phrase qui s'y
+rapporte disparaît au lieu d'être comblée. Le nom d'usage n'est extrait que
+s'il ressemble à celui d'une personne — « Bonjour Agence » serait pire qu'un
+« Bonjour » nu. Aucun participe accordé n'est employé : le genre de
+l'expéditeur ne se devine pas.
+
+**Rien n'est envoyé** : aucun service de messagerie n'est connecté. Les textes
+sont des brouillons à relire, copier et envoyer depuis sa propre messagerie.
+
+## Rapport client
+
+`src/report/audit.js` produit le livrable remis au client : score, potentiel,
+répartition par critère, problèmes classés, version proposée, performances
+observées. Il s'imprime en PDF par la fonction d'impression du navigateur —
+pas de bibliothèque tierce, le même document à l'écran et sur le papier. Il
+porte ses propres réserves : grille interne, aucune donnée de marché, aucun
+résultat garanti.
+
 ## Journaux
 
 - `src/domain/audit.js` — validations, publications, calculs de commission,

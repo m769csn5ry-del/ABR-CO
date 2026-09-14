@@ -155,6 +155,86 @@ try{
     assert((await page.locator('#outlet').innerText()).toLowerCase().includes('exécutions'), 'journal IA absent');
   });
 
+  await step('Automatisations : règles, aperçu et journal', async () => {
+    await goto('#/automatisations');
+    const txt = await page.locator('#outlet').innerText();
+    assert(txt.includes('Analyser dès qu’une annonce est importée'), 'règle d’analyse absente');
+    assert(txt.includes('Ce que le système ne fera jamais seul'), 'limites de l’automatisation non affichées');
+    assert(/Valider une version optimisée/.test(txt), 'la validation humaine n’est pas annoncée comme non automatisable');
+    assert((await page.locator('.switch input').count()) >= 6, 'interrupteurs des règles absents');
+    await page.locator('#runAll').click();
+    await page.waitForTimeout(1200);
+    assert((await page.locator('#outlet').innerText()).length > 400, 'la page ne se recharge pas après exécution');
+  });
+
+  await step('Le brouillon d’optimisation est produit automatiquement, jamais validé', async () => {
+    await goto('#/dossiers');
+    const links = await page.locator('.mini').all();
+    for (const l of links){ if ((await l.innerText()).includes('Studio Gare')){ await l.click(); break; } }
+    await page.waitForTimeout(400);
+    const id = page.url().split('/dossier/')[1].split('/')[0];
+    await goto(`#/dossier/${id}/optimisation`);
+    const txt = await page.locator('#outlet').innerText();
+    assert(txt.includes('Version 1'), 'aucune version générée automatiquement');
+    // La frise d'étapes contient le mot « Publiée » : on interroge l'état de la
+    // version elle-même, pas le texte entier de la page.
+    assert(/état\s*:\s*en attente de validation/i.test(txt),
+      'la version n’est pas restée en attente de validation humaine');
+    assert((await page.locator('#tabBody').innerText()).includes('Valider'),
+      'le bouton de validation humaine est absent');
+    const dossier = await page.evaluate((id) =>
+      JSON.parse(localStorage.getItem('ls.v2.dossiers')).find(d => d.id === id), id);
+    assert(!dossier.publishedAt, 'le dossier aurait été publié automatiquement');
+    assert(dossier.stage === 'optimized', `étape attendue « optimized », obtenue « ${dossier.stage} »`);
+  });
+
+  await step('Import en lot : plusieurs annonces, analysées d’affilée', async () => {
+    await goto('#/dossiers/lot');
+    await page.locator('#raw').fill([
+      'Appartement 2 pièces 44 m² — Neudorf',
+      'Appartement de 44 m² au 1er étage, séjour avec balcon exposé est. Charges de 95 € par mois. DPE classe C. Disponible immédiatement.',
+      '',
+      '---',
+      '',
+      'MAISON SUPERBE !!!',
+      'Magnifique maison idéale, très belle, coup de coeur assuré, à saisir vite.',
+    ].join('\n'));
+    await page.waitForTimeout(200);
+    assert((await page.locator('#count').innerText()).includes('2 annonces'), 'les deux blocs ne sont pas détectés');
+    await page.locator('#go').click();
+    await page.waitForTimeout(2500);
+    const txt = await page.locator('body').innerText();
+    assert(/2 dossier\(s\) créé/.test(txt) || /dossier/i.test(txt), 'aucun dossier créé');
+  });
+
+  await step('Rapport client : score, critères, priorités, réserves', async () => {
+    await goto('#/dossiers');
+    const links = await page.locator('.mini').all();
+    for (const l of links){ if ((await l.innerText()).includes('Krutenau')){ await l.click(); break; } }
+    await page.waitForTimeout(400);
+    const id = page.url().split('/dossier/')[1].split('/')[0];
+    await goto(`#/rapport/${id}`);
+    const txt = await page.locator('#outlet').innerText();
+    assert((await page.locator('.report').count()) === 1, 'rapport absent');
+    assert(txt.includes('Répartition par critère'), 'tableau des critères absent');
+    assert(/grille d’évaluation interne/.test(txt), 'la nature de la grille n’est pas précisée');
+    assert(/aucun résultat commercial n’est garanti/.test(txt), 'réserve commerciale absente');
+    assert(!/non_communiqué|undefined|NaN/.test(txt), 'marqueur technique dans le rapport');
+  });
+
+  await step('Messages : brouillons construits sur les chiffres du dossier', async () => {
+    await goto('#/dossiers');
+    const links = await page.locator('.mini').all();
+    for (const l of links){ if ((await l.innerText()).includes('Krutenau')){ await l.click(); break; } }
+    await page.waitForTimeout(400);
+    const id = page.url().split('/dossier/')[1].split('/')[0];
+    await goto(`#/dossier/${id}/messages`);
+    const txt = await page.locator('#outlet').innerText();
+    assert(/Aucun n’est\s+envoyé|n’est\s+envoyé/.test(txt), 'l’absence d’envoi n’est pas annoncée');
+    assert(/sur 100/.test(txt), 'le message ne cite pas le score réel');
+    assert(!/undefined|NaN|null/.test(txt), 'donnée manquante rendue telle quelle');
+  });
+
   await step('Route inconnue : message clair', async () => {
     await goto('#/nexistepas');
     assert((await page.locator('body').innerText()).includes('introuvable'), 'page 404 absente');
