@@ -12,6 +12,15 @@ export const fmt = (serialized) => {
   return m ? M.format(m) : '—';
 };
 
+/* Une moyenne par jour descend souvent sous 1 : arrondie à l'entier, elle
+   afficherait « +0 » à côté d'un écart de 153 %. */
+export const perDay = (n) => {
+  const v = Number(n) || 0;
+  return Math.abs(v) < 10 && !Number.isInteger(v)
+    ? new Intl.NumberFormat('fr-FR', { maximumFractionDigits:1 }).format(v)
+    : num(v);
+};
+
 export const dash = (v) => (v === null || v === undefined || v === '' ? '<span class="missing">Information manquante</span>' : esc(String(v)));
 
 export const levelTone = (level) => ({ excellent:'ok', bon:'ok', faible:'warn', critique:'bad' }[level] || 'outline');

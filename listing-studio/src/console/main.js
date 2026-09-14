@@ -19,6 +19,10 @@ import * as crm from './pages/crm.js';
 import * as clients from './pages/clients.js';
 import * as commissions from './pages/commissions.js';
 import * as admin from './pages/admin.js';
+import * as automations from './pages/automations.js';
+import * as batch from './pages/batch.js';
+import * as report from './pages/report.js';
+import * as auto from '../domain/automations.js';
 import { seed, isSeeded } from './seed.js';
 
 async function boot(){
@@ -35,11 +39,14 @@ async function boot(){
   route('/', dashboard.render);
   route('/dossiers', dossiers.renderList);
   route('/dossiers/nouveau', dossiers.renderNew);
+  route('/dossiers/lot', batch.render);
   route('/dossier/:id', (p, q) => dossier.render({ ...p, tab:'fiche' }, q));
   route('/dossier/:id/:tab', dossier.render);
   route('/crm', crm.render);
   route('/clients', clients.render);
   route('/commissions', commissions.render);
+  route('/automatisations', automations.render);
+  route('/rapport/:id', report.render);
   route('/admin', admin.render);
 
   fallback((path) => {
@@ -61,12 +68,24 @@ async function boot(){
     console.error(err);
     failed(err?.message || 'Une erreur est survenue pendant le rendu.');
   });
+  /* Les automatisations suivent l'état réel : un changement de dossier, de
+     transaction ou de commission déclenche un passage groupé. Les règles ne
+     touchent jamais à la validation, à la publication ni à l'encaissement. */
+  onEvent('dossier:change', () => auto.schedule());
+  onEvent('db:change', ({ table }) => {
+    if (['transactions','commissions','leads','contracts'].includes(table)) auto.schedule();
+  });
+
   onEvent('dossier:blocked', ({ reasons }) => {
     if (reasons?.length) console.info('[workflow] étape bloquée :', reasons.join(' '));
   });
   onEvent('workspace:switch', () => { refreshNav(); go('/'); });
 
   start();
+
+  /* Premier passage à l'ouverture : la console affiche un état déjà à jour
+     plutôt qu'une liste de choses que le système savait devoir faire. */
+  auto.schedule({ delay: 900 });
 }
 
 boot();

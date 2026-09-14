@@ -12,16 +12,21 @@ import * as ws from '../domain/workspace.js';
 import * as db from '../core/db.js';
 import { ROLE_LABELS } from '../domain/permissions.js';
 import { deriveTasks } from '../domain/crm.js';
+import { preview as automationPreview } from '../domain/automations.js';
 
 const NAV = [
   { group:'Pilotage', items:[
     { id:'home',    label:'Tableau de bord', icon:'dashboard', href:'#/',
       count:() => taskCount() },
+    { id:'auto',    label:'Automatisations', icon:'refresh', href:'#/automatisations',
+      perm:'dossier:read', count:() => pendingCount() },
   ]},
   { group:'Production', items:[
     { id:'dossiers', label:'Dossiers', icon:'listings', href:'#/dossiers',
       perm:'dossier:read', count:() => db.dossiers.count() },
     { id:'new',      label:'Nouveau dossier', icon:'plus', href:'#/dossiers/nouveau',
+      perm:'dossier:write' },
+    { id:'batch',    label:'Import en lot', icon:'upload', href:'#/dossiers/lot',
       perm:'dossier:write' },
   ]},
   { group:'Relation client', items:[
@@ -38,6 +43,11 @@ const NAV = [
     { id:'admin', label:'Administration', icon:'settings', href:'#/admin', perm:'org:update' },
   ]},
 ];
+
+function pendingCount(){
+  try{ return automationPreview().reduce((s, p) => s + (p.enabled ? p.count : 0), 0); }
+  catch{ return 0; }
+}
 
 function taskCount(){
   try{

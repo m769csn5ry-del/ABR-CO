@@ -97,10 +97,18 @@ export function score(m, problems = [], ctx = {}){
 
   /* Informations — 12 */
   {
-    const weights = { surface:4, rooms:3, floor:2, transport:1.5, availability:1.5 };
+    /* Les motifs sont lus par le client dans son rapport : ils portent le nom
+       français de l'information, pas la clé technique du champ. */
+    const EXPECTED = [
+      { key:'surface',      weight:4,   label:'La surface n’est pas indiquée.' },
+      { key:'rooms',        weight:3,   label:'Le nombre de pièces n’est pas indiqué.' },
+      { key:'floor',        weight:2,   label:'L’étage n’est pas précisé.' },
+      { key:'transport',    weight:1.5, label:'Aucun repère de transport ou de distance.' },
+      { key:'availability', weight:1.5, label:'La disponibilité n’est pas mentionnée.' },
+    ];
     let p = 12; const r = [];
-    Object.entries(weights).forEach(([k, w]) => {
-      if (!m.facts[k]){ p -= w; r.push(`${k} absent.`); }
+    EXPECTED.forEach(({ key, weight, label }) => {
+      if (!m.facts[key]){ p -= weight; r.push(label); }
     });
     note('information', clamp(p, 0, 12), r);
   }

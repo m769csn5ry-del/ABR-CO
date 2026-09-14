@@ -42,6 +42,24 @@ l'autre. Ils coexistent dans des espaces de stockage distincts ;
 `migrateFromV1()` importe une fois les projets de l'atelier dans le nouveau
 modèle à la première ouverture de la console.
 
+### Automatisation
+
+Six règles agissent sur l'état réel sans intervention : analyse à l'import,
+brouillon d'optimisation après l'analyse, calcul de commission à la saisie
+d'une transaction, signalement des échéances dépassées, clôture des dossiers
+réglés, rédaction des relances. Elles sont rejouables sans effet de bord et
+sérialisées entre elles.
+
+Quatre décisions restent humaines par construction et aucune configuration ne
+permet de les déléguer : valider une version, déclarer une publication, rendre
+une commission exigible, la marquer encaissée.
+
+S'y ajoutent l'import en lot (plusieurs annonces collées d'un coup, analysées
+et mises en brouillon à la suite), le rapport client imprimable en PDF, et la
+rédaction automatique des messages — audit, remise de version, relance de
+règlement, relance de prospect — tous construits sur les chiffres réels du
+dossier, aucun envoyé.
+
 ### Interface
 
 - **Listing Studio** (`index.html`) — atelier de production d'annonces de
@@ -57,7 +75,7 @@ modèle à la première ouverture de la console.
 |---|---|---|
 | `npm run test:unit` | moteur : génération, grammaire, plateformes, photos, exports, analyse, import, score, contrats entre modules | 45 / 45 |
 | `npm run test:integration` | parcours critique complet, isolation, permissions, journalisation | 24 / 24 |
-| `npm run test:console` | douze parcours navigateur de la console, sans erreur console | 12 / 12 |
+| `npm run test:console` | dix-sept parcours navigateur de la console, sans erreur console | 17 / 17 |
 | `npm run test:e2e` | parcours navigateur de Listing Studio | 19 / 19 |
 
 Le test de console ne contrôle pas seulement l'affichage : il vérifie qu'une
@@ -76,6 +94,9 @@ mesurable, et qu'aucun défaut de langue n'atteint le texte généré.
 | Potentiel toujours proche de 100 | chiffre flatteur et faux | gain plafonné axe par axe |
 | Version optimisée analysée sans son invitation à contacter | l'axe Conversion sous-évaluait la version produite | le texte analysé est celui qui sera publié |
 | Élisions et majuscules parasites | « de un balcon », « Chauffage Collectif gaz » | assemblage des phrases corrigé |
+| Clés techniques anglaises dans le rapport client | « surface absent. floor absent. transport absent. » sous les yeux du client | motifs rédigés en français |
+| Moyennes par jour arrondies à l'entier | « +0 » affiché en face d'un écart de +153 % | une décimale conservée sous 10 |
+| Prénom déduit d'une raison sociale | « Bonjour Agence, » en tête d'un message client | le prénom n'est extrait que d'un nom de personne |
 | La refonte de la couche de données avait retiré des fonctions utilisées par l'atelier | l'atelier d'annonces ne démarrait plus du tout (19 parcours sur 19 en échec) | l'atelier retrouve sa propre couche (`core/dbLegacy.js`), la console garde la sienne ; un test structurel vérifie désormais que chaque appel existe |
 
 ## Ce qui n'est pas connecté
@@ -88,7 +109,7 @@ fonctionnel.
 | Publication vers un portail | accord et accès API du portail ; la plupart n'en ouvrent pas aux tiers | variable, souvent contractuel |
 | Récupération d'annonce par URL | interdite par les conditions d'utilisation des portails ; la saisie par copier-coller est la voie légale | — |
 | Signature électronique | intégration d'un prestataire (Yousign, Docusign) | de l'ordre de 1 à 3 € par document |
-| Envoi de courriels | fournisseur transactionnel (Postmark, Resend, SES) | quelques euros par mois à faible volume |
+| Envoi de courriels | fournisseur transactionnel (Postmark, Resend, SES) ; les messages sont déjà rédigés, il ne manque que l'expédition | quelques euros par mois à faible volume |
 | Facturation SaaS | Stripe ; l'abstraction est en place, aucun paiement n'est traité | 1,5 % + 0,25 € par transaction européenne |
 | Moteur IA distant | clé API côté serveur ; l'analyse et la réécriture actuelles n'en ont pas besoin | de l'ordre de 0,01 à 0,05 € par annonce réécrite |
 | Données de marché | source de données immobilières sous licence | plusieurs centaines d'euros par mois |

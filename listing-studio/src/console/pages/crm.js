@@ -6,13 +6,15 @@
 
 import { $, esc, num, dateFR, relTime } from '../../core/util.js';
 import { icon } from '../../core/icons.js';
-import { failed, saved } from '../../core/toast.js';
+import { failed, saved, toast } from '../../core/toast.js';
 import { renderTopbar, denied } from '../shell.js';
 import * as db from '../../core/db.js';
 import * as ws from '../../domain/workspace.js';
 import { LEAD_STATUSES, leadStatus, deriveTasks } from '../../domain/crm.js';
 import { log } from '../../domain/audit.js';
 import { formModal } from '../ui.js';
+import { followUpDraft, prospectionDraft } from '../../domain/outreach.js';
+import { copy } from '../../core/util.js';
 
 export function render(){
   if (!ws.allows('lead:read')){ $('#outlet').innerHTML = denied('lead:read'); return; }
@@ -41,6 +43,7 @@ export function render(){
                   ${esc(l.company || l.email || l.phone || 'sans coordonnées')}
                   <br>${esc(relTime(l.lastContactAt || l.updatedAt))}
                   ${stale.has(l.id) ? ' — <span style="color:var(--warn)">à relancer</span>' : ''}
+                  ${l.draft ? ' — <span style="color:var(--brand)">message prêt</span>' : ''}
                 </div>
               </button>`).join('')
               : '<div class="stage-empty">Aucun prospect</div>'}
@@ -79,10 +82,15 @@ function leadDialog(existing = null){
       </div>
       <label class="field" style="margin-top:12px"><span>Note</span>
         <textarea class="textarea" id="note" rows="3">${esc(existing?.note || '')}</textarea></label>
-      ${existing ? `<div class="muted" style="font-size:11.8px;margin-top:10px">
-        Créé le ${esc(dateFR(existing.createdAt))}${existing.lastContactAt ? ` — dernier contact ${esc(relTime(existing.lastContactAt))}` : ''}.
-        Enregistrer met à jour la date de dernier contact.
-      </div>` : ''}`,
+      ${existing ? `
+        <div class="row" style="gap:8px;margin-top:14px">
+          <button type="button" class="btn sm" id="draftBtn">${existing.draft ? 'Voir le message préparé' : 'Rédiger une relance'}</button>
+          ${existing.draft ? '<button type="button" class="btn sm" id="sentBtn">Marquer comme envoyé</button>' : ''}
+        </div>
+        <div class="muted" style="font-size:11.8px;margin-top:10px">
+          Créé le ${esc(dateFR(existing.createdAt))}${existing.lastContactAt ? ` — dernier contact ${esc(relTime(existing.lastContactAt))}` : ''}${existing.followUpCount ? ` — ${num(existing.followUpCount)} relance(s) envoyée(s)` : ''}.
+          Enregistrer met à jour la date de dernier contact.
+        </div>` : ''}`,
     onSubmit(b){
       const name = b.querySelector('#name').value.trim();
       if (!name){ failed('Le nom est obligatoire.'); return false; }
@@ -110,5 +118,29 @@ function leadDialog(existing = null){
         render();
       }catch(err){ failed(err.message); return false; }
     },
+  });
+
+  if (!existing) return;
+  const root = document.querySelector('.modal-root .modal:last-child .modal-body');
+  root.querySelector('#draftBtn')?.addEventListener('click', async () => {
+    const draft = existing.draft
+      ? { subject: existing.draftSubject || 'Relance', body: existing.draft,
+          reason:'Brouillon préparé automatiquement.' }
+      : (existing.lastContactAt ? followUpDraft(existing)
+                                : prospectionDraft({ name: existing.name, city: existing.city || '' }));
+    await copy(`${draft.subject}\n\n${draft.body}`);
+    db.leads.update(existing.id, { draft: draft.body, draftSubject: draft.subject, draftAt: Date.now() });
+    toast('Message copié. Envoyez-le depuis votre messagerie, puis marquez-le comme envoyé.', 'ok', { duration:4200 });
+  });
+  root.querySelector('#sentBtn')?.addEventListener('click', () => {
+    db.leads.update(existing.id, {
+      followUpCount: (existing.followUpCount || 0) + 1,
+      lastContactAt: Date.now(), draft:null, draftSubject:null,
+      status: existing.status === 'new' ? 'contacted' : existing.status,
+    });
+    log('entity.update', { entity:'lead', entityId:existing.id, note:'Relance marquée comme envoyée' });
+    saved('Relance enregistrée');
+    document.querySelector('.modal-root .modal:last-child [data-cancel]')?.click();
+    render();
   });
 }
