@@ -54,12 +54,15 @@ jobs:
             || { echo "::error::la police display n'est pas encastrée"; exit 1; }
           echo "Paquet complet : $(du -sh todo | cut -f1)"
 
-          for f in listing-studio/index.html listing-studio/src/main.js \
-                   listing-studio/assets/css/base.css; do
+          for f in listing-studio/index.html listing-studio/console.html \
+                   listing-studio/src/main.js listing-studio/src/console/main.js \
+                   listing-studio/assets/css/base.css listing-studio/assets/css/console.css; do
             [ -f "$f" ] || { echo "::error::fichier manquant : $f"; exit 1; }
           done
           grep -q 'src/main.js' listing-studio/index.html \
             || { echo "::error::Listing Studio : le script principal n'est pas lié"; exit 1; }
+          grep -q 'src/console/main.js' listing-studio/console.html \
+            || { echo "::error::Console : le script principal n'est pas lié"; exit 1; }
           if grep -rqE 'fonts\.(googleapis|gstatic)\.com' listing-studio/index.html; then
             echo "::error::Listing Studio : appel à un hébergeur de polices"; exit 1
           fi
@@ -149,6 +152,8 @@ jobs:
           check "$base/listing-studio/"                    200 "Listing Studio"
           check "$base/listing-studio/src/main.js"         200 "Listing Studio — script"
           check "$base/listing-studio/assets/css/base.css" 200 "Listing Studio — styles"
+          check "$base/listing-studio/console.html"           200 "Console d'exploitation"
+          check "$base/listing-studio/src/console/main.js"    200 "Console — script"
 
           html=$(curl -sSL --max-time 30 "$base/")
           for m in 'rel="manifest"' 'apple-mobile-web-app-capable' 'Bodoni Moda' 'data-tab="today"'; do
@@ -166,6 +171,7 @@ jobs:
           [ "$fail" = "0" ] || { echo "::error::vérification en ligne en échec"; exit 1; }
           { echo "## Les apps répondent en ligne"; echo ""
             echo "- Orga : **$base/**"
-            echo "- Listing Studio : **$base/listing-studio/**"; echo ""
+            echo "- Listing Studio : **$base/listing-studio/**"
+            echo "- Console : **$base/listing-studio/console.html**"; echo ""
             echo "Commit \`$ATTENDU\` — pages, manifeste, service worker, icônes et scripts vérifiés."
           } >> "$GITHUB_STEP_SUMMARY"

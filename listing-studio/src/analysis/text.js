@@ -11,7 +11,19 @@ const STOP = new Set(['le','la','les','un','une','des','de','du','au','aux','et'
 export const EMPTY_WORDS = ['superbe','magnifique','sublime','exceptionnel','idéal','idéale','rare','unique','coup de cœur','incontournable','splendide','somptueux','charmant','joli','belle','beau','agréable','sympathique','parfait','parfaite','excellent','formidable','extraordinaire','fantastique','merveilleux','à ne pas manquer','à saisir','immanquable'];
 
 /** Marqueurs de confiance : des faits vérifiables plutôt que des promesses. */
-export const TRUST_MARKERS = [/\b\d+\s?m²/i, /\b\d+\s?(minute|min)\b/i, /\bDPE\b/i, /\bclasse\s+[A-G]\b/i, /\bétage\b/i, /\bcopropriété\b/i, /\bcharges\b/i, /\bhonoraires\b/i, /\btaxe foncière\b/i, /\bdisponible\b/i, /\bconstruit en \d{4}\b/i, /\b\d{4}\b/];
+/* `\b` de JavaScript s'appuie sur [A-Za-z0-9_] : devant « étage » ou derrière
+   « copropriété », la lettre accentuée n'est pas un caractère de mot et la
+   limite ne se produit jamais. Un mot accentué encadré de `\b` ne se trouve
+   donc jamais. On construit les limites sur les lettres Unicode. */
+export const word = (source) =>
+  new RegExp(`(?<![\\p{L}\\p{N}])(?:${source})(?![\\p{L}\\p{N}])`, 'iu');
+
+export const TRUST_MARKERS = [
+  /\d+\s?m²/i, word(String.raw`\d+\s?(?:minutes?|min)`), word('DPE'),
+  word(String.raw`classe\s+[A-G]`), word('étages?'), word('copropriété'),
+  word('charges?'), word('honoraires'), word('taxe foncière'),
+  word('disponible'), word(String.raw`construit en \d{4}`), word(String.raw`\d{4}`),
+];
 
 const CTA = [/contact/i, /appel/i, /téléphon/i, /visite/i, /rendez-vous/i, /réserv/i, /disponib/i, /écrivez/i, /message/i, /informations? complémentaires?/i];
 
@@ -73,21 +85,23 @@ export const trustScore = (text) => TRUST_MARKERS.filter(rx => rx.test(String(te
 /** Données chiffrées effectivement présentes dans le texte. */
 export function facts(text){
   const t = String(text || '');
+  const has = (src) => word(src).test(t);
   return {
-    surface: /\b\d+([.,]\d+)?\s?m²/i.test(t),
-    rooms: /\b\d+\s?(pièces?|p\b|T\d|F\d)/i.test(t),
-    bedrooms: /\bchambres?\b/i.test(t),
-    floor: /\bétage\b|\brez-de-chaussée\b|\brdc\b/i.test(t),
+    surface: /\d+([.,]\d+)?\s?m²/i.test(t),
+    rooms: has(String.raw`\d+\s?(?:pièces?|p|T\d|F\d)`),
+    bedrooms: has('chambres?'),
+    floor: has('étages?') || has('rez-de-chaussée') || has('rdc'),
     price: /\d[\d\s]{2,}\s?(€|euros)/i.test(t),
-    charges: /\bcharges?\b/i.test(t),
-    dpe: /\bDPE\b|\bclasse\s+[A-G]\b|\bénergie\b|\bGES\b/i.test(t),
-    fees: /\bhonoraires?\b|\bfrais d['’]agence\b/i.test(t),
-    availability: /\bdisponible\b|\blibre\b|\bà partir du\b/i.test(t),
-    transport: /\btram\b|\bmétro\b|\bbus\b|\bgare\b|\bminutes? (à pied|en voiture)\b/i.test(t),
+    charges: has('charges?'),
+    dpe: has('DPE') || has(String.raw`classe\s+[A-G]`) || has('énergie') || has('GES'),
+    fees: has('honoraires?') || has(String.raw`frais d['’]agence`),
+    availability: has('disponible') || has('libre') || has('à partir du'),
+    transport: has('tram') || has('métro') || has('bus') || has('gare')
+      || has(String.raw`\d+\s?minutes?\s+(?:à pied|en voiture)`),
     year: /\b(19|20)\d{2}\b/.test(t),
-    exterior: /\bbalcon\b|\bterrasse\b|\bjardin\b|\bcour\b|\bloggia\b/i.test(t),
-    parking: /\bparking\b|\bgarage\b|\bstationnement\b/i.test(t),
-    condo: /\bcopropriété\b|\blots?\b|\bsyndic\b/i.test(t),
+    exterior: has('balcon') || has('terrasse') || has('jardin') || has('cour') || has('loggia'),
+    parking: has('parking') || has('garage') || has('stationnement'),
+    condo: has('copropriété') || has('lots?') || has('syndic'),
   };
 }
 

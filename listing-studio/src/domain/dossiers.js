@@ -171,7 +171,9 @@ export async function optimize(id, { angle = null } = {}){
   );
   const optimized = produced.value;
 
-  const after = analyze({ title:optimized.title, description:optimized.description }, {
+  /* Le texte publié comprend l'invitation à contacter : l'analyser sans elle
+     sous-estimerait la version optimisée sur l'axe Conversion. */
+  const after = analyze({ title:optimized.title, description:`${optimized.description}\n\n${optimized.cta}` }, {
     market:d.market, professional:true,
     photoCount:d.analysis.score.axes.find(a => a.id === 'photos')?.points ? null : null,
     hasTarget:Boolean(d.positioning?.target), hasAngle:Boolean(angle || d.positioning?.angle),

@@ -21,6 +21,10 @@ import { coverage } from '../src/photos/coverage.js';
 import { scoreFromMetrics, recommendations } from '../src/photos/analyzer.js';
 import { toText, toJSON, toCSV } from '../src/export/index.js';
 import { AMENITIES, PROPERTY_TYPES, TONES } from '../src/data/options.js';
+import { facts, trustScore, measure } from '../src/analysis/text.js';
+import { parseListingText } from '../src/domain/listingImport.js';
+import { generate as rewriteListing } from '../src/analysis/rewrite.js';
+import { analyze } from '../src/analysis/index.js';
 
 let passed = 0;
 const failures = [];
@@ -369,6 +373,91 @@ test('un projet de démonstration est signalé dans l’export', () => {
   assert.ok(toText(p, { platform:'generic' }).includes('DÉMONSTRATION'));
   assert.equal(toJSON(p, { photos:[] }).demo, true);
   assert.ok(toCSV(p, { photos:[] }).includes('démonstration'));
+});
+
+/* ---------- Moteur d'analyse : détection des faits ---------- */
+test('un mot accentué est reconnu : « étage » se trouve, « étagère » ne compte pas', () => {
+  // `\b` de JavaScript ignore les lettres accentuées : sans limites Unicode,
+  // aucune annonce mentionnant un étage n'était créditée de l'information.
+  assert.equal(facts('Appartement au 3e étage avec ascenseur.').floor, true);
+  assert.equal(facts('Studio en rez-de-chaussée.').floor, true);
+  assert.equal(facts('Une étagère murale dans le séjour.').floor, false);
+  assert.equal(facts('Copropriété de 24 lots.').condo, true);
+  assert.ok(trustScore('68 m², 3e étage, DPE classe D, charges de 180 €') >= 4);
+});
+
+test('les mesures du texte reflètent la structure réelle', () => {
+  const m = measure({ title:'Appartement 3 pièces', description:'Une phrase.\n\nUne autre phrase ici.' });
+  assert.equal(m.description.structure.paragraphs, 2);
+  assert.equal(m.description.sentences, 2);
+  assert.equal(m.title.length, 20);
+});
+
+/* ---------- Import : un montant de charges n'est pas un prix ---------- */
+test('un montant rattaché aux charges n’est jamais retenu comme prix', () => {
+  const r = parseListingText('T3 de 68 m². Les charges de copropriété s’élèvent à 180 € par mois.');
+  assert.equal(r.facts.price, undefined, 'les charges ont été prises pour un prix');
+  assert.equal(r.facts.charges, 180);
+  assert.ok(r.missing.includes('price'), 'le prix manquant doit être signalé');
+});
+
+test('le prix explicite l’emporte sur les autres montants du texte', () => {
+  const r = parseListingText('Maison 120 m². Prix : 395 000 €. Charges 150 € par mois. Taxe foncière 1 200 €.');
+  assert.equal(r.facts.price, 395000);
+  assert.equal(r.facts.charges, 150);
+});
+
+/* ---------- Réécriture : rien d'inventé, rien de bancal ---------- */
+test('une fiche vide ne produit aucune caractéristique inventée', () => {
+  const r = rewriteListing({ propertyType:'house' }, { market:'sale' });
+  assert.ok(!/non_communiqué|undefined|null|NaN/.test(r.description), 'marqueur technique dans le texte');
+  assert.ok(!/\d+\s?m²/.test(r.description), 'une surface est apparue sans donnée');
+  assert.ok(r.missing.includes('ville') && r.missing.includes('surface'));
+});
+
+test('la version optimisée respecte l’élision et la capitalisation', () => {
+  const r = rewriteListing({
+    propertyType:'apartment', city:'Strasbourg', surface:68, rooms:3, bedrooms:2,
+    hasBalcony:true, hasCellar:true, heating:'Collectif au gaz', availability:'1er mars',
+  }, { market:'rent' });
+  assert.ok(!/de un |de une /.test(r.description), 'élision manquante');
+  assert.ok(!/\n[a-zé]/.test('\n' + r.description), 'un paragraphe commence en minuscule');
+  assert.ok(r.description.includes('chauffage est collectif'), 'majuscule parasite en milieu de phrase');
+});
+
+test('une annonce de location parle de loyer, pas de prix de vente', () => {
+  const r = rewriteListing({ propertyType:'apartment', city:'Lyon', rent:980 }, { market:'rent' });
+  assert.ok(r.description.includes('Loyer de 980'), 'le vocabulaire de la location n’est pas appliqué');
+  assert.ok(!r.description.includes('Prix de'));
+});
+
+/* ---------- Score : discriminant et reproductible ---------- */
+test('le score sépare une annonce creuse d’une annonce factuelle', () => {
+  const creuse = analyze({
+    title:'SUPERBE APPARTEMENT !!!',
+    description:'Magnifique appartement idéal, très beau, coup de coeur assuré, à saisir rapidement.',
+  }, { market:'rent', professional:true });
+  const factuelle = analyze({
+    title:'Appartement 3 pièces 68 m² avec balcon — Krutenau',
+    description:rewriteListing({
+      propertyType:'apartment', city:'Strasbourg', district:'Krutenau', surface:68, rooms:3,
+      bedrooms:2, bathrooms:1, floor:3, year:1998, charges:180, dpe:'D', hasElevator:true,
+      hasBalcony:true, rent:980, availability:'1er mars', transport:'Tram à 4 minutes à pied.',
+      landmarks:[{ name:'Commerces rue de Zurich', distance:'3 minutes' }],
+      feesNote:'honoraires de 10 € par m²',
+    }, { market:'rent' }).description,
+  }, { market:'rent', professional:true });
+  assert.ok(creuse.score.total < 40, `annonce creuse notée ${creuse.score.total}`);
+  assert.ok(factuelle.score.total > creuse.score.total + 25,
+    `écart insuffisant : ${creuse.score.total} contre ${factuelle.score.total}`);
+});
+
+test('le potentiel ne dépasse jamais ce qui est récupérable axe par axe', () => {
+  const a = analyze({ title:'A', description:'Court.' }, { market:'sale' });
+  assert.ok(a.score.potential <= 100);
+  assert.ok(a.score.potential >= a.score.total);
+  assert.ok(a.score.gain === a.score.potential - a.score.total);
+  assert.ok(a.score.potential < 100, 'un texte vide ne peut pas promettre un score parfait');
 });
 
 /* ---------- Bilan ---------- */

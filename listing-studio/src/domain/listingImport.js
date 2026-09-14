@@ -32,17 +32,23 @@ export function parseListingText(raw){
   if ((m = first(text, /\b(\d+)\s?salles?\s?d[eu]\s?bain/i))) facts.bathrooms = Number(m[1]);
   if ((m = first(text, /\b(\d+)(?:e|ème|er)?\s?étage\b/i))) facts.floor = Number(m[1]);
   else if (/rez-de-chauss[ée]e|\bRDC\b/i.test(text)) facts.floor = 0;
-  /* Plusieurs montants coexistent (prix, charges, taxe, honoraires). On prend
-     d'abord celui qui suit explicitement « prix », sinon le plus élevé —
-     jamais le premier rencontré, qui est souvent les charges. */
+  /* Plusieurs montants coexistent dans une annonce : prix, charges, honoraires,
+     taxe foncière, dépôt de garantie. Un montant explicitement rattaché à l'un
+     de ces postes n'est jamais retenu comme prix — mieux vaut un prix manquant,
+     signalé comme tel, qu'un prix faux présenté comme certain. */
+  const NOT_A_PRICE = /(charges?|honoraires?|taxe|fonci[eè]re|d[ée]p[oô]t|caution|garantie|provision|assurance|copropri[ée]t[ée])[^.\n]{0,40}$/i;
   const amounts = Array.from(text.matchAll(new RegExp(NUM + String.raw`\s?(?:€|euros)`, 'gi')))
-    .map(a => toNumber(a[1])).filter(n => n !== null);
-  const labelled = first(text, new RegExp(String.raw`prix\D{0,15}` + NUM, 'i'));
+    .map(a => ({ value: toNumber(a[1]), before: text.slice(Math.max(0, a.index - 60), a.index) }))
+    .filter(a => a.value !== null && !NOT_A_PRICE.test(a.before))
+    .map(a => a.value);
+  const labelled = first(text, new RegExp(String.raw`(?:prix|loyer)\D{0,15}` + NUM, 'i'));
   if (labelled) facts.price = toNumber(labelled[1]);
   else if (amounts.length) facts.price = Math.max(...amounts);
   if ((m = first(text, /\bDPE\s*:?\s*([A-G])\b/i, /\bclasse\s+énergie\s*:?\s*([A-G])\b/i))) facts.dpe = m[1].toUpperCase();
   if ((m = first(text, /\bGES\s*:?\s*([A-G])\b/i))) facts.ges = m[1].toUpperCase();
-  if ((m = first(text, new RegExp(String.raw`charges?\D{0,20}` + NUM, 'i')))) facts.charges = toNumber(m[1]);
+  /* « charges de copropriété s'élèvent à 180 € » : l'écart entre le mot et le
+     montant peut dépasser vingt caractères, mais jamais une fin de phrase. */
+  if ((m = first(text, new RegExp(String.raw`charges?[^.\n\d]{0,40}` + NUM, 'i')))) facts.charges = toNumber(m[1]);
   // Une valeur identique au prix n'est pas une charge : c'est le même montant capté deux fois.
   if (facts.charges && facts.price && facts.charges === facts.price) facts.charges = null;
   if ((m = first(text, /\b(19|20)\d{2}\b/))) facts.year = Number(m[0]);

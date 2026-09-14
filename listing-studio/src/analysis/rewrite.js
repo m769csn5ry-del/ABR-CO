@@ -62,6 +62,11 @@ export function buildTitleVariants(p){
 }
 
 /** Description en cinq paragraphes : cadrage, espaces, technique, quartier, conditions. */
+/* Le marché est nommé « rent » ou « short » côté dossier, « rental » dans les
+   premiers modules : on normalise ici plutôt que de laisser une annonce de
+   location parler de prix de vente. */
+export const isRental = (market) => ['rental', 'rent', 'short', 'location'].includes(String(market));
+
 export function buildDescription(p, { market = 'sale' } = {}){
   const t = typeOf(p.propertyType);
   const missing = [];
@@ -71,7 +76,10 @@ export function buildDescription(p, { market = 'sale' } = {}){
   /* 1. Cadrage */
   {
     const parts = [];
-    const place = p.district && p.city ? `${p.city}, quartier ${p.district}` : (p.city || MISSING);
+    /* Sans ville, la mention de lieu disparaît : écrire « à non communiqué »
+       serait pire que de ne rien écrire. Le manque est signalé en fin de
+       génération, pas planté au milieu de la phrase. */
+    const place = p.city ? (p.district ? `${p.city}, quartier ${p.district}` : p.city) : null;
     if (!p.city) missing.push('ville');
     const head = present(p.surface)
       ? `${t.label} de ${num(p.surface)} m²${p.surfaceCarrez ? ' (surface Carrez)' : ''}`
@@ -80,37 +88,53 @@ export function buildDescription(p, { market = 'sale' } = {}){
     const loc = present(p.floor)
       ? (Number(p.floor) === 0 ? 'en rez-de-chaussée' : `au ${p.floor}e étage${p.hasElevator ? ' avec ascenseur' : p.hasElevator === false ? ' sans ascenseur' : ''}`)
       : '';
-    parts.push(`${head} ${loc ? loc + ', ' : ''}à ${place}.`);
-    if (present(p.year)) parts.push(`Immeuble de ${p.year}.`);
-    if (present(p.condoLots)) parts.push(`Copropriété de ${num(p.condoLots)} lots.`);
+    parts.push(`${head}${loc ? ` ${loc}` : ''}${place ? `${loc ? ',' : ''} à ${place}` : ''}.`);
+    /* L'immeuble en une phrase plutôt qu'en fragments : mêmes faits, lecture
+       plus naturelle, et le texte atteint la longueur attendue sans qu'aucune
+       information ne soit ajoutée. */
+    if (present(p.year) && present(p.condoLots))
+      parts.push(`L’immeuble, construit en ${p.year}, compte ${num(p.condoLots)} lots.`);
+    else if (present(p.year)) parts.push(`L’immeuble a été construit en ${p.year}.`);
+    else if (present(p.condoLots)) parts.push(`La copropriété compte ${num(p.condoLots)} lots.`);
     P.push(parts.join(' '));
   }
 
   /* 2. Espaces */
   {
     const parts = [];
-    if (present(p.rooms)) parts.push(`${p.rooms} pièces`);
-    if (present(p.bedrooms)) parts.push(`${p.bedrooms} chambre${p.bedrooms > 1 ? 's' : ''}`);
+    if (present(p.rooms)) parts.push(`${p.rooms} pièce${p.rooms > 1 ? 's' : ''}`);
+    if (present(p.bedrooms)) parts.push(`dont ${p.bedrooms} chambre${p.bedrooms > 1 ? 's' : ''}`);
     if (present(p.bathrooms)) parts.push(`${p.bathrooms} salle${p.bathrooms > 1 ? 's' : ''} de bains`);
-    if (parts.length) P.push(`Distribution : ${listFR(parts)}.`
-      + (present(p.livingRoomSurface) ? ` Séjour de ${num(p.livingRoomSurface)} m².` : ''));
+    const sentences = [];
+    if (parts.length) sentences.push(`Le logement compte ${listFR(parts)}.`);
     else missing.push('distribution des pièces');
-    const ext = [p.hasBalcony && 'balcon', p.hasTerrace && 'terrasse', p.hasGarden && 'jardin',
-                 p.hasCellar && 'cave', p.hasParking && 'stationnement'].filter(Boolean);
-    if (ext.length) P.push(`${capitalize(listFR(ext))}${p.orientation ? `, exposition ${p.orientation}` : ''}.`);
-    else if (p.orientation) P.push(`Exposition ${p.orientation}.`);
+    if (present(p.livingRoomSurface)) sentences.push(`Le séjour mesure ${num(p.livingRoomSurface)} m².`);
+    /* Les compléments portent leur propre article élidé : « de un balcon »
+       serait une faute que personne ne pardonne à un texte professionnel. */
+    const ext = [p.hasBalcony && 'd’un balcon', p.hasTerrace && 'd’une terrasse',
+                 p.hasGarden && 'd’un jardin', p.hasCellar && 'd’une cave',
+                 p.hasParking && 'd’un stationnement'].filter(Boolean);
+    if (ext.length) sentences.push(`Il dispose ${listFR(ext)}.`);
+    if (p.orientation) sentences.push(`L’exposition est ${p.orientation}.`);
+    if (sentences.length) P.push(sentences.join(' '));
   }
 
   /* 3. Technique et charges */
   {
+    const sentences = [];
+    // Valeur libre saisie par l'opérateur : elle s'insère en milieu de phrase,
+    // sa majuscule initiale doit tomber.
+    if (p.heating) sentences.push(`Le chauffage est ${String(p.heating).charAt(0).toLowerCase() + String(p.heating).slice(1)}.`);
     const parts = [];
-    if (p.heating) parts.push(`chauffage ${p.heating}`);
-    if (present(p.dpe)) parts.push(`DPE classe ${p.dpe}${present(p.ges) ? `, GES classe ${p.ges}` : ''}`);
+    if (present(p.dpe)) parts.push(`classé ${p.dpe} au DPE${present(p.ges) ? ` et ${p.ges} au GES` : ''}`);
     else missing.push('classe énergie (DPE)');
-    if (present(p.charges)) parts.push(`charges de ${num(p.charges)} € par mois`);
-    else if (market === 'rental') missing.push('montant des charges');
-    if (present(p.propertyTax)) parts.push(`taxe foncière de ${num(p.propertyTax)} € par an`);
-    if (parts.length) P.push(`${capitalize(listFR(parts))}.`);
+    if (parts.length) sentences.push(`Le bien est ${listFR(parts)}.`);
+    const couts = [];
+    if (present(p.charges)) couts.push(`des charges de ${num(p.charges)} € par mois`);
+    else if (isRental(market)) missing.push('montant des charges');
+    if (present(p.propertyTax)) couts.push(`une taxe foncière de ${num(p.propertyTax)} € par an`);
+    if (couts.length) sentences.push(`Il supporte ${listFR(couts)}.`);
+    if (sentences.length) P.push(sentences.join(' '));
   }
 
   /* 4. Quartier — uniquement les repères saisis */
@@ -118,16 +142,19 @@ export function buildDescription(p, { market = 'sale' } = {}){
     const parts = [];
     (p.landmarks || []).filter(l => l.name).forEach(l =>
       parts.push(l.distance ? `${l.name} (${l.distance})` : l.name));
-    if (parts.length) P.push(`À proximité : ${listFR(parts)}.`);
+    const sentences = [];
+    if (parts.length) sentences.push(`À proximité immédiate : ${listFR(parts)}.`);
     else missing.push('repères de proximité');
-    if (p.transport) P.push(`${p.transport.trim().replace(/\.?$/, '.')}`);
+    if (p.transport) sentences.push(`${p.transport.trim().replace(/\.?$/, '.')}`);
+    if (sentences.length) P.push(sentences.join(' '));
   }
 
   /* 5. Conditions */
   {
     const parts = [];
-    if (market === 'rental'){
-      if (present(p.rent)) parts.push(`Loyer de ${num(p.rent)} € hors charges`);
+    if (isRental(market)){
+      const rent = present(p.rent) ? p.rent : (present(p.price) ? p.price : null);
+      if (rent !== null) parts.push(`Loyer de ${num(rent)} € hors charges`);
       else missing.push('montant du loyer');
       if (present(p.deposit)) parts.push(`dépôt de garantie de ${num(p.deposit)} €`);
     } else if (present(p.price)){
@@ -137,7 +164,9 @@ export function buildDescription(p, { market = 'sale' } = {}){
     else missing.push('mention des honoraires');
     if (p.availability) parts.push(`disponible ${p.availability}`);
     else missing.push('disponibilité');
-    if (parts.length) P.push(`${listFR(parts)}.`);
+    // Le premier élément de la liste n'est pas garanti : la phrase se capitalise
+    // après assemblage, sinon elle commence par « disponible… ».
+    if (parts.length) P.push(`${capitalize(listFR(parts))}.`);
   }
 
   return { text: P.filter(Boolean).join('\n\n'), missing: Array.from(new Set(missing)) };
@@ -158,7 +187,7 @@ export function buildArguments(p){
 }
 
 export function buildCTA(market){
-  return market === 'rental'
+  return isRental(market)
     ? 'Dossier complet et visite sur demande : contactez-nous pour convenir d’un créneau.'
     : 'Visite sur rendez-vous : contactez-nous pour obtenir le dossier complet et les diagnostics.';
 }
@@ -170,7 +199,7 @@ export function buildFAQ(p, market){
   if (p.hasParking !== undefined) faq.push({ q:'Un stationnement est-il prévu ?', a: p.hasParking ? 'Oui, un stationnement est inclus.' : 'Non, aucun stationnement n’est rattaché au bien.' });
   if (present(p.floor)) faq.push({ q:'À quel étage se situe le bien ?', a:`Au ${p.floor}e étage${p.hasElevator ? ', desservi par un ascenseur' : ', sans ascenseur'}.` });
   if (p.availability) faq.push({ q:'À partir de quand est-il disponible ?', a:`Le bien est disponible ${p.availability}.` });
-  if (market === 'rental' && present(p.deposit)) faq.push({ q:'Quel est le dépôt de garantie ?', a:`Il s’élève à ${num(p.deposit)} €.` });
+  if (isRental(market) && present(p.deposit)) faq.push({ q:'Quel est le dépôt de garantie ?', a:`Il s’élève à ${num(p.deposit)} €.` });
   return faq.slice(0, 6);
 }
 
