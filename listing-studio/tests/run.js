@@ -8,6 +8,11 @@
  */
 
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
 import { generate, detectMissing, MISSING_MARK } from '../src/ai/local/generator.js';
 import { agree, articles, soft, sentence } from '../src/ai/local/grammar.js';
@@ -458,6 +463,59 @@ test('le potentiel ne dépasse jamais ce qui est récupérable axe par axe', () 
   assert.ok(a.score.potential >= a.score.total);
   assert.ok(a.score.gain === a.score.potential - a.score.total);
   assert.ok(a.score.potential < 100, 'un texte vide ne peut pas promettre un score parfait');
+});
+
+/* ---------- Contrats entre modules ---------- */
+/* L'atelier (index.html) et la console (console.html) s'appuient sur deux
+   couches de données distinctes. Retirer une fonction de l'une casse l'autre
+   sans qu'aucun test fonctionnel ne le dise : ce contrôle lit les appels
+   réellement écrits et vérifie qu'ils existent. */
+const exportsOf = (file) => {
+  const src = fs.readFileSync(path.join(SRC, file), 'utf8');
+  const names = new Set();
+  for (const m of src.matchAll(/^export\s+(?:async\s+)?function\s+(\w+)/gm)) names.add(m[1]);
+  for (const m of src.matchAll(/^export\s+(?:const|let|class)\s+(\w+)/gm)) names.add(m[1]);
+  for (const m of src.matchAll(/^export\s*\{([^}]+)\}/gm))
+    m[1].split(',').forEach(n => names.add(n.trim().split(/\s+as\s+/).pop()));
+  return names;
+};
+const callsOn = (file, alias) => {
+  // Les lignes d'import et les commentaires citent les chemins de modules
+  // (« core/db.js ») : les laisser produirait un appel « db.js » inexistant.
+  const src = fs.readFileSync(path.join(SRC, file), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/^\s*\/\/.*$/gm, '')
+    .replace(/^import[\s\S]*?from\s+'[^']+';\s*$/gm, '');
+  return new Set([...src.matchAll(new RegExp(`\\b${alias}\\.([A-Za-z_]\\w*)`, 'g'))].map(m => m[1]));
+};
+
+test('l’atelier dispose de toute la couche de données qu’il appelle', () => {
+  const available = exportsOf('core/dbLegacy.js');
+  for (const file of ['data/projects.js', 'views/settings.js']){
+    const used = callsOn(file, 'db');
+    const missing = [...used].filter(n => !available.has(n));
+    assert.deepEqual(missing, [], `${file} appelle ${missing.join(', ')} qui n’existe pas dans core/dbLegacy.js`);
+  }
+});
+
+test('la console dispose de toute la couche de données qu’elle appelle', () => {
+  const available = exportsOf('core/db.js');
+  const files = ['console/shell.js', 'console/seed.js', 'domain/workspace.js', 'domain/dossiers.js',
+                 'domain/audit.js', 'domain/flags.js', 'ai/ledger.js',
+                 ...fs.readdirSync(path.join(SRC, 'console/pages')).map(f => `console/pages/${f}`)];
+  for (const file of files){
+    const used = callsOn(file, 'db');
+    const missing = [...used].filter(n => !available.has(n));
+    assert.deepEqual(missing, [], `${file} appelle ${missing.join(', ')} qui n’existe pas dans core/db.js`);
+  }
+});
+
+test('les deux couches de données occupent des espaces de stockage distincts', () => {
+  const v2 = fs.readFileSync(path.join(SRC, 'core/db.js'), 'utf8');
+  const v1 = fs.readFileSync(path.join(SRC, 'core/dbLegacy.js'), 'utf8');
+  const ns = (src) => src.match(/const NS = '([^']+)'/)?.[1];
+  assert.ok(ns(v1) && ns(v2), 'espace de stockage non déclaré');
+  assert.notEqual(ns(v1), ns(v2), 'les deux couches écriraient dans les mêmes clés');
 });
 
 /* ---------- Bilan ---------- */

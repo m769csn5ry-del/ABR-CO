@@ -5,7 +5,7 @@ import { icon } from '../core/icons.js';
 import { PLANS, TONES, plan as planOf } from '../data/options.js';
 import { list as platformList } from '../platforms/index.js';
 import * as svc from '../data/projects.js';
-import * as db from '../core/db.js';
+import * as db from '../core/dbLegacy.js';
 import * as idb from '../core/idb.js';
 import * as ai from '../ai/engine.js';
 import { renderTopbar } from './shell.js';

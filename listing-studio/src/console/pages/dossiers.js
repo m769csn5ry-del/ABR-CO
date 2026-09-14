@@ -47,6 +47,16 @@ export function renderList(_params, query){
         }).join('')}
       </div>
       ${filter && !shown.length ? `<div class="empty" style="margin-top:var(--gap)"><p>Aucun dossier à cette étape.</p></div>` : ''}
+      ${(() => {
+        /* Un dossier importé d'une version antérieure peut porter une étape
+           inconnue : mieux vaut une colonne « à reprendre » qu'un dossier
+           silencieusement absent de tous les écrans. */
+        const orphans = all.filter(d => !STAGES.some(s => s.id === d.stage));
+        return orphans.length ? `<div class="stage-col" style="margin-top:var(--gap)">
+          <div class="stage-head"><span>Étape inconnue — à reprendre</span><span class="count">${num(orphans.length)}</span></div>
+          ${orphans.map(dossierRow).join('')}
+        </div>` : '';
+      })()}
     ` : `<div class="empty" style="margin-top:var(--gap)">${icon('listings')}
         <h3>Aucun dossier</h3>
         <p>Un dossier réunit un client, un bien, l’annonce d’origine, son analyse,

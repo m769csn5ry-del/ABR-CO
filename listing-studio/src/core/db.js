@@ -258,7 +258,23 @@ export function migrateFromV1(orgId){
     const target = read(to);
     rows.forEach(r => {
       const { userId, ...rest } = r;
-      target.push({ ...rest, orgId, createdBy: userId || null, migratedFrom:`v1.${from}` });
+      const row = { ...rest, orgId, createdBy: userId || null, migratedFrom:`v1.${from}` };
+      /* Un projet de l'atelier devient un dossier : il lui faut une étape, sans
+         quoi il n'apparaît dans aucune colonne du pipeline et devient
+         invisible sans être supprimé. */
+      if (to === 'dossiers'){
+        row.name = row.name || row.property?.name || 'Projet importé';
+        row.stage = row.stage || 'intake';
+        row.stageEnteredAt = row.stageEnteredAt || Date.now();
+        row.stageHistory = row.stageHistory || [];
+        row.market = row.market || 'short';
+        row.property = row.property || {};
+        row.listing = row.listing || null;
+        row.analysis = row.analysis || null;
+        row.optimization = row.optimization || null;
+        row.currency = row.currency || 'EUR';
+      }
+      target.push(row);
       count++;
     });
     write(to, target);
