@@ -61,7 +61,7 @@ export function render(_params, query){
             <td><span class="badge ${c.status === 'paid' ? 'ok' : c.status === 'overdue' ? 'bad' : 'warn'}">
               ${esc(commission.STATUS_LABELS[c.status])}</span></td>
             <td class="nowrap">${ws.allows('commission:write')
-              ? (commission.STATUS_FLOW[c.status] || []).map(s =>
+              ? (commission.STATUS_FLOW[c.status] || []).filter(s => s !== c.status).map(s =>
                   `<button class="btn sm" data-go="${esc(c.id)}|${esc(s)}">${esc(commission.STATUS_LABELS[s])}</button>`).join(' ')
               : ''}</td>
           </tr>`).join('')}</tbody>

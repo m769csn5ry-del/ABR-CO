@@ -486,8 +486,16 @@ function finances(d){
   }));
 }
 
+/* Le moteur autorise « estimée → estimée » pour qu'un recalcul conserve le
+   statut. Ce n'est pas une action à proposer : un bouton qui ne change rien
+   fait douter de celui d'à côté. */
+const nextStatuses = (status) => (STATUS_FLOW[status] || []).filter(s => s !== status);
+
 function commissionCard(c){
-  const next = STATUS_FLOW[c.status] || [];
+  const next = nextStatuses(c.status);
+  /* La trace se termine déjà par la TVA et le total : les répéter sous le net
+     dû donnerait deux fois les mêmes lignes dans un ordre incompréhensible. */
+  const steps = c.trace.filter(t => t.label !== 'TVA' && t.label !== 'Total TTC');
   return `<section class="card" style="margin-top:var(--gap)">
     <div class="card-head">
       <div>
@@ -505,7 +513,7 @@ function commissionCard(c){
     </div>
     <div class="card-body">
       <table class="trace">
-        ${c.trace.map(t => `<tr>
+        ${steps.map(t => `<tr>
           <td>${esc(t.label)}<div class="t-detail">${esc(t.detail)}</div></td>
           <td class="t-amount">${esc(fmt(t.amount))}</td></tr>`).join('')}
         <tr class="total"><td>Net dû</td><td class="t-amount">${esc(fmt(c.amount))}</td></tr>
