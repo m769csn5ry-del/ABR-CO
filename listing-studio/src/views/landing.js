@@ -40,6 +40,7 @@ export default function landing(outlet){
         <a href="#rapport">Rapport client</a><a href="#tarifs">Tarifs</a>
       </nav>
       <div class="row" style="gap:8px">
+        <a class="btn" href="console.html#/">Console</a>
         <a class="btn" href="#/app">Ouvrir l’espace</a>
         <a class="btn primary" href="#/project/new">Créer une annonce</a>
       </div>

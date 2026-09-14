@@ -3,7 +3,7 @@
    qui garantit l'isolation par utilisateur, l'historique et la cohérence des
    scores. */
 
-import * as db from '../core/db.js';
+import * as db from '../core/dbLegacy.js';
 import * as idb from '../core/idb.js';
 import { uid, uniq, deepClone } from '../core/util.js';
 import { emit } from '../core/events.js';
