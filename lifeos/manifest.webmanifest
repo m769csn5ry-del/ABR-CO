@@ -1,0 +1,25 @@
+{
+  "name": "LifeOS — organisation personnelle",
+  "short_name": "LifeOS",
+  "description": "Temps, tâches, objectifs, finances, habitudes, projets et notes, reliés par un même moteur. Hors ligne, données sur l'appareil.",
+  "lang": "fr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "./",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF",
+  "categories": ["productivity", "lifestyle", "finance"],
+  "icons": [
+    { "src": "./icons/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Aujourd'hui", "url": "./#/today", "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Je suis perdu", "url": "./#/planning?generate=day", "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Assistant", "url": "./#/assistant", "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

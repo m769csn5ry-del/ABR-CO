@@ -1,0 +1,183 @@
+/* ==========================================================================
+   LifeOS — jetons de design
+   Noir et blanc, beaucoup d'air, une seule teinte d'accent personnalisable.
+   Tout le reste de l'app ne connaît que ces variables : changer un thème
+   n'oblige jamais à toucher un composant.
+   ========================================================================== */
+
+:root{
+  /* --- surfaces (thème clair) --- */
+  --bg:#FFFFFF;
+  --bg-sunken:#F6F6F7;
+  --surface:#FFFFFF;
+  --surface-2:#F7F7F8;
+  --surface-3:#EFEFF1;
+  --overlay:rgba(255,255,255,.72);
+  --scrim:rgba(14,14,16,.32);
+
+  /* --- encre --- */
+  --ink:#0E0E10;
+  --ink-2:#3C3F45;
+  --ink-3:#6B7078;
+  --ink-4:#9CA1A9;
+  --on-accent:#FFFFFF;
+
+  /* --- filets --- */
+  --line:rgba(14,14,16,.10);
+  --line-strong:rgba(14,14,16,.17);
+  --line-soft:rgba(14,14,16,.055);
+
+  /* --- accent (personnalisable depuis Paramètres) --- */
+  --accent:#0E0E10;
+  --accent-ink:#FFFFFF;
+  --accent-soft:rgba(14,14,16,.07);
+  --accent-line:rgba(14,14,16,.22);
+
+  /* --- signaux : sobres, jamais criards --- */
+  --positive:#1B7F5A;
+  --positive-soft:rgba(27,127,90,.11);
+  --warning:#9A6B12;
+  --warning-soft:rgba(154,107,18,.12);
+  --danger:#B23A32;
+  --danger-soft:rgba(178,58,50,.10);
+  --info:#2C5AA0;
+  --info-soft:rgba(44,90,160,.10);
+
+  /* --- ombres : présentes mais discrètes --- */
+  --shadow-1:0 1px 2px rgba(14,14,16,.05);
+  --shadow-2:0 1px 2px rgba(14,14,16,.04), 0 8px 24px -12px rgba(14,14,16,.22);
+  --shadow-3:0 2px 6px rgba(14,14,16,.06), 0 28px 60px -24px rgba(14,14,16,.36);
+
+  /* --- typographie --- */
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Segoe UI",
+       Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  --fs-micro:11px;
+  --fs-xs:12px;
+  --fs-s:13px;
+  --fs-base:14px;
+  --fs-m:15px;
+  --fs-l:17px;
+  --fs-xl:21px;
+  --fs-2xl:28px;
+  --fs-3xl:36px;
+  --tracking-tight:-.018em;
+  --tracking-caps:.07em;
+
+  /* --- rythme --- */
+  --sp-1:4px;  --sp-2:8px;  --sp-3:12px; --sp-4:16px;
+  --sp-5:20px; --sp-6:24px; --sp-7:32px; --sp-8:44px; --sp-9:64px;
+  --r-s:8px; --r-m:12px; --r-l:16px; --r-xl:22px; --r-full:999px;
+
+  /* --- mouvement : court, jamais spectaculaire --- */
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --ease-out:cubic-bezier(.16,1,.3,1);
+  --t-fast:120ms;
+  --t-base:190ms;
+  --t-slow:320ms;
+
+  /* --- gabarit --- */
+  --sidebar:252px;
+  --topbar:56px;
+  --tabbar:calc(58px + env(safe-area-inset-bottom));
+  --content-max:1180px;
+
+  color-scheme:light;
+}
+
+/* Thème sombre : suit le système, sauf choix explicite. */
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0B0B0D;
+    --bg-sunken:#08080A;
+    --surface:#141417;
+    --surface-2:#1A1A1E;
+    --surface-3:#222227;
+    --overlay:rgba(11,11,13,.74);
+    --scrim:rgba(0,0,0,.58);
+
+    --ink:#F2F2F3;
+    --ink-2:#B9BCC2;
+    --ink-3:#8A8E96;
+    --ink-4:#63676E;
+
+    --line:rgba(242,242,243,.11);
+    --line-strong:rgba(242,242,243,.19);
+    --line-soft:rgba(242,242,243,.06);
+
+    --accent:#F2F2F3;
+    --accent-ink:#0B0B0D;
+    --accent-soft:rgba(242,242,243,.10);
+    --accent-line:rgba(242,242,243,.26);
+
+    --positive:#5BC59A;
+    --positive-soft:rgba(91,197,154,.13);
+    --warning:#D6A74A;
+    --warning-soft:rgba(214,167,74,.14);
+    --danger:#E2776E;
+    --danger-soft:rgba(226,119,110,.13);
+    --info:#7BA4E8;
+    --info-soft:rgba(123,164,232,.13);
+
+    --shadow-1:0 1px 2px rgba(0,0,0,.5);
+    --shadow-2:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.8);
+    --shadow-3:0 2px 8px rgba(0,0,0,.55), 0 30px 70px -26px rgba(0,0,0,.9);
+
+    color-scheme:dark;
+  }
+}
+
+/* Choix explicite « sombre » depuis les Paramètres. */
+:root[data-theme="dark"]{
+  --bg:#0B0B0D;
+  --bg-sunken:#08080A;
+  --surface:#141417;
+  --surface-2:#1A1A1E;
+  --surface-3:#222227;
+  --overlay:rgba(11,11,13,.74);
+  --scrim:rgba(0,0,0,.58);
+
+  --ink:#F2F2F3;
+  --ink-2:#B9BCC2;
+  --ink-3:#8A8E96;
+  --ink-4:#63676E;
+
+  --line:rgba(242,242,243,.11);
+  --line-strong:rgba(242,242,243,.19);
+  --line-soft:rgba(242,242,243,.06);
+
+  --accent:#F2F2F3;
+  --accent-ink:#0B0B0D;
+  --accent-soft:rgba(242,242,243,.10);
+  --accent-line:rgba(242,242,243,.26);
+
+  --positive:#5BC59A;
+  --positive-soft:rgba(91,197,154,.13);
+  --warning:#D6A74A;
+  --warning-soft:rgba(214,167,74,.14);
+  --danger:#E2776E;
+  --danger-soft:rgba(226,119,110,.13);
+  --info:#7BA4E8;
+  --info-soft:rgba(123,164,232,.13);
+
+  --shadow-1:0 1px 2px rgba(0,0,0,.5);
+  --shadow-2:0 1px 2px rgba(0,0,0,.45), 0 10px 28px -14px rgba(0,0,0,.8);
+  --shadow-3:0 2px 8px rgba(0,0,0,.55), 0 30px 70px -26px rgba(0,0,0,.9);
+
+  color-scheme:dark;
+}
+
+/* Accents proposés dans les Paramètres. L'encre reste la valeur par défaut :
+   le logiciel est noir et blanc, la couleur n'arrive que si on la demande. */
+:root[data-accent="bleu"]   { --accent:#2E6BE6; --accent-ink:#FFF; --accent-soft:rgba(46,107,230,.12); --accent-line:rgba(46,107,230,.35); }
+:root[data-accent="violet"] { --accent:#6B54E8; --accent-ink:#FFF; --accent-soft:rgba(107,84,232,.12); --accent-line:rgba(107,84,232,.35); }
+:root[data-accent="vert"]   { --accent:#1B7F5A; --accent-ink:#FFF; --accent-soft:rgba(27,127,90,.12);  --accent-line:rgba(27,127,90,.35); }
+:root[data-accent="ambre"]  { --accent:#A9761A; --accent-ink:#FFF; --accent-soft:rgba(169,118,26,.14); --accent-line:rgba(169,118,26,.35); }
+:root[data-accent="rouge"]  { --accent:#B23A32; --accent-ink:#FFF; --accent-soft:rgba(178,58,50,.12);  --accent-line:rgba(178,58,50,.35); }
+:root[data-accent="rose"]   { --accent:#C2417F; --accent-ink:#FFF; --accent-soft:rgba(194,65,127,.12); --accent-line:rgba(194,65,127,.35); }
+
+/* Densité : « compact » resserre le rythme vertical sans changer la grille. */
+:root[data-density="compact"]{
+  --sp-5:16px; --sp-6:20px; --sp-7:26px; --sp-8:34px; --sp-9:48px;
+  --topbar:52px;
+}

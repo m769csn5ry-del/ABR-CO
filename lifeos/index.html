@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LifeOS</title>
+<meta name="description" content="LifeOS — logiciel personnel d'organisation : temps, tâches, objectifs, finances, habitudes, projets et notes, reliés par un même moteur. Fonctionne hors ligne, les données restent sur l'appareil.">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark">
+
+<!-- Écran d'accueil iOS / Android -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="LifeOS">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="./icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230E0E10'/%3E%3Ctext x='50' y='70' font-family='-apple-system,Helvetica,Arial' font-size='58' font-weight='700' fill='%23fff' text-anchor='middle'%3EL%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="./manifest.webmanifest">
+
+<link rel="stylesheet" href="./styles/tokens.css">
+<link rel="stylesheet" href="./styles/base.css">
+<link rel="stylesheet" href="./styles/shell.css">
+<link rel="stylesheet" href="./styles/components.css">
+<link rel="stylesheet" href="./styles/views.css">
+</head>
+<body>
+
+<div id="app"></div>
+
+<noscript>
+  <div style="padding:40px;font-family:system-ui;max-width:40ch;margin:0 auto">
+    <h1 style="font-size:20px">LifeOS</h1>
+    <p style="color:#666">Cette application a besoin de JavaScript pour fonctionner : tout y est calculé sur l'appareil, sans serveur.</p>
+  </div>
+</noscript>
+
+<!-- Socle : outils, dates, nombres, modèle de données, stockage, état -->
+<script src="./src/core/util.js"></script>
+<script src="./src/core/date.js"></script>
+<script src="./src/core/format.js"></script>
+<script src="./src/core/schema.js"></script>
+<script src="./src/core/seed.js"></script>
+<script src="./src/core/storage.js"></script>
+<script src="./src/core/store.js"></script>
+
+<!-- Règles métier : aucune de ces briques ne touche au DOM -->
+<script src="./src/domain/domains.js"></script>
+<script src="./src/domain/tasks.js"></script>
+<script src="./src/domain/projects.js"></script>
+<script src="./src/domain/goals.js"></script>
+<script src="./src/domain/finance.js"></script>
+<script src="./src/domain/habits.js"></script>
+<script src="./src/domain/calendar.js"></script>
+<script src="./src/domain/notes.js"></script>
+<script src="./src/domain/stats.js"></script>
+<script src="./src/domain/search.js"></script>
+<script src="./src/domain/planner.js"></script>
+<script src="./src/domain/weekly.js"></script>
+<script src="./src/domain/focus.js"></script>
+
+<!-- Services : notifications, calendrier externe, comptes, assistant -->
+<script src="./src/services/notifications.js"></script>
+<script src="./src/services/ics.js"></script>
+<script src="./src/services/auth.js"></script>
+<script src="./src/services/nlp.js"></script>
+<script src="./src/services/assistant.js"></script>
+
+<!-- Interface : briques d'affichage -->
+<script src="./src/ui/dom.js"></script>
+<script src="./src/ui/icons.js"></script>
+<script src="./src/ui/overlay.js"></script>
+<script src="./src/ui/charts.js"></script>
+<script src="./src/ui/forms.js"></script>
+<script src="./src/ui/palette.js"></script>
+<script src="./src/ui/shortcuts.js"></script>
+<script src="./src/ui/router.js"></script>
+
+<!-- Écrans -->
+<script src="./src/views/common.js"></script>
+<script src="./src/views/home.js"></script>
+<script src="./src/views/today.js"></script>
+<script src="./src/views/planning.js"></script>
+<script src="./src/views/calendar.js"></script>
+<script src="./src/views/tasks.js"></script>
+<script src="./src/views/projects.js"></script>
+<script src="./src/views/goals.js"></script>
+<script src="./src/views/finance.js"></script>
+<script src="./src/views/habits.js"></script>
+<script src="./src/views/stats.js"></script>
+<script src="./src/views/notes.js"></script>
+<script src="./src/views/assistant.js"></script>
+<script src="./src/views/settings.js"></script>
+
+<!-- Assemblage : branche le tout et démarre -->
+<script src="./src/app.js"></script>
+</body>
+</html>
