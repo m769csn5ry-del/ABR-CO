@@ -32,6 +32,9 @@
       case 'ask':
         send(action.payload.text);
         break;
+      case 'categorize':
+        L.forms.sortUncategorized();
+        break;
       case 'undo':
         L.store.undo() ? L.toast.show('Action annulée') : L.toast.show('Rien à annuler');
         break;

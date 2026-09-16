@@ -726,12 +726,125 @@
     ]);
   }
 
+  /* ---------------- banque ---------------- */
+  function bank() {
+    var cfg = L.store.state.settings.bank || {};
+    var rules = L.rules.all();
+    var missing = L.rules.uncategorized().length;
+
+    return h('div.col', [
+      h('div.card', [
+        h('div.card__head', [h('div.card__title', 'Importer un relevé')]),
+        h('p.t-s.muted', { style: { marginBottom: 'var(--sp-4)' } },
+          'La façon la plus sûre de faire entrer tes opérations : ta banque exporte, LifeOS lit. ' +
+          'Aucun identifiant ne quitte ta banque, rien ne transite par un tiers.'),
+        h('div.card.card--flat', { style: { marginBottom: 'var(--sp-4)' } }, [
+          h('div.t-xs.w-600', { style: { marginBottom: '6px' } }, 'Au CIC'),
+          h('p.t-xs.muted', 'Comptes → sélectionne le compte → Télécharger les opérations. ' +
+            'Choisis le format Excel/CSV ou, mieux, OFX : il porte les montants signés et les libellés complets.')
+        ]),
+        h('div.row.wrap', { style: { gap: '8px' } }, [
+          h('button.btn.btn--primary', { onclick: function () { L.forms.importStatement(); } },
+            [L.icon('upload'), 'Importer un relevé']),
+          missing ? h('button.btn', { onclick: function () { L.forms.sortUncategorized(); } },
+            [L.icon('tag'), 'Classer ' + missing + ' opérations']) : null,
+          h('button.btn', {
+            onclick: function () {
+              var n = L.rules.backfill();
+              L.toast.show(n ? n + ' opérations classées automatiquement' : 'Rien de plus à reconnaître');
+            }
+          }, 'Reconnaître les anciennes'),
+          h('button.btn.btn--ghost', { onclick: function () { L.router.go('finance', { tab: 'bilan' }); } }, 'Voir le bilan')
+        ]),
+        h('p.t-xs.faint', { style: { marginTop: 'var(--sp-4)' } },
+          'Formats lus : CSV (y compris les relevés à deux colonnes Débit/Crédit du CIC et du Crédit Mutuel), OFX et QIF. ' +
+          'L\'encodage est détecté : les accents des libellés restent corrects.')
+      ]),
+
+      h('div.card', [
+        h('div.card__head', [
+          h('div.card__title', 'Reconnaissance des libellés'),
+          h('span.t-xs.muted', rules.length + ' ' + L.util.plural(rules.length, 'règle') + ' ' + L.util.plural(rules.length, 'apprise'))
+        ]),
+        h('p.t-xs.faint', { style: { marginBottom: 'var(--sp-4)' } },
+          'Les marchands courants sont reconnus d\'emblée. Classer une opération à la main enseigne le marchand : ' +
+          'les suivantes tombent au bon endroit.'),
+        rules.length
+          ? h('div.list.list--framed', rules.slice(0, 12).map(function (rule) {
+              var cat = L.finance.category(rule.categoryId);
+              return h('div.list__item', [
+                h('div.grow', { style: { minWidth: 0 } }, [
+                  h('div.t-s.mono.truncate', rule.pattern),
+                  h('div.t-xs.faint', (cat ? cat.name : 'catégorie supprimée') + ' · ' + (rule.hits || 1) + ' fois')
+                ]),
+                h('button.iconbtn', {
+                  'aria-label': 'Oublier cette règle',
+                  onclick: function () { L.rules.forget(rule.id); }
+                }, L.icon('trash'))
+              ]);
+            }))
+          : h('p.t-s.faint', 'Aucune règle apprise pour l\'instant.')
+      ]),
+
+      h('div.card', [
+        h('div.card__head', [h('div.card__title', 'Connexion directe à la banque')]),
+        h('p.t-s.muted', 'Depuis la DSP2, une application ne peut pas interroger le CIC directement : ' +
+          'seul un établissement agréé par l\'ACPR le peut. Un particulier ne peut pas s\'enregistrer. ' +
+          'La connexion passe donc par un agrégateur agréé, et demande un petit service en ligne — ' +
+          'une clé d\'agrégateur ne peut pas vivre dans un navigateur, elle signerait n\'importe quelle requête.'),
+        h('div.col', { style: { gap: '6px', margin: 'var(--sp-4) 0' } },
+          L.bank.aggregator.requirements.map(function (line) {
+            return h('div.row-top', { style: { gap: '8px' } }, [
+              h('span.faint', { style: { marginTop: '2px' } }, L.icon('circle', 12)),
+              h('span.t-xs.muted', line)
+            ]);
+          })),
+        L.dom.field('Agrégateur', L.forms.select([
+          { value: '', label: 'Aucun — import de fichier' },
+          { value: 'gocardless', label: 'GoCardless Bank Account Data' },
+          { value: 'powens', label: 'Powens' },
+          { value: 'bridge', label: 'Bridge' },
+          { value: 'tink', label: 'Tink' },
+          { value: 'autre', label: 'Autre' }
+        ], cfg.provider || '', function (v) { L.store.setSetting('bank.provider', v || ''); })),
+        L.dom.field('Adresse de ton service', h('input.input', {
+          value: cfg.endpoint || '', placeholder: 'https://…/api',
+          'aria-label': 'Adresse du service bancaire',
+          onchange: function (e) { L.store.setSetting('bank.endpoint', e.target.value.trim()); }
+        }), 'Ce service garde la clé secrète et expose /transactions. Tant qu\'il n\'existe pas, l\'import de fichier fait le travail.'),
+        L.dom.field('Jeton d\'accès (facultatif)', h('input.input', {
+          type: 'password', value: cfg.token || '',
+          'aria-label': 'Jeton du service bancaire',
+          onchange: function (e) { L.store.setSetting('bank.token', e.target.value.trim()); }
+        }), 'Pour que ton service n\'accepte que tes requêtes.'),
+        L.bank.aggregator.configured() ? h('button.btn', {
+          style: { marginTop: 'var(--sp-3)' },
+          onclick: function () {
+            var since = L.date.addMonths(L.date.today(), -3);
+            L.bank.aggregator.fetch(since).then(function (entries) {
+              var res = L.csv.apply(L.rules.categorize(entries), {});
+              L.toast.undo(res.added + ' opérations récupérées' + (res.skipped ? ' · ' + res.skipped + ' déjà présentes' : ''));
+            }, function (err) { L.toast.error(err.message); });
+          }
+        }, [L.icon('refresh'), 'Récupérer les 3 derniers mois']) : null
+      ]),
+
+      h('div.card', [
+        h('div.card__head', [h('div.card__title', 'Ce qui reste sur l\'appareil')]),
+        h('p.t-s.muted', 'Les opérations importées vivent dans ton profil, comme le reste : rien n\'est envoyé nulle part. ' +
+          'Si tu actives le mode étendu de l\'assistant, les montants du mois peuvent être joints au contexte — ' +
+          'un interrupteur dans Paramètres → Assistant permet de les en exclure.')
+      ])
+    ]);
+  }
+
   var TABS = [
     { id: 'appearance', label: 'Apparence', build: appearance },
     { id: 'navigation', label: 'Navigation', build: navigation },
     { id: 'domains', label: 'Domaines', build: domains },
     { id: 'day', label: 'Journée', build: dayRhythm },
     { id: 'notifications', label: 'Notifications', build: notifications },
+    { id: 'bank', label: 'Banque', build: bank },
     { id: 'ai', label: 'Assistant', build: ai },
     { id: 'account', label: 'Compte', build: account },
     { id: 'data', label: 'Données', build: data }

@@ -101,13 +101,41 @@
         });
         return bestValue ? best : -1;
       };
-      var dateCol = pick(score.date, []);
-      var amountCol = pick(score.amount, [dateCol]);
-      var textCol = pick(score.text, [dateCol, amountCol]);
+
+      /* Beaucoup de banques françaises — CIC et Crédit Mutuel en tête —
+         séparent les sorties et les entrées en deux colonnes. On les repère
+         par leur intitulé, faute de quoi on retombe sur une colonne unique. */
+      var named = function (words) {
+        for (var i = 0; i < header.length; i++) {
+          var name = L.util.fold(header[i]);
+          for (var w = 0; w < words.length; w++) {
+            if (name === words[w] || name.indexOf(words[w]) === 0) return i;
+          }
+        }
+        return -1;
+      };
+      var debitCol = hasHeader ? named(['debit', 'depense', 'sortie', 'retrait']) : -1;
+      var creditCol = hasHeader ? named(['credit', 'recette', 'entree', 'versement']) : -1;
+      var twoColumns = debitCol > -1 && creditCol > -1 && debitCol !== creditCol;
+
+      var dateCol = hasHeader ? named(['date']) : -1;
+      if (dateCol === -1 || !score.date[dateCol]) dateCol = pick(score.date, []);
+
+      var amountCol = twoColumns ? -1 : pick(score.amount, [dateCol]);
+      var exclude = [dateCol, amountCol, debitCol, creditCol].filter(function (i) { return i > -1; });
+      var textCol = hasHeader ? named(['libelle', 'description', 'nature', 'detail', 'operation', 'motif']) : -1;
+      if (textCol === -1 || exclude.indexOf(textCol) > -1) textCol = pick(score.text, exclude);
 
       return {
         separator: sep, header: header, rows: body, width: width,
-        mapping: { date: dateCol, amount: amountCol, description: textCol }
+        twoColumns: twoColumns,
+        mapping: {
+          date: dateCol,
+          amount: amountCol,
+          debit: twoColumns ? debitCol : -1,
+          credit: twoColumns ? creditCol : -1,
+          description: textCol
+        }
       };
     },
 
@@ -115,16 +143,31 @@
     preview: function (parsed, mapping, opts) {
       opts = opts || {};
       var out = [];
+      var twoColumns = mapping.debit > -1 && mapping.credit > -1;
       parsed.rows.forEach(function (row) {
         var date = parseDate(row[mapping.date]);
-        var amount = parseAmount(row[mapping.amount]);
-        if (!date || amount === null || !amount) return;
+        if (!date) return;
+
+        var amount, type;
+        if (twoColumns) {
+          /* Une ligne ne remplit qu'une des deux colonnes : celle qui porte
+             une valeur donne le sens de l'opération. */
+          var debit = parseAmount(row[mapping.debit]);
+          var credit = parseAmount(row[mapping.credit]);
+          if (debit) { amount = Math.abs(debit); type = 'expense'; }
+          else if (credit) { amount = Math.abs(credit); type = 'income'; }
+          else return;
+        } else {
+          var value = parseAmount(row[mapping.amount]);
+          if (value === null || !value) return;
+          amount = Math.abs(value);
+          type = value < 0 ? 'expense' : (opts.reverse ? 'expense' : 'income');
+        }
+
         var description = (row[mapping.description] || '').replace(/\s{2,}/g, ' ').trim();
         out.push({
-          date: date,
-          amount: Math.abs(amount),
-          type: amount < 0 ? 'expense' : (opts.reverse ? 'expense' : 'income'),
-          description: description || (amount < 0 ? 'Dépense' : 'Revenu')
+          date: date, amount: amount, type: type,
+          description: description || (type === 'expense' ? 'Dépense' : 'Revenu')
         });
       });
       return out;

@@ -127,6 +127,64 @@ Ce qu'on fait vingt fois par jour ne doit pas demander trois gestes.
   boutons d'actions rapides, domaines, catégories, thème, accent, densité,
   rythme de la journée et niveau d'énergie.
 
+## Relier sa banque
+
+Trois chemins possibles, du plus sûr au plus lourd — et un quatrième qui n'en
+est pas un.
+
+**1. Importer un relevé (disponible, rien à installer).** Toutes les banques
+françaises exportent les opérations. Au CIC : *Comptes → Télécharger les
+opérations*, en CSV, OFX ou QIF. Aucun identifiant ne quitte ta banque, rien
+ne transite par un tiers.
+
+LifeOS lit les trois formats, détecte l'encodage — beaucoup de banques
+exportent encore en Windows-1252, et « Décathlon » ne doit pas devenir
+« DÃ©cathlon » — et comprend les relevés à **deux colonnes Débit/Crédit** du
+CIC et du Crédit Mutuel.
+
+**2. Le classement automatique.** Les libellés bancaires français sont
+reconnus d'emblée : `CARTE 01/09 CARREFOUR MARKET` devient *Courses*,
+`PRLV SEPA FREE MOBILE 0612345678` devient *Abonnements*, `VIR SEPA SALAIRE`
+devient *Salaire*. Ce qui n'est pas reconnu se classe en deux gestes, et
+chaque choix enseigne le marchand : la fois suivante, il tombe tout seul au
+bon endroit.
+
+**3. Un agrégateur agréé (à brancher).** Depuis la DSP2, seul un établissement
+enregistré auprès de l'ACPR peut interroger l'API d'une banque française. Un
+particulier ne peut pas s'enregistrer : il faut passer par Powens, Bridge,
+Tink ou GoCardless Bank Account Data. Cela demande en plus un petit service en
+ligne — une clé d'agrégateur ne peut pas vivre dans un navigateur, elle
+signerait n'importe quelle requête venue de n'importe où. `src/services/bank.js`
+expose l'adaptateur qui attend ce branchement : il suffit de renseigner
+l'adresse du service dans *Paramètres → Banque*.
+
+**4. Confier ses identifiants bancaires à une application : jamais.** C'est
+contraire aux conditions de ta banque, et cela revient à lui donner ton accès.
+LifeOS ne le propose pas et ne le proposera pas.
+
+## Le bilan du mois
+
+Un écran (*Finances → Bilan*) et une réponse de l'assistant (« fais mon
+bilan »), construits sur les mêmes calculs :
+
+- **Les chiffres du mois**, comparés non au seul mois précédent mais à la
+  médiane des trois derniers — un mois atypique ne devient pas la norme.
+- **Les engagements récurrents** : un prélèvement revenu au moins trois mois
+  de suite, au montant quasi identique. Le loyer et les abonnements en sont ;
+  les courses non, leur montant varie — c'est une habitude de dépense, pas un
+  engagement. L'épargne programmée est comptée à part : c'est un engagement,
+  mais elle te revient.
+- **Les postes qui dérapent**, chiffrés en écart à l'ordinaire.
+- **Les dépenses inhabituelles**, nommées.
+- **Le reste à vivre par jour**, échéances à venir déduites.
+- **Des recommandations chiffrées** : « deux abonnements en Abonnements, en
+  couper un c'est 119,88 € par an », « revenir à ton niveau habituel de
+  courses libère 47 € par mois », « il manque 56 € par mois pour tenir ton
+  objectif ».
+
+Le bilan dit aussi **ce qu'il ne sait pas** : si un cinquième des dépenses
+n'est pas classé, il l'annonce avant de conclure quoi que ce soit.
+
 ## Finances : ce qui se fait tout seul
 
 - **Mouvements récurrents** — loyer, abonnements, salaire : déclare la
@@ -275,9 +333,9 @@ lifeos/
       util date format schema seed storage store
     domain/             règles métier — aucune ne touche au DOM
       domains tasks projects goals finance habits calendar
-      notes stats search planner weekly focus
+      notes stats search planner weekly focus rules insights
     services/           ponts vers le monde extérieur
-      timer notifications ics csv auth nlp assistant
+      timer notifications ics csv bank auth nlp assistant
     ui/                 briques d'affichage réutilisables
       dom icons overlay charts forms palette shortcuts router
     views/              un fichier par écran
@@ -314,8 +372,9 @@ npx http-server lifeos -p 8099 -c-1 &
 # captures et erreurs de console
 NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-check.js ./captures
 
-# 69 contrôles : calculs, liens entre modules, récurrences, import de relevé,
-# isolation des profils, chiffrement, sauvegardes, hors ligne
+# 92 contrôles : calculs, liens entre modules, récurrences, relevés CIC/OFX/QIF,
+# reconnaissance des libellés, bilan mensuel, isolation des profils,
+# chiffrement, sauvegardes, hors ligne
 NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-test.js
 
 # accessibilité : noms accessibles, étiquettes, contrastes (clair et sombre),
