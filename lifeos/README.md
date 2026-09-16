@@ -232,6 +232,28 @@ manqués du matin et du dimanche sont rattrapés au lancement suivant.
 
 ---
 
+## Sur téléphone
+
+L'application n'est pas un site réduit : plusieurs écrans changent de forme.
+
+- **Calendrier du mois** — sept colonnes de cinquante pixels ne peuvent pas
+  porter du texte : la grille montre la densité de chaque jour par des points
+  (rendez-vous, échéances, tâches), et le détail s'ouvre juste en dessous.
+- **Champs à seize pixels** — en dessous, iOS agrandit la page à chaque prise
+  de focus. Tous les champs, feuilles comprises, tiennent cette règle.
+- **Barre latérale ou barre d'onglets** — la bascule regarde la largeur *et*
+  la hauteur : un iPhone en paysage (852 × 393) garde les onglets, un iPad en
+  portrait (834 × 1194) reçoit la barre latérale.
+- **Barre d'onglets** — elle suit l'ordre des sections défini dans les
+  réglages ; le reste tient dans « Plus ».
+- **Contrôles segmentés** — ils défilent, amènent le choix actif sous les yeux
+  et signalent d'un dégradé qu'il en reste à droite.
+- **Encoche et bords arrondis** — marges sûres respectées en portrait comme en
+  paysage, barre d'onglets comprise.
+
+Sept formats sont contrôlés à chaque vérification : iPhone SE, iPhone 15
+portrait et paysage, iPad mini, iPad portrait et paysage, portable.
+
 ## Architecture
 
 Quatre couches, une dépendance à sens unique : l'interface connaît le métier,
@@ -299,6 +321,10 @@ NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-test.js
 # accessibilité : noms accessibles, étiquettes, contrastes (clair et sombre),
 # cibles tactiles, visibilité du focus
 NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-a11y.js
+
+# mise en page mobile : débordements, textes trop petits, feuilles qui ne
+# tiennent pas à l'écran, sur iPhone SE et iPhone 15
+NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-mobile.js
 ```
 
 L'audit d'accessibilité passe sans réserve : chaque texte tient le rapport de
