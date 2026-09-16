@@ -1,9 +1,0 @@
-User-Agent: *
-Allow: /
-Disallow: /compte
-Disallow: /compte/
-Disallow: /panier
-Disallow: /commande
-Disallow: /suivi/
-
-Sitemap: https://example.com/sitemap.xml
