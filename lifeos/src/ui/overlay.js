@@ -68,8 +68,25 @@
     document.body.style.overflow = 'hidden';
     stack.push(api);
 
-    var focusable = node.querySelector('input,textarea,select,button');
-    if (focusable && !L.util.isMobile()) setTimeout(function () { focusable.focus(); }, 60);
+    var FOCUSABLE = 'input,textarea,select,button,a[href],[tabindex]:not([tabindex="-1"])';
+    var first = node.querySelector(FOCUSABLE);
+    if (first && !L.util.isMobile()) setTimeout(function () { first.focus(); }, 60);
+
+    /* Tant qu'une fenêtre est ouverte, la tabulation y reste : on ne se
+       retrouve pas à parcourir l'application derrière, invisible. */
+    scrim.addEventListener('keydown', function (e) {
+      if (e.key !== 'Tab') return;
+      var items = Array.prototype.filter.call(node.querySelectorAll(FOCUSABLE), function (el) {
+        return !el.disabled && el.offsetParent !== null;
+      });
+      if (!items.length) return;
+      var firstItem = items[0], lastItem = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === firstItem) { e.preventDefault(); lastItem.focus(); }
+      else if (!e.shiftKey && document.activeElement === lastItem) { e.preventDefault(); firstItem.focus(); }
+    });
+
+    /* La fenêtre rend le focus là où il était : on reprend sa lecture. */
+    var returnTo = document.activeElement;
 
     function close(result) {
       var i = stack.indexOf(api);
@@ -79,6 +96,9 @@
       setTimeout(function () {
         scrim.remove();
         if (!stack.length) document.body.style.overflow = '';
+        if (returnTo && returnTo.focus && document.contains(returnTo)) {
+          try { returnTo.focus({ preventScroll: true }); } catch (err) { /* sans conséquence */ }
+        }
       }, 170);
       if (opts.onClose) opts.onClose(result);
     }

@@ -10,7 +10,71 @@
   var h = L.h, D = L.date;
   L.views = L.views || {};
 
+  /* Une brève vibration confirme un geste sans avoir à regarder l'écran. */
+  function haptic(ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms || 12); } catch (e) { /* sans conséquence */ }
+  }
+
+  /* Rend une ligne glissable au doigt : à droite pour terminer, à gauche pour
+     reporter. Le geste n'est reconnu que s'il est franchement horizontal —
+     sinon c'est un défilement, et on n'y touche pas. */
+  function swipeable(surface, opts) {
+    var THRESHOLD = 88;
+    var bgDone = h('div.swipe__bg.swipe__bg--done', [L.icon('check'), opts.rightLabel || 'Terminé']);
+    var bgLater = h('div.swipe__bg.swipe__bg--later', [opts.leftLabel || 'Demain', L.icon('clock')]);
+    var wrap = h('div.swipe', [bgDone, bgLater, surface]);
+    surface.classList.add('swipe__surface');
+
+    var startX = 0, startY = 0, dx = 0, sliding = false, decided = false;
+
+    surface.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) return;
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      dx = 0; sliding = false; decided = false;
+    }, { passive: true });
+
+    surface.addEventListener('touchmove', function (e) {
+      if (e.touches.length !== 1) return;
+      var x = e.touches[0].clientX - startX;
+      var y = e.touches[0].clientY - startY;
+      if (!decided) {
+        if (Math.abs(x) < 10 && Math.abs(y) < 10) return;
+        decided = true;
+        sliding = Math.abs(x) > Math.abs(y) * 1.4;
+        if (sliding) wrap.classList.add('swipe--sliding');
+      }
+      if (!sliding) return;
+      dx = x;
+      /* Passé le seuil, le mouvement résiste : on sent qu'on y est. */
+      var shown = Math.abs(dx) > THRESHOLD
+        ? (dx > 0 ? 1 : -1) * (THRESHOLD + (Math.abs(dx) - THRESHOLD) * 0.25)
+        : dx;
+      surface.style.transform = 'translateX(' + shown + 'px)';
+      bgDone.classList.toggle('swipe__bg--armed', dx > THRESHOLD);
+      bgLater.classList.toggle('swipe__bg--armed', dx < -THRESHOLD);
+    }, { passive: true });
+
+    function release() {
+      wrap.classList.remove('swipe--sliding');
+      surface.style.transform = '';
+      bgDone.classList.remove('swipe__bg--armed');
+      bgLater.classList.remove('swipe__bg--armed');
+      if (!sliding) return;
+      if (dx > THRESHOLD && opts.onRight) { haptic(14); opts.onRight(); }
+      else if (dx < -THRESHOLD && opts.onLeft) { haptic(14); opts.onLeft(); }
+      dx = 0; sliding = false;
+    }
+    surface.addEventListener('touchend', release, { passive: true });
+    surface.addEventListener('touchcancel', release, { passive: true });
+
+    return wrap;
+  }
+
   var V = {
+    haptic: haptic,
+    swipeable: swipeable,
+
     /* ---------- tâche ---------- */
     taskRow: function (task, opts) {
       opts = opts || {};
@@ -40,31 +104,57 @@
       if (task.status === 'postponed') meta.push(h('span.warning', 'Reportée'));
       if (task.status === 'doing') meta.push(h('span.accent', 'En cours'));
 
-      var node = h('div.task' + (done ? '.task--done' : '') + (task.status === 'cancelled' ? '.task--cancelled' : ''), {
+      var select = opts.select || null;
+      var selected = select && select.has(task.id);
+
+      function complete() {
+        var spawned = L.tasks.setStatus(task.id, done ? 'todo' : 'done');
+        if (!done) {
+          haptic();
+          L.toast.show('« ' + task.title + ' » terminée' + (spawned ? ' — prochaine occurrence le ' + D.format(spawned.date || spawned.due, 'short') : ''), {
+            action: { label: 'Annuler', run: function () { L.store.undo(); } }
+          });
+        }
+      }
+
+      var node = h('div.task' + (done ? '.task--done' : '') +
+        (task.status === 'cancelled' ? '.task--cancelled' : '') +
+        (selected ? '.task--selected' : ''), {
         'data-id': task.id
       }, [
         h('div.prio.prio--' + task.priority, { title: L.schema.priority(task.priority).label }),
-        L.dom.checkbox(done, function () {
-          var spawned = L.tasks.setStatus(task.id, done ? 'todo' : 'done');
-          if (!done) {
-            L.toast.show('« ' + task.title + ' » terminée' + (spawned ? ' — prochaine occurrence le ' + D.format(spawned.date || spawned.due, 'short') : ''), {
-              action: { label: 'Annuler', run: function () { L.store.undo(); } }
-            });
-          }
-        }, { round: true, label: 'Terminer ' + task.title }),
+        select
+          ? L.dom.checkbox(selected, function () { select.toggle(task.id); }, { label: 'Sélectionner ' + task.title })
+          : L.dom.checkbox(done, complete, { round: true, label: 'Terminer ' + task.title }),
         h('div.task__main', {
-          onclick: function () { V.taskDetail(task.id); }
+          onclick: function () {
+            if (select) { select.toggle(task.id); return; }
+            V.taskDetail(task.id);
+          }
         }, [
           h('div.task__title', task.title),
           meta.length ? h('div.task__meta', meta) : null
         ]),
         h('div.task__side', [
-          opts.actions === false ? null : h('button.iconbtn', {
+          opts.actions === false || select ? null : h('button.iconbtn', {
             'aria-label': 'Options',
             onclick: function (e) { e.stopPropagation(); V.taskMenu(e.currentTarget, task); }
           }, L.icon('more'))
         ])
       ]);
+
+      /* Au doigt : glisser à droite termine, glisser à gauche reporte. */
+      if (!select && opts.swipe !== false && L.util.isMobile() && L.tasks.OPEN_STATUS[task.status]) {
+        return swipeable(node, {
+          rightLabel: 'Terminer',
+          leftLabel: 'Demain',
+          onRight: complete,
+          onLeft: function () {
+            L.tasks.postpone(task.id, D.addDays(task.date || D.today(), 1));
+            L.toast.undo('« ' + task.title + ' » reportée à demain');
+          }
+        });
+      }
       return node;
     },
 
@@ -456,9 +546,32 @@
                   L.habits.toggle(b.refId, plan.date);
                 }, { round: true, label: 'Terminer' }) : null,
                 opts.editable ? h('button.iconbtn', {
-                  'aria-label': 'Retirer',
-                  onclick: function () { L.planner.removeBlock(plan.date, b.id); }
-                }, L.icon('x')) : null
+                  'aria-label': 'Options du bloc',
+                  onclick: function (e) {
+                    L.menu(e.currentTarget, [
+                      { icon: 'chevron-left', label: 'Avancer de 15 min', hint: D.toTime(Math.max(0, b.start - 15)),
+                        run: function () { L.planner.moveBlock(plan.date, b.id, b.start - 15); } },
+                      { icon: 'chevron-right', label: 'Retarder de 15 min', hint: D.toTime(b.start + 15),
+                        run: function () { L.planner.moveBlock(plan.date, b.id, b.start + 15); } },
+                      { icon: 'clock', label: 'Placer à une heure précise…', run: function () {
+                        L.modal.prompt({
+                          title: b.title, label: 'Début (HH:MM)', value: D.toTime(b.start)
+                        }).then(function (v) {
+                          var at = D.toMinutes(v);
+                          if (at !== null) L.planner.moveBlock(plan.date, b.id, at);
+                        });
+                      } },
+                      '-',
+                      ref ? { icon: 'play', label: 'Démarrer le minuteur', run: function () {
+                        L.timer.start(ref.id, { goal: b.minutes });
+                        L.toast.show('Minuteur lancé — ' + ref.title);
+                      } } : null,
+                      ref ? { icon: 'edit', label: 'Ouvrir la tâche', run: function () { V.taskDetail(ref.id); } } : null,
+                      { icon: 'x', label: 'Retirer du planning', danger: true,
+                        run: function () { L.planner.removeBlock(plan.date, b.id); L.toast.show('Bloc retiré'); } }
+                    ].filter(Boolean), { align: 'right' });
+                  }
+                }, L.icon('more')) : null
               ])
             ])
           ])

@@ -212,8 +212,9 @@
         description: p.description || '',
         projectId: p.projectId || null,
         goalId: p.goalId || null,
-        recurrence: p.recurrence || null,
-        fixed: !!p.fixed,                     // dépense fixe (loyer, abonnement)
+        recurrence: p.recurrence || null,     // { freq, interval, days, until, start }
+        seriesId: p.seriesId || null,         // occurrences nées d'une même récurrence
+        fixed: !!p.fixed,                     // montant fixe (loyer, abonnement, salaire)
         createdAt: p.createdAt || Date.now()
       };
     },

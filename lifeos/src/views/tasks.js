@@ -8,6 +8,102 @@
 
   var h = L.h, D = L.date;
 
+  /* Sélection multiple : elle vit le temps de l'écran, pas dans les données. */
+  var picked = {};
+  var selectMode = false;
+
+  function pickedIds() { return Object.keys(picked).filter(function (id) { return picked[id]; }); }
+  function clearSelection() { picked = {}; selectMode = false; detachBar(); }
+
+  function bulk(label, mutate, undoLabel) {
+    var ids = pickedIds();
+    if (!ids.length) return;
+    L.store.update(function (s) {
+      s.tasks.forEach(function (t) { if (picked[t.id]) mutate(t, s); });
+    }, label);
+    clearSelection();
+    L.toast.undo(ids.length + ' ' + L.util.plural(ids.length, 'tâche') + ' ' + (undoLabel || 'modifiées'));
+    L.app.render();
+  }
+
+  /* La barre flotte au-dessus de tout : elle est posée sur le document, et
+     non dans l'écran — un écran animé en `transform` piégerait un élément
+     positionné en `fixed` à l'intérieur de lui-même. */
+  var barNode = null;
+
+  function detachBar() {
+    if (barNode) { barNode.remove(); barNode = null; }
+  }
+
+  function selectionBar() {
+    detachBar();
+    var ids = pickedIds();
+    if (!selectMode || !ids.length) return null;
+    var minutes = L.util.sum(ids.map(function (id) { return L.tasks.get(id); }).filter(Boolean),
+      function (t) { return t.estimate || 0; });
+
+    barNode = h('div.selbar', [
+      h('span.selbar__count', ids.length + ' · ' + D.duration(minutes, { zero: '0' })),
+      h('button.selbar__btn', {
+        onclick: function () {
+          bulk('Tâches terminées', function (t) {
+            if (L.tasks.OPEN_STATUS[t.status]) { t.status = 'done'; t.completedAt = Date.now(); if (!t.actual) t.actual = t.estimate || 0; }
+          }, 'terminées');
+        }
+      }, 'Terminer'),
+      h('button.selbar__btn', {
+        onclick: function () { bulk('Tâches replacées', function (t) { t.date = D.today(); if (t.status === 'postponed') t.status = 'todo'; }, "replacées aujourd'hui"); }
+      }, "Aujourd'hui"),
+      h('button.selbar__btn', {
+        onclick: function () { bulk('Tâches reportées', function (t) { t.date = D.addDays(D.today(), 1); t.status = t.status === 'done' ? 'todo' : 'postponed'; }, 'reportées à demain'); }
+      }, 'Demain'),
+      h('button.selbar__btn', {
+        onclick: function (e) {
+          L.menu(e.currentTarget, L.schema.PRIORITIES.map(function (p) {
+            return { icon: 'flag', label: p.short + ' · ' + p.label, run: function () {
+              bulk('Priorité modifiée', function (t) { t.priority = p.id; }, 'repriorisées');
+            } };
+          }), { align: 'right' });
+        }
+      }, 'Priorité'),
+      h('button.selbar__btn', {
+        onclick: function (e) {
+          L.menu(e.currentTarget, [{ icon: 'x', label: 'Aucun projet', run: function () {
+            bulk('Projet retiré', function (t) { t.projectId = null; }, 'détachées');
+          } }].concat(L.projects.all().map(function (p) {
+            return { icon: 'folder', label: p.name, run: function () {
+              bulk('Projet appliqué', function (t) { t.projectId = p.id; if (!t.domainId) t.domainId = p.domainId; }, 'rattachées');
+            } };
+          })), { align: 'right' });
+        }
+      }, 'Projet'),
+      h('button.selbar__btn', {
+        onclick: function () {
+          var ids2 = pickedIds();
+          L.modal.confirm({
+            title: 'Supprimer ' + ids2.length + ' tâches',
+            text: 'Tu pourras annuler juste après.', danger: true, confirm: 'Supprimer'
+          }).then(function (okDelete) {
+            if (!okDelete) return;
+            L.store.update(function (s) {
+              s.tasks = s.tasks.filter(function (t) { return !picked[t.id]; });
+            }, 'Tâches supprimées');
+            clearSelection();
+            L.toast.undo(ids2.length + ' tâches supprimées');
+            L.app.render();
+          });
+        }
+      }, 'Supprimer'),
+      h('button.selbar__btn', {
+        'aria-label': 'Quitter la sélection', title: 'Quitter la sélection',
+        style: { width: '30px', padding: '0', display: 'grid', placeItems: 'center' },
+        onclick: function () { clearSelection(); L.app.render(); }
+      }, L.icon('x', 14))
+    ]);
+    document.body.appendChild(barNode);
+    return null;
+  }
+
   var QUICK = [
     { id: 'today', label: "Aujourd'hui", icon: 'sun' },
     { id: 'week', label: 'Cette semaine', icon: 'layout' },
@@ -115,6 +211,10 @@
     }
   }
 
+  L.router.on('change', function (route) {
+    if (route.view !== 'tasks') clearSelection();
+  });
+
   L.views.tasks = function (params) {
     var quick = params.quick || 'open';
     var groupMode = params.group || 'date';
@@ -166,6 +266,13 @@
         { value: 'estimate', label: 'Par durée' },
         { value: 'alpha', label: 'Alphabétique' }
       ], params.sort || 'smart', function (v) { L.router.setParams({ sort: v }); }),
+      h('button.btn.btn--s' + (selectMode ? '.btn--primary' : ''), {
+        onclick: function () {
+          selectMode = !selectMode;
+          if (!selectMode) picked = {};
+          L.app.render();
+        }
+      }, [L.icon(selectMode ? 'x' : 'check'), selectMode ? 'Quitter la sélection' : 'Sélectionner']),
       select([
         { value: 'date', label: 'Grouper par date' },
         { value: 'domain', label: 'Grouper par domaine' },
@@ -216,16 +323,34 @@
                 }, '#' + tag);
               })) : null,
             list.length
-              ? L.views.taskList(list, grouping ? {
-                  group: grouping.group,
-                  groupLabel: grouping.groupLabel
-                } : {})
+              ? L.views.taskList(list, Object.assign({
+                  select: selectMode ? {
+                    has: function (id) { return !!picked[id]; },
+                    toggle: function (id) {
+                      picked[id] = !picked[id];
+                      L.views.haptic(8);
+                      L.app.render();
+                    }
+                  } : null
+                }, grouping ? { group: grouping.group, groupLabel: grouping.groupLabel } : {}))
               : L.dom.empty('check', 'Aucune tâche ici',
                   quick === 'overdue' ? 'Rien en retard — c\'est une bonne nouvelle.' : 'Ajoute une tâche ou change de filtre.',
                   h('button.btn.btn--primary', { onclick: function () { L.forms.quickTask(); } }, 'Nouvelle tâche'))
           ])
         ])
-      ])
+      ]),
+      selectionBar(),
+      selectMode ? h('div.row.wrap.t-xs.muted', { style: { marginTop: 'var(--sp-4)' } }, [
+        h('button.btn.btn--s.btn--ghost', {
+          onclick: function () {
+            list.forEach(function (t) { picked[t.id] = true; });
+            L.app.render();
+          }
+        }, 'Tout sélectionner'),
+        pickedIds().length ? h('button.btn.btn--s.btn--ghost', {
+          onclick: function () { picked = {}; L.app.render(); }
+        }, 'Tout désélectionner') : null
+      ]) : null
     ]);
   };
 })(window.LifeOS = window.LifeOS || {});

@@ -668,8 +668,13 @@
             ]),
             h('label.row', { style: { gap: '10px', cursor: 'pointer' } }, [
               L.dom.toggle(t.fixed, function (v) { t.fixed = v; }, 'Montant fixe'),
-              h('span.t-s', 'Montant fixe et récurrent (loyer, abonnement, salaire)')
-            ])
+              h('span.t-s', 'Montant fixe (loyer, abonnement, salaire)')
+            ]),
+            recurrenceEditor(t.recurrence, function (rec) {
+              t.recurrence = rec;
+              if (rec) { t.fixed = true; rec.start = rec.start || t.date; }
+            }),
+            h('p.t-xs.faint', 'Un mouvement récurrent se réenregistre tout seul à chaque échéance, et alimente la projection de fin de mois.')
           ];
         },
         footerSplit: !!existing,
@@ -1007,6 +1012,93 @@
             }, existing ? 'Enregistrer' : 'Créer')
           ];
         }
+      });
+    },
+
+    /* ================= import d'un relevé bancaire ================= */
+    importStatement: function (onDone) {
+      L.util.pickFile('.csv,text/csv,text/plain').then(function (file) {
+        if (!file) return;
+        return L.util.readFile(file).then(function (text) {
+          var parsed = L.csv.parse(text);
+          if (!parsed || !parsed.rows.length) { L.toast.error('Fichier illisible ou vide.'); return; }
+
+          var mapping = Object.assign({}, parsed.mapping);
+          var options = { reverse: false, accountId: (L.finance.accounts()[0] || {}).id || null, categoryId: null };
+          var preview = h('div');
+
+          function columns() {
+            return parsed.header.map(function (name, i) {
+              return { value: i, label: (name || 'Colonne ' + (i + 1)).slice(0, 28) };
+            });
+          }
+
+          function drawPreview() {
+            var entries = L.csv.preview(parsed, mapping, options);
+            var expenses = entries.filter(function (e) { return e.type === 'expense'; });
+            L.dom.mount(preview, [
+              h('div.row.wrap.t-xs.muted', { style: { gap: '12px', marginBottom: 'var(--sp-3)' } }, [
+                h('span', entries.length + ' ' + L.util.plural(entries.length, 'ligne') + ' ' + L.util.plural(entries.length, 'lisible') + ' sur ' + parsed.rows.length),
+                h('span', expenses.length + ' dépenses'),
+                h('span', (entries.length - expenses.length) + ' revenus')
+              ]),
+              entries.length
+                ? h('div.list.list--framed', entries.slice(0, 5).map(function (e) {
+                    return h('div.list__item', [
+                      h('span.t-xs.muted.num', { style: { width: '74px', flex: 'none' } }, D.format(e.date, 'short')),
+                      h('span.grow.truncate.t-s', e.description),
+                      h('span.t-s.num.w-600' + (e.type === 'income' ? '.positive' : ''),
+                        (e.type === 'income' ? '+' : '−') + L.format.money(e.amount))
+                    ]);
+                  }))
+                : h('p.t-s.negative', 'Aucune ligne exploitable — vérifie les colonnes choisies.')
+            ]);
+            return entries;
+          }
+
+          L.modal.open({
+            title: 'Importer un relevé',
+            size: 'wide',
+            body: function () {
+              var node = h('div.col', [
+                h('p.t-xs.faint', file.name + ' · séparateur « ' + (parsed.separator === '\t' ? 'tabulation' : parsed.separator) + ' »'),
+                h('div.grid.grid--3', [
+                  L.dom.field('Colonne date', select(columns(), mapping.date, function (v) { mapping.date = +v; drawPreview(); })),
+                  L.dom.field('Colonne montant', select(columns(), mapping.amount, function (v) { mapping.amount = +v; drawPreview(); })),
+                  L.dom.field('Colonne libellé', select(columns(), mapping.description, function (v) { mapping.description = +v; drawPreview(); }))
+                ]),
+                h('div.grid.grid--2', [
+                  L.dom.field('Compte', select(optionsFrom(L.finance.accounts(), 'Aucun'), options.accountId || '', function (v) { options.accountId = v || null; })),
+                  L.dom.field('Catégorie par défaut', select(optionsFrom(L.finance.categories('expense'), 'Aucune'), options.categoryId || '', function (v) { options.categoryId = v || null; }))
+                ]),
+                h('label.row', { style: { gap: '10px', cursor: 'pointer' } }, [
+                  L.dom.toggle(options.reverse, function (v) { options.reverse = v; drawPreview(); }, 'Montants positifs'),
+                  h('span.t-s', 'Les montants positifs sont des dépenses (relevés qui ne notent pas le signe)')
+                ]),
+                h('div.sep'),
+                preview
+              ]);
+              drawPreview();
+              return node;
+            },
+            footer: function (api) {
+              return [
+                h('button.btn', { onclick: function () { api.close(); } }, 'Annuler'),
+                h('button.btn.btn--primary', {
+                  onclick: function () {
+                    var entries = L.csv.preview(parsed, mapping, options);
+                    if (!entries.length) { L.toast.error('Rien à importer.'); return; }
+                    var res = L.csv.apply(entries, options);
+                    api.close();
+                    L.toast.undo(res.added + ' ' + L.util.plural(res.added, 'mouvement') + ' ' + L.util.plural(res.added, 'importé') +
+                      (res.skipped ? ' · ' + res.skipped + ' déjà présents' : ''));
+                    if (onDone) onDone(res);
+                  }
+                }, 'Importer')
+              ];
+            }
+          });
+        });
       });
     },
 

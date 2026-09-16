@@ -197,7 +197,9 @@
         type: t[0], description: t[1], amount: t[2], categoryId: t[3], date: t[4], fixed: t[5],
         accountId: acc ? acc.id : null,
         toAccountId: t[0] === 'saving' && sav ? sav.id : null,
-        goalId: t[0] === 'saving' ? goalSave.id : null
+        goalId: t[0] === 'saving' ? goalSave.id : null,
+        /* Ce qui est fixe se répète : l'application le réenregistrera seule. */
+        recurrence: t[5] ? { freq: 'monthly', interval: 1, start: t[4] } : null
       }));
     });
     /* Deux mois d'historique pour que les courbes aient du relief. */

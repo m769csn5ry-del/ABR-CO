@@ -49,6 +49,7 @@ C'est le point important : rien n'est une page isolée.
 | Un objectif décroche | Ses tâches remontent dans les priorités, le planning et « Je suis perdu » |
 | Tu acceptes un planning | Les tâches reçoivent leur date et leur heure — le calendrier et les rappels suivent |
 | Tu lances le minuteur sur une tâche | Le temps mesuré s'ajoute à son temps réel, puis aux statistiques de temps par domaine et par projet |
+| Tu déclares un loyer récurrent | Il se réenregistre seul à chaque échéance et entre dans la projection de fin de mois |
 
 Aucun chiffre affiché n'est stocké : tout est recalculé depuis les données
 brutes (tâches, transactions, relevés d'habitudes). Un nombre affiché est
@@ -107,6 +108,34 @@ réellement disponible, indique son horaire et la raison pour laquelle elle
 passe devant. Un rendez-vous imminent prend toujours le dessus.
 
 ---
+
+## Gestes et raccourcis du quotidien
+
+Ce qu'on fait vingt fois par jour ne doit pas demander trois gestes.
+
+- **Au doigt** — sur une ligne de tâche : glisser vers la droite pour
+  terminer, vers la gauche pour reporter à demain. Une brève vibration
+  confirme.
+- **Sélection multiple** — bouton *Sélectionner* dans les tâches : terminer,
+  replacer, reprioriser, rattacher à un projet ou supprimer d'un coup.
+- **Glisser-déposer** — dans le calendrier : une tâche ou un rendez-vous se
+  déplace d'un jour à l'autre en vue mois, et change d'heure au quart d'heure
+  près en vue semaine.
+- **Retouche du planning** — chaque bloc s'avance, se retarde, se place à une
+  heure précise ou se retire, sans tout recalculer.
+
+## Finances : ce qui se fait tout seul
+
+- **Mouvements récurrents** — loyer, abonnements, salaire : déclare la
+  récurrence une fois. Les échéances passées sont rattrapées au lancement,
+  les suivantes annoncées dans « À venir », et la projection de fin de mois
+  s'appuie dessus plutôt que sur une moyenne.
+- **Import d'un relevé** — un CSV de banque suffit : le séparateur, les
+  colonnes et le sens des montants sont devinés, un aperçu montre ce qui sera
+  écrit, et réimporter un relevé qui recoupe le précédent ne crée pas de
+  doublon.
+- **Export** — transactions en CSV, calendrier en `.ics`, tout le profil en
+  JSON.
 
 ## L'assistant
 
@@ -223,7 +252,7 @@ lifeos/
       domains tasks projects goals finance habits calendar
       notes stats search planner weekly focus
     services/           ponts vers le monde extérieur
-      timer notifications ics auth nlp assistant
+      timer notifications ics csv auth nlp assistant
     ui/                 briques d'affichage réutilisables
       dom icons overlay charts forms palette shortcuts router
     views/              un fichier par écran
@@ -259,8 +288,8 @@ npx http-server lifeos -p 8099 -c-1 &
 # parcours complet des écrans, captures et erreurs de console
 NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-check.js ./captures
 
-# 55 contrôles : calculs, liens entre modules, isolation des profils,
-# chiffrement, sauvegardes, hors ligne
+# 69 contrôles : calculs, liens entre modules, récurrences, import de relevé,
+# isolation des profils, chiffrement, sauvegardes, hors ligne
 NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-test.js
 ```
 
@@ -275,9 +304,11 @@ Site statique, donc n'importe quel hébergeur :
 
 - **Netlify** — dossier à publier : `lifeos`, aucune commande de build.
 - **Vercel** — `outputDirectory: "lifeos"`.
-- **GitHub Pages** — copier le contenu de `lifeos/` à la racine de la branche
-  publiée (le service worker et le manifeste veulent vivre à la racine du
-  domaine ou d'un sous-dossier servi comme tel).
+- **GitHub Pages** — déjà automatisé : `.github/workflows/pages.yml` publie
+  `todo/` à la racine du site et `lifeos/` dans `/lifeos/` à chaque poussée sur
+  `main`, puis vérifie en ligne que les deux applications répondent (page,
+  manifeste, service worker, icônes, et présence de chaque script dans le
+  cache hors ligne).
 
 Servir `sw.js` et `manifest.webmanifest` sans cache long, pour que les mises à
 jour arrivent tout de suite.

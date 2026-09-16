@@ -118,6 +118,38 @@
         ])
       ]),
 
+      (function () {
+        var upcoming = L.finance.upcoming(31);
+        if (!upcoming.length) return null;
+        var total = L.util.sum(upcoming.filter(function (u) { return u.model.type !== 'income'; }),
+          function (u) { return u.model.amount; });
+        var income = L.util.sum(upcoming.filter(function (u) { return u.model.type === 'income'; }),
+          function (u) { return u.model.amount; });
+        return h('div.section', [
+          L.views.sectionHead('À venir · 30 jours',
+            h('span.t-xs.muted', L.format.money(total) + ' à sortir' + (income ? ' · ' + L.format.money(income) + ' à rentrer' : ''))),
+          h('div.list.list--framed', upcoming.slice(0, 8).map(function (u) {
+            var cat = u.model.categoryId ? L.finance.category(u.model.categoryId) : null;
+            return h('div.list__item', [
+              h('span.t-xs.muted.num', { style: { width: '62px', flex: 'none' } }, D.format(u.date, 'short')),
+              h('div.tx__icon', { style: cat ? { color: cat.color } : null }, cat ? cat.icon : '↻'),
+              h('div.grow', { style: { minWidth: 0 } }, [
+                h('div.t-s.truncate', u.model.description || (cat ? cat.name : 'Mouvement')),
+                h('div.t-xs.faint', D.recurrenceLabel(u.model.recurrence) + ' · ' + D.relative(u.date, { caps: false }))
+              ]),
+              h('span.t-s.w-600.num' + (u.model.type === 'income' ? '.positive' : ''),
+                (u.model.type === 'income' ? '+' : '−') + L.format.money(u.model.amount)),
+              h('button.btn.btn--s', {
+                onclick: function () {
+                  L.finance.confirm(u.model, u.date);
+                  L.toast.undo('Mouvement enregistré');
+                }
+              }, 'Enregistrer')
+            ]);
+          }))
+        ]);
+      })(),
+
       goals.length ? h('div.section', [
         L.views.sectionHead('Objectifs financiers'),
         h('div.grid.grid--auto', goals.map(function (g) { return L.views.goalCard(g); }))
@@ -277,12 +309,36 @@
       ]),
 
       h('div.section', [
-        L.views.sectionHead('Dépenses fixes du mois'),
+        L.views.sectionHead('Engagements récurrents',
+          h('button.btn.btn--s', {
+            onclick: function () { L.forms.transaction(null, { type: 'expense', fixed: true }); }
+          }, [L.icon('plus'), 'Ajouter'])),
         (function () {
-          var fixed = L.finance.fixed();
-          return fixed.length
-            ? h('div.list--framed', fixed.map(function (t) { return L.views.txRow(t); }))
-            : h('p.t-s.faint', 'Aucune dépense marquée comme fixe. Coche « montant fixe » sur un loyer ou un abonnement pour l\'inclure aux prévisions.');
+          var models = L.finance.recurring();
+          if (!models.length) {
+            return h('p.t-s.faint', 'Aucun mouvement récurrent. Déclare la récurrence d\'un loyer ou d\'un abonnement : ' +
+              'il se réenregistrera seul et entrera dans la projection de fin de mois.');
+          }
+          var monthly = L.util.sum(models.filter(function (m) {
+            return m.type !== 'income' && m.recurrence.freq === 'monthly';
+          }), function (m) { return m.amount; });
+          return h('div', [
+            h('div.list--framed', models.map(function (m) {
+              var cat = m.categoryId ? L.finance.category(m.categoryId) : null;
+              return h('button.tx', { onclick: function () { L.forms.transaction(m); } }, [
+                h('div.tx__icon', { style: cat ? { color: cat.color } : null }, cat ? cat.icon : '↻'),
+                h('div.grow', { style: { minWidth: 0 } }, [
+                  h('div.t-s.w-500.truncate', m.description || (cat ? cat.name : 'Mouvement')),
+                  h('div.t-xs.faint.truncate', D.recurrenceLabel(m.recurrence) +
+                    (m.recurrence.until ? ' · jusqu\'au ' + D.format(m.recurrence.until, 'short') : ''))
+                ]),
+                h('div.tx__amount' + (m.type === 'income' ? '.positive' : ''),
+                  (m.type === 'income' ? '+' : '−') + L.format.money(m.amount))
+              ]);
+            })),
+            monthly ? h('p.t-xs.faint', { style: { marginTop: 'var(--sp-3)' } },
+              L.format.money(monthly) + ' de charges mensuelles engagées avant toute dépense libre.') : null
+          ]);
         })()
       ])
     ];
@@ -360,7 +416,30 @@
           ]),
           h('div.row.wrap', [
             tab !== 'structure' ? monthNav(month, function (m) { L.router.setParams({ month: m }); }) : null,
-            h('button.btn.btn--primary', { onclick: function () { L.forms.transaction(null, { type: 'expense' }); } }, [L.icon('plus'), 'Transaction'])
+            h('button.btn.btn--primary', { onclick: function () { L.forms.transaction(null, { type: 'expense' }); } }, [L.icon('plus'), 'Transaction']),
+            h('button.iconbtn', {
+              'aria-label': 'Autres actions',
+              onclick: function (e) {
+                L.menu(e.currentTarget, [
+                  { icon: 'upload', label: 'Importer un relevé (.csv)', run: function () { L.forms.importStatement(); } },
+                  { icon: 'download', label: 'Exporter les transactions (.csv)', run: function () {
+                    var rows = [['Date', 'Type', 'Catégorie', 'Description', 'Montant', 'Compte']];
+                    L.finance.all().forEach(function (t) {
+                      var cat = t.categoryId ? L.finance.category(t.categoryId) : null;
+                      var account = t.accountId ? L.finance.account(t.accountId) : null;
+                      rows.push([t.date, L.schema.label(L.schema.TX_TYPES, t.type), cat ? cat.name : '',
+                        (t.description || '').replace(/;/g, ','), String(L.finance.sign(t.type) * t.amount).replace('.', ','),
+                        account ? account.name : '']);
+                    });
+                    L.util.download('lifeos-transactions-' + D.today() + '.csv',
+                      rows.map(function (r) { return r.join(';'); }).join('\n'), 'text/csv;charset=utf-8');
+                    L.toast.show('Transactions exportées');
+                  } },
+                  '-',
+                  { icon: 'repeat', label: 'Voir les engagements récurrents', run: function () { L.router.setParams({ tab: 'budgets' }); } }
+                ], { align: 'right' });
+              }
+            }, L.icon('more'))
           ])
         ]),
         h('div.toolbar', { style: { marginTop: 'var(--sp-5)' } }, [

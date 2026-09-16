@@ -450,6 +450,10 @@
       adapter = L.storage.open(L.auth.namespace(profile));
 
       function boot(info) {
+        /* Les mouvements récurrents échus depuis la dernière ouverture sont
+           enregistrés avant le premier affichage : les chiffres montrés sont
+           déjà à jour. */
+        var caught = L.finance.materialize();
         App.applyTheme();
         L.router.init();
         L.notify.init();
@@ -457,6 +461,13 @@
         queueRender();
 
         if (info && info.fresh) setTimeout(welcome, 400);
+
+        if (caught.length) {
+          setTimeout(function () {
+            L.toast.show(caught.length + ' ' + L.util.plural(caught.length, 'mouvement récurrent', 'mouvements récurrents') +
+              ' ' + L.util.plural(caught.length, 'enregistré', 'enregistrés'), { icon: 'wallet', duration: 5000 });
+          }, 900);
+        }
 
         var missed = L.notify.catchUp();
         if (missed) setTimeout(function () {

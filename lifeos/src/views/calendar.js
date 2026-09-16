@@ -29,12 +29,26 @@
             return da - db;
           });
           var shown = items.slice(0, 3);
-          return h('button.cal-day' +
+          return h('div.cal-day' +
             (cell.inMonth ? '' : '.cal-day--out') +
             (cell.today ? '.cal-day--today' : '') +
             (cell.date === selected ? '.cal-day--sel' : ''), {
+            role: 'button', tabindex: '0',
+            'aria-label': D.format(cell.date, 'full'),
+            onkeydown: function (e) {
+              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); L.router.setParams({ date: cell.date }); }
+            },
             onclick: function () { L.router.setParams({ date: cell.date }); },
-            ondblclick: function () { L.forms.event(null, { date: cell.date }); }
+            ondblclick: function () { L.forms.event(null, { date: cell.date }); },
+            ondragover: function (e) { e.preventDefault(); e.currentTarget.classList.add('cal-day--drop'); },
+            ondragleave: function (e) { e.currentTarget.classList.remove('cal-day--drop'); },
+            ondrop: function (e) {
+              e.preventDefault();
+              e.currentTarget.classList.remove('cal-day--drop');
+              var payload = String(e.dataTransfer.getData('text/plain') || '').split(':');
+              if (payload.length < 3 || payload[2] === cell.date) return;
+              moveItem(payload[0], payload[1], cell.date);
+            }
           }, [
             h('span.cal-day__n', String(+cell.date.slice(8, 10))),
             h('div.col', { style: { gap: '2px' } }, shown.map(function (item) {
@@ -42,7 +56,13 @@
               var done = item.kind === 'task' && item.ref && item.ref.status === 'done';
               return h('span.cal-pill' + pillClass(item.kind) + (done ? '.cal-pill--done' : ''), {
                 style: domain && item.kind === 'event' ? { color: domain.color } : null,
-                title: item.title
+                title: item.title + ' — glisser pour déplacer',
+                draggable: 'true',
+                ondragstart: function (e) {
+                  e.stopPropagation();
+                  e.dataTransfer.effectAllowed = 'move';
+                  e.dataTransfer.setData('text/plain', item.kind + ':' + item.id + ':' + cell.date);
+                }
               }, [
                 item.allDay ? null : h('span.num', { style: { opacity: '.7' } }, D.toTime(item.start).replace(':00', 'h') + ' '),
                 item.title
@@ -52,6 +72,30 @@
           ]);
         })))
     ]);
+  }
+
+  /* Déplacer un élément du calendrier : une tâche change de jour, une
+     échéance change de date limite, un événement se décale en bloc. */
+  function moveItem(kind, id, toISO) {
+    if (kind === 'task') {
+      var task = L.tasks.get(id);
+      if (!task) return;
+      L.tasks.save(id, { date: toISO, status: task.status === 'postponed' ? 'todo' : task.status });
+      L.views.haptic();
+      L.toast.undo('« ' + task.title + ' » déplacée au ' + D.format(toISO, 'short'));
+    } else if (kind === 'due') {
+      var t = L.tasks.get(id);
+      if (t) {
+        L.tasks.save(id, { due: toISO });
+        L.toast.undo('Échéance de « ' + t.title + ' » au ' + D.format(toISO, 'short'));
+      }
+    } else if (kind === 'event') {
+      var ev = L.calendar.get(id);
+      if (!ev) return;
+      L.calendar.save(id, { date: toISO });
+      L.views.haptic();
+      L.toast.undo('« ' + ev.title + ' » déplacé au ' + D.format(toISO, 'short'));
+    }
   }
 
   /* ---------------- semaine ---------------- */
@@ -75,10 +119,11 @@
         var top = ((item.start - startH * 60) / 60) * rowH;
         var height = Math.max(16, ((item.end - item.start) / 60) * rowH - 2);
         var cls = item.kind === 'event' ? '.cal-ev--event' : item.kind === 'habit' ? '.cal-ev--habit' : '';
-        return h('button.cal-ev' + cls, {
+        var node = h('button.cal-ev' + cls, {
           style: { top: top + 'px', height: height + 'px' },
-          title: item.title,
+          title: item.title + (item.kind === 'habit' ? '' : ' — glisser pour changer l\'heure'),
           onclick: function () {
+            if (node.dataset.dragged === '1') { node.dataset.dragged = '0'; return; }
             if (item.kind === 'event') L.forms.event(item.ref);
             else if (item.kind === 'habit') L.router.go('habits', { id: item.id });
             else L.views.taskDetail(item.id);
@@ -87,6 +132,9 @@
           h('div', { style: { fontWeight: '600' } }, item.title),
           height > 30 ? h('div', { style: { opacity: '.75' } }, D.toTime(item.start)) : null
         ]);
+
+        if (item.kind !== 'habit') dragTime(node, item, day, rowH, startH);
+        return node;
       });
 
       if (day === D.today()) {
@@ -113,6 +161,63 @@
     return h('div.card.cal-scroll', { style: { padding: '0', overflow: 'auto' } }, [
       h('div.cal-week', [gutter].concat(cols))
     ]);
+  }
+
+  /* Glissement vertical dans la vue semaine : la grille est proportionnelle,
+     un pixel vaut donc un temps précis. On aligne sur le quart d'heure. */
+  function dragTime(node, item, day, rowH, startH) {
+    var dragging = false, startY = 0, originTop = 0, moved = 0;
+
+    function begin(e) {
+      var point = e.touches ? e.touches[0] : e;
+      dragging = true; moved = 0;
+      startY = point.clientY;
+      originTop = parseFloat(node.style.top) || 0;
+      node.style.zIndex = '6';
+      node.style.opacity = '.85';
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', end);
+      document.addEventListener('touchmove', move, { passive: false });
+      document.addEventListener('touchend', end);
+    }
+
+    function move(e) {
+      if (!dragging) return;
+      var point = e.touches ? e.touches[0] : e;
+      var dy = point.clientY - startY;
+      moved = Math.abs(dy);
+      if (moved > 4 && e.cancelable) e.preventDefault();
+      node.style.top = (originTop + dy) + 'px';
+    }
+
+    function end() {
+      if (!dragging) return;
+      dragging = false;
+      node.style.zIndex = '';
+      node.style.opacity = '';
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', end);
+      document.removeEventListener('touchmove', move);
+      document.removeEventListener('touchend', end);
+      if (moved < 5) { node.style.top = originTop + 'px'; return; }
+
+      node.dataset.dragged = '1';
+      var top = parseFloat(node.style.top) || 0;
+      var minutes = startH * 60 + (top / rowH) * 60;
+      var snapped = L.util.clamp(Math.round(minutes / 15) * 15, 0, 23 * 60 + 45);
+      var length = item.end - item.start;
+
+      if (item.kind === 'event') {
+        L.calendar.save(item.id, { start: D.toTime(snapped), end: D.toTime(snapped + length) });
+      } else if (item.kind === 'task') {
+        L.tasks.save(item.id, { date: day, time: D.toTime(snapped) });
+      }
+      L.views.haptic();
+      L.toast.undo('« ' + item.title + ' » à ' + D.toTime(snapped));
+    }
+
+    node.addEventListener('mousedown', begin);
+    node.addEventListener('touchstart', begin, { passive: true });
   }
 
   /* ---------------- jour ---------------- */

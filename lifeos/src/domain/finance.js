@@ -217,16 +217,26 @@
 
       var fixedLeft = 0;
       if (isCurrent) {
-        var lastMonth = D.monthKey(D.addMonths(from, -1));
-        F.filter({ from: lastMonth + '-01', to: D.endOfMonth(lastMonth + '-01'), type: 'expense' })
-          .filter(function (t) { return t.fixed; })
-          .forEach(function (t) {
-            var already = F.filter({ from: from, to: to, type: 'expense' }).some(function (x) {
-              return x.fixed && x.categoryId === t.categoryId &&
-                L.util.fold(x.description) === L.util.fold(t.description);
+        /* Ce qui est déclaré récurrent et doit encore tomber ce mois-ci. */
+        F.upcoming(D.diffDays(today, to)).forEach(function (u) {
+          if (u.model.type === 'expense' || u.model.type === 'saving' || u.model.type === 'invest') {
+            if (u.date <= to) fixedLeft += u.model.amount;
+          }
+        });
+        /* À défaut de récurrence déclarée, on se fie aux montants fixes du
+           mois précédent qui ne sont pas encore repassés. */
+        if (!fixedLeft) {
+          var lastMonth = D.monthKey(D.addMonths(from, -1));
+          F.filter({ from: lastMonth + '-01', to: D.endOfMonth(lastMonth + '-01'), type: 'expense' })
+            .filter(function (t) { return t.fixed; })
+            .forEach(function (t) {
+              var already = F.filter({ from: from, to: to, type: 'expense' }).some(function (x) {
+                return x.fixed && x.categoryId === t.categoryId &&
+                  L.util.fold(x.description) === L.util.fold(t.description);
+              });
+              if (!already) fixedLeft += t.amount;
             });
-            if (!already) fixedLeft += t.amount;
-          });
+        }
       }
 
       var projected = isCurrent ? period.expense + pace * (daysTotal - daysGone) * 0.75 + fixedLeft : period.expense;
@@ -251,6 +261,75 @@
         out.push({ key: m, label: D.MONTHS_SHORT[+m.slice(5, 7) - 1], income: p.income, expense: p.expense, saving: p.put, net: p.net });
       }
       return out;
+    },
+
+    /* --- mouvements récurrents ---
+       Un loyer, un abonnement ou un salaire n'a pas à être ressaisi chaque
+       mois. La transaction porte sa récurrence ; les occurrences passées sont
+       créées au lancement, les suivantes restent des prévisions tant que la
+       date n'est pas arrivée. */
+    recurring: function () {
+      return S().transactions.filter(function (t) { return t.recurrence && t.recurrence.freq && !t.seriesId; });
+    },
+
+    /* Occurrences attendues d'ici N jours, non encore enregistrées. */
+    upcoming: function (days) {
+      var today = D.today();
+      var limit = D.addDays(today, days === undefined ? 30 : days);
+      var out = [];
+      F.recurring().forEach(function (model) {
+        var anchor = model.recurrence.start || model.date;
+        var cur = D.addDays(today, 1);
+        for (var i = 0; i < 400 && cur <= limit; i++) {
+          if (D.matchesRecurrence(model.recurrence, cur, anchor) && !F.hasOccurrence(model, cur)) {
+            out.push({ model: model, date: cur });
+          }
+          cur = D.addDays(cur, 1);
+        }
+      });
+      return out.sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+    },
+
+    hasOccurrence: function (model, isoDate) {
+      var seriesId = model.seriesId || model.id;
+      return S().transactions.some(function (t) {
+        return t.date === isoDate && (t.id === model.id || t.seriesId === seriesId);
+      });
+    },
+
+    /* Rattrapage au lancement : tout ce qui aurait dû tomber depuis la
+       dernière ouverture est enregistré, sans jamais créer de doublon. */
+    materialize: function () {
+      var today = D.today();
+      var created = [];
+      F.recurring().forEach(function (model) {
+        var anchor = model.recurrence.start || model.date;
+        var cur = D.addDays(model.date, 1);
+        for (var i = 0; i < 800 && cur <= today; i++) {
+          if (model.recurrence.until && cur > model.recurrence.until) break;
+          if (D.matchesRecurrence(model.recurrence, cur, anchor) && !F.hasOccurrence(model, cur)) {
+            created.push(make.transaction(Object.assign(L.util.clone(model), {
+              id: L.util.uid('trx'), date: cur, recurrence: null,
+              seriesId: model.seriesId || model.id, createdAt: Date.now()
+            })));
+          }
+          cur = D.addDays(cur, 1);
+        }
+      });
+      if (created.length) {
+        store.update(function (s) { s.transactions = created.concat(s.transactions); }, null);
+      }
+      return created;
+    },
+
+    /* Enregistrer maintenant une occurrence attendue. */
+    confirm: function (model, isoDate) {
+      var tx = make.transaction(Object.assign(L.util.clone(model), {
+        id: L.util.uid('trx'), date: isoDate, recurrence: null,
+        seriesId: model.seriesId || model.id, createdAt: Date.now()
+      }));
+      store.update(function (s) { s.transactions.unshift(tx); }, 'Mouvement enregistré');
+      return tx;
     },
 
     /* Dépenses fixes du mois : utile pour « combien puis-je engager ? ». */

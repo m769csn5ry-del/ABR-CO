@@ -102,6 +102,51 @@ const BASE = process.env.LIFEOS_URL || 'http://127.0.0.1:8099/';
     const m = L.finance.month();
     ok('taux d\'épargne cohérent', m.rate > 0 && m.rate <= 1, Math.round(m.rate * 100) + ' %');
 
+    /* --- 7 bis. mouvements récurrents --- */
+    const rent = L.finance.create({
+      type: 'expense', amount: 480, description: 'Loyer test',
+      date: D.addMonths(D.today(), -3), fixed: true,
+      recurrence: { freq: 'monthly', interval: 1, start: D.addMonths(D.today(), -3) }
+    });
+    const born = L.finance.materialize();
+    ok('les échéances passées sont rattrapées', born.length === 3, born.length + ' occurrences');
+    ok('aucun doublon au second passage', L.finance.materialize().length === 0);
+    const series = L.store.state.transactions.filter((t) => t.seriesId === rent.id);
+    ok('les occurrences portent la même série', series.length === 3);
+    ok('une occurrence ne se répète pas elle-même', series.every((t) => !t.recurrence));
+    const soon = L.finance.upcoming(40);
+    ok('les prochaines échéances sont annoncées', soon.some((u) => u.model.id === rent.id),
+      soon.length + ' à venir');
+    const confirmed = L.finance.confirm(rent, soon[0].date);
+    ok('une échéance peut être enregistrée d\'avance', confirmed.date === soon[0].date);
+    ok('elle disparaît alors des prévisions',
+      !L.finance.upcoming(40).some((u) => u.date === confirmed.date && u.model.id === rent.id));
+
+    /* --- 7 ter. import d'un relevé --- */
+    const releve = [
+      'Date;Libellé;Montant',
+      '02/09/2026;CARTE 01/09 SUPERMARCHE;-42,30',
+      '03/09/2026;VIREMENT SALAIRE;1350,00',
+      '05/09/2026;PRLV ABONNEMENT MOBILE;-19,99',
+      'ligne cassée sans rien'
+    ].join('\n');
+    const parsedCsv = L.csv.parse(releve);
+    ok('séparateur détecté', parsedCsv.separator === ';', parsedCsv.separator);
+    ok('colonnes devinées',
+      parsedCsv.mapping.date === 0 && parsedCsv.mapping.amount === 2 && parsedCsv.mapping.description === 1,
+      JSON.stringify(parsedCsv.mapping));
+    const entries = L.csv.preview(parsedCsv, parsedCsv.mapping, {});
+    ok('lignes exploitables retenues', entries.length === 3, entries.length + ' lignes');
+    ok('signe respecté',
+      entries[0].type === 'expense' && entries[1].type === 'income' && entries[0].amount === 42.3,
+      entries.map((e) => e.type).join(','));
+    ok('date française convertie', entries[0].date === '2026-09-02', entries[0].date);
+    const firstImport = L.csv.apply(entries, {});
+    ok('import effectif', firstImport.added === 3);
+    const secondImport = L.csv.apply(entries, {});
+    ok('réimport sans doublon', secondImport.added === 0 && secondImport.skipped === 3,
+      secondImport.added + ' ajoutés');
+
     /* --- 8. habitudes : séries et taux --- */
     const hb = L.habits.create({ name: 'Test quotidien', kind: 'check', days: [0, 1, 2, 3, 4, 5, 6] });
     for (let i = 0; i < 5; i++) L.habits.log(hb.id, D.addDays(D.today(), -i), 1);

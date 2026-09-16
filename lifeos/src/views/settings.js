@@ -625,7 +625,10 @@
                 L.toast.show(res.added + ' événements importés' + (res.skipped ? ', ' + res.skipped + ' ignorés' : ''));
               }, function (err) { L.toast.error('Import impossible : ' + err.message); });
             }
-          }, [L.icon('upload'), 'Importer un .ics'])
+          }, [L.icon('upload'), 'Importer un .ics']),
+          h('button.btn', {
+            onclick: function () { L.forms.importStatement(); }
+          }, [L.icon('wallet'), 'Importer un relevé (.csv)'])
         ])
       ]),
 
