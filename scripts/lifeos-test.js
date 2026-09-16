@@ -147,6 +147,99 @@ const BASE = process.env.LIFEOS_URL || 'http://127.0.0.1:8099/';
     ok('réimport sans doublon', secondImport.added === 0 && secondImport.skipped === 3,
       secondImport.added + ' ajoutés');
 
+    /* --- 7 quater. relevés bancaires : CIC, OFX, QIF --- */
+    const cic = [
+      'Date;Date de valeur;Débit;Crédit;Libellé',
+      '02/09/2026;02/09/2026;-42,30;;CARTE 01/09 CARREFOUR MARKET',
+      '03/09/2026;03/09/2026;;1350,00;VIR SEPA SALAIRE ENTREPRISE',
+      '05/09/2026;05/09/2026;-19,99;;PRLV SEPA FREE MOBILE 0612345678'
+    ].join('\n');
+    const cicParsed = L.csv.parse(cic);
+    ok('relevé CIC : deux colonnes reconnues', cicParsed.twoColumns === true);
+    ok('relevé CIC : colonnes devinées',
+      cicParsed.mapping.date === 0 && cicParsed.mapping.debit === 2 &&
+      cicParsed.mapping.credit === 3 && cicParsed.mapping.description === 4,
+      JSON.stringify(cicParsed.mapping));
+    const cicEntries = L.csv.preview(cicParsed, cicParsed.mapping, {});
+    ok('relevé CIC : sens des opérations',
+      cicEntries.length === 3 && cicEntries[0].type === 'expense' && cicEntries[1].type === 'income',
+      cicEntries.map((e) => e.type).join(','));
+    ok('relevé CIC : montants et dates',
+      cicEntries[0].amount === 42.3 && cicEntries[0].date === '2026-09-02' && cicEntries[1].amount === 1350);
+
+    const ofx = `OFXHEADER:100
+<OFX><BANKMSGSRSV1><STMTTRNRS><STMTRS><BANKTRANLIST>
+<STMTTRN><TRNTYPE>DEBIT<DTPOSTED>20260902120000<TRNAMT>-42.30<FITID>A1<NAME>CARREFOUR MARKET</STMTTRN>
+<STMTTRN><TRNTYPE>CREDIT<DTPOSTED>20260903<TRNAMT>1350.00<FITID>A2<NAME>VIR SALAIRE</STMTTRN>
+</BANKTRANLIST></STMTRS></STMTTRNRS></BANKMSGSRSV1></OFX>`;
+    ok('format OFX détecté', L.bank.detectFormat(ofx, 'releve.ofx') === 'ofx');
+    const ofxEntries = L.bank.parseOFX(ofx);
+    ok('OFX : opérations lues', ofxEntries.length === 2, ofxEntries.length + '');
+    ok('OFX : signe et date',
+      ofxEntries[0].type === 'expense' && ofxEntries[0].date === '2026-09-02' &&
+      ofxEntries[1].type === 'income' && ofxEntries[1].amount === 1350,
+      JSON.stringify(ofxEntries[0]));
+
+    const qif = ['!Type:Bank', 'D02/09/2026', 'T-42,30', 'PCARREFOUR MARKET', '^',
+                 'D03/09/2026', 'T1350,00', 'PVIR SALAIRE', '^'].join('\n');
+    ok('format QIF détecté', L.bank.detectFormat(qif, 'releve.qif') === 'qif');
+    const qifEntries = L.bank.parseQIF(qif);
+    ok('QIF : opérations lues', qifEntries.length === 2 && qifEntries[0].amount === 42.3,
+      JSON.stringify(qifEntries[0]));
+
+    /* --- 7 quinquies. reconnaissance des libellés --- */
+    const guessCourses = L.rules.guess('CARTE 01/09 CARREFOUR MARKET', 'expense');
+    ok('libellé de carte reconnu', guessCourses && guessCourses.label === 'Courses',
+      guessCourses ? guessCourses.label : 'aucun');
+    const guessSalaire = L.rules.guess('VIR SEPA SALAIRE ENTREPRISE', 'income');
+    ok('virement de salaire reconnu', guessSalaire && guessSalaire.label === 'Salaire',
+      guessSalaire ? guessSalaire.label : 'aucun');
+    const guessAbo = L.rules.guess('PRLV SEPA FREE MOBILE 0612345678', 'expense');
+    ok('prélèvement d\'abonnement reconnu', guessAbo && guessAbo.label === 'Abonnements',
+      guessAbo ? guessAbo.label : 'aucun');
+    ok('le bruit bancaire est retiré de la signature',
+      L.rules.signature('CARTE 01/09 CARREFOUR MARKET 123456') === 'carrefour market',
+      L.rules.signature('CARTE 01/09 CARREFOUR MARKET 123456'));
+
+    const inconnu = 'PRLV SEPA ZZZTOPFOURNISSEUR 998877';
+    ok('un marchand inconnu reste à classer', L.rules.guess(inconnu, 'expense') === null);
+    const catSport = L.finance.categories('expense').filter((c) => c.name === 'Sport')[0];
+    L.rules.learn(inconnu, catSport.id);
+    const appris = L.rules.guess('PRLV SEPA ZZZTOPFOURNISSEUR 112233', 'expense');
+    ok('classer une fois enseigne le marchand',
+      appris && appris.categoryId === catSport.id && appris.source === 'apprise',
+      appris ? appris.source : 'aucun');
+
+    /* --- 7 sexies. bilan mensuel --- */
+    /* Trois mois d'un même abonnement : c'est ce qui en fait un engagement. */
+    const catAbo = L.finance.categories('expense').filter((c) => c.name === 'Abonnements')[0];
+    for (let m = 2; m >= 0; m--) {
+      L.finance.create({
+        type: 'expense', amount: 19.99, description: 'PRLV SEPA FREE MOBILE 0612345678',
+        categoryId: catAbo.id, date: D.addMonths(D.startOfMonth(D.today()), -m)
+      });
+    }
+    const recurrents = L.insights.subscriptions(6);
+    ok('abonnement détecté sur trois mois',
+      recurrents.some((x) => x.key.indexOf('free mobile') > -1), recurrents.map((x) => x.key).join(' | '));
+    const abo = recurrents.filter((x) => x.key.indexOf('free mobile') > -1)[0];
+    ok('montant mensuel et annuel calculés',
+      abo && abo.amount === 19.99 && Math.round(abo.yearly) === 240, abo ? abo.yearly + '' : '');
+
+    const report = L.insights.month();
+    ok('le bilan produit des totaux', report.period.expense > 0 && report.categories.length > 0);
+    ok('le bilan mesure sa propre fiabilité',
+      report.coverage.ratio >= 0 && report.coverage.ratio <= 1,
+      Math.round(report.coverage.ratio * 100) + ' %');
+    const advice = L.insights.advice(report);
+    ok('le bilan produit des recommandations', advice.length > 0, advice.length + ' conseils');
+    ok('chaque recommandation est chiffrée ou explicative',
+      advice.every((a) => a.title && a.detail !== undefined));
+    ok('les recommandations sont classées par importance',
+      advice.every((a, i) => i === 0 || advice[i - 1].weight >= a.weight));
+    const summary = L.insights.summarize(report);
+    ok('le bilan se résume en texte', summary.length > 60 && summary.indexOf('€') > -1);
+
     /* --- 8. habitudes : séries et taux --- */
     const hb = L.habits.create({ name: 'Test quotidien', kind: 'check', days: [0, 1, 2, 3, 4, 5, 6] });
     for (let i = 0; i < 5; i++) L.habits.log(hb.id, D.addDays(D.today(), -i), 1);

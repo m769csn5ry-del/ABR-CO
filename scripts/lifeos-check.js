@@ -49,6 +49,21 @@ const VIEWS = ['home', 'today', 'planning', 'calendar', 'tasks', 'projects',
     }
   }
 
+  // Bilan financier : il doit produire des constats, pas une page vide.
+  await page.evaluate(() => { window.location.hash = '#/finance?tab=bilan'; });
+  await page.waitForTimeout(700);
+  const conseils = await page.locator('.section', { hasText: 'Ce que ça dit' }).locator('.card').count();
+  if (!conseils) errors.push('le bilan ne produit aucun constat');
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'flow-bilan.png'), fullPage: false });
+
+  // Réglages bancaires
+  await page.evaluate(() => { window.location.hash = '#/settings?tab=bank'; });
+  await page.waitForTimeout(450);
+  if (!(await page.locator('.card', { hasText: 'Connexion directe' }).count())) {
+    errors.push('la section bancaire des réglages ne s\'affiche pas');
+  }
+  if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'flow-banque.png'), fullPage: false });
+
   // Parcours fonctionnel : planning du jour, semaine, assistant, recherche.
   await page.evaluate(() => { window.location.hash = '#/planning?generate=day'; });
   await page.waitForTimeout(900);
@@ -66,7 +81,8 @@ const VIEWS = ['home', 'today', 'planning', 'calendar', 'tasks', 'projects',
     const qs = ['Quelles sont mes priorités ?', 'Combien ai-je dépensé ce mois-ci ?',
                 'Organise ma soirée', 'Combien dois-je économiser par mois ?',
                 "J'ai deux heures libres, que faire ?", 'Ajoute réviser les stats demain 14h 1h30',
-                'Ajoute une dépense de 24,50 € en courses', 'Quels objectifs sont en retard ?'];
+                'Ajoute une dépense de 24,50 € en courses', 'Quels objectifs sont en retard ?',
+                'Fais mon bilan du mois', 'Quels sont mes abonnements ?'];
     const out = [];
     for (const q of qs) {
       const r = await L.assistant.ask(q);

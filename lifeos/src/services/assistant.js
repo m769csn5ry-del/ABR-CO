@@ -206,6 +206,56 @@
 
     /* ---------- finances ---------- */
     {
+      id: 'bilan',
+      test: /bilan|analyse.*(depense|finance|budget|mois)|comment (je gere|ca se passe).*(argent|budget)|ou part mon argent|comment ameliorer|que faire pour (economiser|depenser moins)/i,
+      run: function (text) {
+        var when = N.period(text);
+        var key = when ? D.monthKey(when.from) : D.monthKey(D.today());
+        var report = L.insights.month(key);
+        var advice = L.insights.advice(report);
+        return reply(L.insights.summarize(report), {
+          intent: 'bilan',
+          list: advice.slice(0, 6).map(function (a) {
+            return { id: a.id, kind: 'transaction', title: a.title, meta: a.detail };
+          }),
+          actions: [
+            { label: 'Ouvrir le bilan', type: 'open', payload: { view: 'finance', tab: 'bilan', month: key } },
+            report.coverage.missing ? { label: 'Classer ' + report.coverage.missing + ' opérations', type: 'categorize' } : null
+          ].filter(Boolean)
+        });
+      }
+    },
+
+    {
+      id: 'subscriptions',
+      test: /abonnement|prelevement.*(recurrent|regulier)|ce qui part (tous les mois|chaque mois)|charges fixes/i,
+      run: function () {
+        var subs = L.insights.subscriptions(6);
+        if (!subs.length) {
+          return reply('Aucun prélèvement récurrent identifié. Il en faut au moins trois mois de suite, au même montant, pour que je le reconnaisse — importe un relevé sur plusieurs mois si tu veux que je cherche.');
+        }
+        var depenses = subs.filter(function (s) { return !s.isSaving; });
+        var epargne = subs.filter(function (s) { return s.isSaving; });
+        var monthly = L.util.sum(depenses, function (s) { return s.amount; });
+        var saved = L.util.sum(epargne, function (s) { return s.amount; });
+        return reply(depenses.length + ' ' + L.util.plural(depenses.length, 'engagement récurrent', 'engagements récurrents') +
+          ' pour ' + L.format.money(monthly) + ' par mois, soit ' + L.format.money(monthly * 12) + ' sur l\'année' +
+          (saved ? ', plus ' + L.format.money(saved) + ' d\'épargne programmée' : '') + ' :', {
+          intent: 'subscriptions',
+          list: subs.map(function (s) {
+            return {
+              id: s.key, kind: 'transaction', title: s.label,
+              meta: L.format.money(s.amount) + ' / mois · ' + s.months + ' mois consécutifs' +
+                (s.isSaving ? ' · épargne programmée' : '') +
+                (s.category ? ' · ' + s.category.name : '')
+            };
+          }),
+          actions: [{ label: 'Ouvrir le bilan', type: 'open', payload: { view: 'finance', tab: 'bilan' } }]
+        });
+      }
+    },
+
+    {
       id: 'spending',
       test: /combien.*(depens|coute|sorti)|mes depenses|j'?ai depense/i,
       run: function (text) {

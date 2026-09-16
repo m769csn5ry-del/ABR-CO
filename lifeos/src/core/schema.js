@@ -336,6 +336,7 @@
         shareFinance: true
       },
       finance: { monthlyBudget: null, alertAt: 0.8, salaryDay: 1 },
+      bank: { provider: '', endpoint: '', token: '' },
       auth: { googleClientId: '', appleClientId: '', appleRedirect: '' },
       privacy: { lockOnStart: false },
       updatedAt: Date.now()
@@ -361,6 +362,7 @@
       plans: {},             // { 'AAAA-MM-JJ': {blocks, status, createdAt} }
       weekPlans: {},         // { 'AAAA-Snn': {...} }
       chat: [],
+      rules: [],               // règles de reconnaissance apprises
       timer: null,           // { taskId, startedAt, accumulated, goal }
       meta: { createdAt: Date.now(), updatedAt: Date.now(), seeded: false }
     };
@@ -387,7 +389,7 @@
     });
 
     ['domains', 'tasks', 'projects', 'goals', 'accounts', 'categories',
-     'transactions', 'habits', 'events', 'notes', 'folders', 'chat'].forEach(function (k) {
+     'transactions', 'habits', 'events', 'notes', 'folders', 'chat', 'rules'].forEach(function (k) {
       if (!Array.isArray(out[k])) out[k] = [];
     });
     ['habitLogs', 'plans', 'weekPlans'].forEach(function (k) {

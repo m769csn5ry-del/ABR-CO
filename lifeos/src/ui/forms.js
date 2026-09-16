@@ -1018,43 +1018,65 @@
 
     /* ================= import d'un relevé bancaire ================= */
     importStatement: function (onDone) {
-      L.util.pickFile('.csv,text/csv,text/plain').then(function (file) {
+      L.util.pickFile('.csv,.ofx,.qif,.txt,text/csv,text/plain').then(function (file) {
         if (!file) return;
-        return L.util.readFile(file).then(function (text) {
-          var parsed = L.csv.parse(text);
-          if (!parsed || !parsed.rows.length) { L.toast.error('Fichier illisible ou vide.'); return; }
-
-          var mapping = Object.assign({}, parsed.mapping);
-          var options = { reverse: false, accountId: (L.finance.accounts()[0] || {}).id || null, categoryId: null };
+        return L.bank.readStatement(file).then(function (read) {
+          /* OFX et QIF portent leur structure : rien à désigner à la main.
+             Un CSV demande d'abord de dire quelle colonne est quoi. */
+          var parsed = read.parsed || null;
+          var mapping = parsed ? Object.assign({}, parsed.mapping) : null;
+          var options = {
+            reverse: false,
+            accountId: (L.finance.accounts()[0] || {}).id || null,
+            categoryId: null,
+            autoCategorize: true
+          };
           var preview = h('div');
 
+          function entries() {
+            var raw = read.entries || (parsed ? L.csv.preview(parsed, mapping, options) : []);
+            return options.autoCategorize ? L.rules.categorize(raw) : raw;
+          }
+
           function columns() {
+            if (!parsed) return [];
             return parsed.header.map(function (name, i) {
               return { value: i, label: (name || 'Colonne ' + (i + 1)).slice(0, 28) };
-            });
+            }).concat([{ value: -1, label: '— aucune —' }]);
           }
 
           function drawPreview() {
-            var entries = L.csv.preview(parsed, mapping, options);
-            var expenses = entries.filter(function (e) { return e.type === 'expense'; });
+            var list = entries();
+            var expenses = list.filter(function (e) { return e.type === 'expense'; });
+            var known = list.filter(function (e) { return e.categoryId; });
+            var total = L.util.sum(expenses, function (e) { return e.amount; });
+
             L.dom.mount(preview, [
               h('div.row.wrap.t-xs.muted', { style: { gap: '12px', marginBottom: 'var(--sp-3)' } }, [
-                h('span', entries.length + ' ' + L.util.plural(entries.length, 'ligne') + ' ' + L.util.plural(entries.length, 'lisible') + ' sur ' + parsed.rows.length),
-                h('span', expenses.length + ' dépenses'),
-                h('span', (entries.length - expenses.length) + ' revenus')
+                h('span', list.length + ' ' + L.util.plural(list.length, 'opération') + ' ' + L.util.plural(list.length, 'lisible')),
+                h('span', expenses.length + ' dépenses · ' + L.format.money(total)),
+                h('span', (list.length - expenses.length) + ' entrées'),
+                options.autoCategorize
+                  ? h('span' + (known.length === list.length ? '.positive' : ''),
+                      known.length + ' classées automatiquement')
+                  : null
               ]),
-              entries.length
-                ? h('div.list.list--framed', entries.slice(0, 5).map(function (e) {
+              list.length
+                ? h('div.list.list--framed', list.slice(0, 6).map(function (e) {
                     return h('div.list__item', [
                       h('span.t-xs.muted.num', { style: { width: '74px', flex: 'none' } }, D.format(e.date, 'short')),
-                      h('span.grow.truncate.t-s', e.description),
+                      h('div.grow', { style: { minWidth: 0 } }, [
+                        h('div.t-s.truncate', e.description),
+                        e.categoryLabel
+                          ? h('div.t-xs.faint', 'reconnu : ' + e.categoryLabel)
+                          : h('div.t-xs.faint', 'à classer')
+                      ]),
                       h('span.t-s.num.w-600' + (e.type === 'income' ? '.positive' : ''),
                         (e.type === 'income' ? '+' : '−') + L.format.money(e.amount))
                     ]);
                   }))
                 : h('p.t-s.negative', 'Aucune ligne exploitable — vérifie les colonnes choisies.')
             ]);
-            return entries;
           }
 
           L.modal.open({
@@ -1062,20 +1084,38 @@
             size: 'wide',
             body: function () {
               var node = h('div.col', [
-                h('p.t-xs.faint', file.name + ' · séparateur « ' + (parsed.separator === '\t' ? 'tabulation' : parsed.separator) + ' »'),
-                h('div.grid.grid--3', [
+                h('p.t-xs.faint', file.name + ' · format ' + read.format.toUpperCase() +
+                  (parsed ? ' · séparateur « ' + (parsed.separator === '\t' ? 'tabulation' : parsed.separator) + ' »' : '')),
+
+                parsed ? h('div.grid.grid--3', [
                   L.dom.field('Colonne date', select(columns(), mapping.date, function (v) { mapping.date = +v; drawPreview(); })),
-                  L.dom.field('Colonne montant', select(columns(), mapping.amount, function (v) { mapping.amount = +v; drawPreview(); })),
-                  L.dom.field('Colonne libellé', select(columns(), mapping.description, function (v) { mapping.description = +v; drawPreview(); }))
-                ]),
+                  parsed.twoColumns
+                    ? L.dom.field('Colonne débit', select(columns(), mapping.debit, function (v) { mapping.debit = +v; drawPreview(); }))
+                    : L.dom.field('Colonne montant', select(columns(), mapping.amount, function (v) { mapping.amount = +v; drawPreview(); })),
+                  parsed.twoColumns
+                    ? L.dom.field('Colonne crédit', select(columns(), mapping.credit, function (v) { mapping.credit = +v; drawPreview(); }))
+                    : L.dom.field('Colonne libellé', select(columns(), mapping.description, function (v) { mapping.description = +v; drawPreview(); }))
+                ]) : null,
+                parsed && parsed.twoColumns
+                  ? L.dom.field('Colonne libellé', select(columns(), mapping.description, function (v) { mapping.description = +v; drawPreview(); }))
+                  : null,
+
                 h('div.grid.grid--2', [
                   L.dom.field('Compte', select(optionsFrom(L.finance.accounts(), 'Aucun'), options.accountId || '', function (v) { options.accountId = v || null; })),
-                  L.dom.field('Catégorie par défaut', select(optionsFrom(L.finance.categories('expense'), 'Aucune'), options.categoryId || '', function (v) { options.categoryId = v || null; }))
+                  L.dom.field('Catégorie par défaut', select(optionsFrom(L.finance.categories('expense'), 'Aucune'), options.categoryId || '', function (v) { options.categoryId = v || null; }),
+                    'Appliquée aux opérations non reconnues')
                 ]),
+
                 h('label.row', { style: { gap: '10px', cursor: 'pointer' } }, [
-                  L.dom.toggle(options.reverse, function (v) { options.reverse = v; drawPreview(); }, 'Montants positifs'),
-                  h('span.t-s', 'Les montants positifs sont des dépenses (relevés qui ne notent pas le signe)')
+                  L.dom.toggle(options.autoCategorize, function (v) { options.autoCategorize = v; drawPreview(); }, 'Classement automatique'),
+                  h('span.t-s', 'Reconnaître les marchands et classer automatiquement')
                 ]),
+
+                parsed && !parsed.twoColumns ? h('label.row', { style: { gap: '10px', cursor: 'pointer' } }, [
+                  L.dom.toggle(options.reverse, function (v) { options.reverse = v; drawPreview(); }, 'Montants positifs'),
+                  h('span.t-s', 'Les montants positifs sont des dépenses (relevés sans signe)')
+                ]) : null,
+
                 h('div.sep'),
                 preview
               ]);
@@ -1087,12 +1127,16 @@
                 h('button.btn', { onclick: function () { api.close(); } }, 'Annuler'),
                 h('button.btn.btn--primary', {
                   onclick: function () {
-                    var entries = L.csv.preview(parsed, mapping, options);
-                    if (!entries.length) { L.toast.error('Rien à importer.'); return; }
-                    var res = L.csv.apply(entries, options);
+                    var list = entries();
+                    if (!list.length) { L.toast.error('Rien à importer.'); return; }
+                    var res = L.csv.apply(list, options);
                     api.close();
-                    L.toast.undo(res.added + ' ' + L.util.plural(res.added, 'mouvement') + ' ' + L.util.plural(res.added, 'importé') +
-                      (res.skipped ? ' · ' + res.skipped + ' déjà présents' : ''));
+                    var rest = L.rules.uncategorized().length;
+                    L.toast.show(res.added + ' ' + L.util.plural(res.added, 'opération') + ' ' + L.util.plural(res.added, 'importée') +
+                      (res.skipped ? ' · ' + res.skipped + ' déjà présentes' : ''), {
+                      action: rest ? { label: 'Classer le reste', run: function () { Forms.sortUncategorized(); } } : null,
+                      duration: 6000
+                    });
                     if (onDone) onDone(res);
                   }
                 }, 'Importer')
@@ -1100,6 +1144,62 @@
             }
           });
         });
+      }, function (err) { L.toast.error('Lecture impossible : ' + err.message); });
+    },
+
+    /* Classement des opérations restées sans catégorie : une par une, et
+       chaque choix enseigne le marchand pour les fois suivantes. */
+    sortUncategorized: function () {
+      var queue = L.rules.uncategorized();
+      if (!queue.length) { L.toast.show('Tout est classé.'); return; }
+      var index = 0;
+
+      L.modal.open({
+        title: 'Classer les opérations',
+        size: 'narrow',
+        body: function (api) {
+          var body = h('div.col');
+          function draw() {
+            if (index >= queue.length) {
+              L.dom.mount(body, L.dom.empty('check', 'Terminé',
+                queue.length + ' ' + L.util.plural(queue.length, 'opération') + ' ' + L.util.plural(queue.length, 'classée') + '.'));
+              return;
+            }
+            var tx = L.finance.get(queue[index].id);
+            if (!tx) { index++; draw(); return; }
+            var cats = L.finance.categories(tx.type === 'income' ? 'income' : 'expense');
+
+            L.dom.mount(body, [
+              h('div.between.t-xs.muted', [
+                h('span', (index + 1) + ' sur ' + queue.length),
+                h('span', D.format(tx.date, 'long'))
+              ]),
+              h('div.card', { style: { padding: 'var(--sp-4)' } }, [
+                h('div.t-m.w-600', tx.description || 'Opération'),
+                h('div.t-l.w-700.num' + (tx.type === 'income' ? '.positive' : ''), { style: { marginTop: '6px' } },
+                  (tx.type === 'income' ? '+' : '−') + L.format.money(tx.amount))
+              ]),
+              h('div.row.wrap', { style: { gap: '6px' } }, cats.map(function (c) {
+                return h('button.chip.chip--tap', {
+                  onclick: function () {
+                    L.finance.save(tx.id, { categoryId: c.id });
+                    L.rules.learn(tx.description, c.id);
+                    index++;
+                    draw();
+                  }
+                }, [h('span', { style: { color: c.color } }, c.icon), c.name]);
+              })),
+              h('button.btn.btn--s.btn--ghost', {
+                onclick: function () { index++; draw(); }
+              }, 'Passer')
+            ]);
+          }
+          draw();
+          return body;
+        },
+        footer: function (api) {
+          return [h('button.btn', { onclick: function () { api.close(); } }, 'Fermer')];
+        }
       });
     },
 

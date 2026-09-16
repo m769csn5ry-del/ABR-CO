@@ -346,6 +346,167 @@
     ];
   }
 
+  /* ---------------- bilan du mois ---------------- */
+  function adviceCard(item) {
+    var tone = item.kind === 'warning' ? 'danger'
+      : item.kind === 'positive' ? 'positive'
+      : item.kind === 'caveat' ? 'warning' : null;
+    var border = tone === 'danger' ? 'var(--danger)'
+      : tone === 'positive' ? 'var(--positive)'
+      : tone === 'warning' ? 'var(--warning)' : 'var(--line)';
+
+    return h('div.card', { style: { borderLeft: '3px solid ' + border } }, [
+      h('div.between.wrap', { style: { gap: 'var(--sp-3)' } }, [
+        h('div.grow', { style: { minWidth: 0 } }, [
+          h('div.t-s.w-600', item.title),
+          item.detail ? h('p.t-xs.muted', { style: { marginTop: '5px' } }, item.detail) : null
+        ]),
+        item.gain > 0 ? h('span.chip.chip--positive.nowrap', L.format.money(item.gain) + ' / mois') : null
+      ]),
+      item.action ? h('div.row', { style: { marginTop: 'var(--sp-3)' } }, [
+        h('button.btn.btn--s', {
+          onclick: function () {
+            var a = item.action;
+            if (a.type === 'categorize') L.forms.sortUncategorized();
+            else if (a.type === 'subscriptions') L.router.setParams({ tab: 'bilan', focus: 'subs' });
+            else if (a.type === 'category') L.router.setParams({ tab: 'transactions', category: a.categoryId });
+            else if (a.type === 'goal') L.router.go('goals', { id: a.goalId });
+          }
+        }, item.action.label)
+      ]) : null
+    ]);
+  }
+
+  function bilan(month) {
+    var r = L.insights.month(month);
+    var advice = L.insights.advice(r);
+    var gains = advice.filter(function (a) { return a.gain > 0; });
+    var totalGain = L.util.sum(gains, function (a) { return a.gain; });
+
+    return [
+      /* --- le mois en quatre chiffres, comparés à l'ordinaire --- */
+      h('div.grid.grid--4.grid--keep2', [
+        L.views.stat('Revenus', L.format.money(r.period.income, { decimals: 0 }),
+          r.delta.income ? L.format.money(r.delta.income, { sign: true, decimals: 0 }) + ' vs moyenne' : 'stable',
+          { tone: 'positive' }),
+        L.views.stat('Dépenses', L.format.money(r.period.expense, { decimals: 0 }),
+          r.delta.expense ? L.format.money(r.delta.expense, { sign: true, decimals: 0 }) + ' vs moyenne' : 'stable',
+          { tone: r.delta.expense > 0 ? 'negative' : null }),
+        L.views.stat('Épargne', L.format.money(r.period.put, { decimals: 0 }),
+          L.format.percent(r.period.rate, 0) + ' des revenus',
+          { bar: r.period.rate, barVariant: 'positive' }),
+        r.isCurrent && r.daysLeft
+          ? L.views.stat('Reste à vivre', r.perDay === null ? '—' : L.format.money(r.perDay) + ' / jour',
+              L.format.money(r.available, { decimals: 0 }) + ' sur ' + r.daysLeft + ' jours',
+              { tone: r.available < 0 ? 'negative' : null })
+          : L.views.stat('Solde du mois', L.format.money(r.period.net, { sign: true, decimals: 0 }),
+              r.period.net >= 0 ? 'excédent' : 'déficit',
+              { tone: r.period.net >= 0 ? 'positive' : 'negative' })
+      ]),
+
+      /* --- ce qu'il y a à en faire --- */
+      h('div.section', [
+        L.views.sectionHead('Ce que ça dit',
+          totalGain > 0 ? h('span.chip.chip--positive', 'jusqu\'à ' + L.format.money(totalGain) + ' / mois') : null),
+        advice.length
+          ? h('div.col', { style: { gap: 'var(--sp-3)' } }, advice.map(adviceCard))
+          : L.dom.empty('sparkle', 'Pas encore de quoi conclure',
+              'Importe un relevé ou saisis quelques mois d\'opérations : l\'analyse a besoin d\'un passé pour comparer.',
+              h('button.btn.btn--primary', { onclick: function () { L.forms.importStatement(); } }, 'Importer un relevé'))
+      ]),
+
+      /* --- les engagements récurrents --- */
+      r.subscriptions.length ? h('div.section', [
+        L.views.sectionHead('Engagements récurrents',
+          h('span.t-xs.muted', L.format.money(r.subscriptionsMonthly) + ' / mois de dépenses' +
+            (r.savingCommitments ? ' · ' + L.format.money(r.savingCommitments) + ' d\'épargne' : ''))),
+        h('p.t-xs.faint', { style: { marginBottom: 'var(--sp-3)' } },
+          'Prélèvements au montant fixe, revenus au moins trois mois de suite.'),
+        h('div.list.list--framed', r.subscriptions.map(function (sub) {
+          return h('div.list__item', [
+            h('div.tx__icon', { style: sub.category ? { background: sub.category.color + '22' } : null },
+              sub.category ? sub.category.icon : '↻'),
+            h('div.grow', { style: { minWidth: 0 } }, [
+              h('div.t-s.truncate', sub.label),
+              h('div.t-xs.faint', sub.months + ' mois consécutifs' +
+                (sub.isSaving ? ' · épargne programmée' : '') +
+                (sub.category ? ' · ' + sub.category.name : '') +
+                (sub.activeThisMonth ? '' : ' · pas encore passé ce mois-ci'))
+            ]),
+            h('div', { style: { textAlign: 'right', flex: 'none' } }, [
+              h('div.t-s.w-600.num', L.format.money(sub.amount)),
+              h('div.t-xs.faint.num', L.format.money(sub.yearly, { decimals: 0 }) + ' / an')
+            ])
+          ]);
+        }))
+      ]) : null,
+
+      /* --- les postes qui bougent --- */
+      r.categories.length ? h('div.section', [
+        L.views.sectionHead('Postes du mois, comparés à l\'ordinaire'),
+        h('div.card', [
+          h('div.col', { style: { gap: 'var(--sp-4)' } }, r.categories.slice(0, 8).map(function (c) {
+            var worse = c.deltaRatio !== null && c.deltaRatio > 0.15 && c.delta > 15;
+            var better = c.deltaRatio !== null && c.deltaRatio < -0.15 && c.delta < -15;
+            return h('div', [
+              h('div.between.t-xs', { style: { marginBottom: '5px' } }, [
+                h('span.row', { style: { gap: '6px', minWidth: 0 } }, [
+                  L.dom.dot(c.color), h('span.truncate', c.name)
+                ]),
+                h('span.row', { style: { gap: '8px', flex: 'none' } }, [
+                  h('span.num.w-600', L.format.money(c.total, { decimals: 0 })),
+                  c.usual ? h('span.num' + (worse ? '.negative' : better ? '.positive' : '.faint'),
+                    L.format.money(c.delta, { sign: true, decimals: 0 })) : null
+                ])
+              ]),
+              L.dom.bar(r.period.expense ? c.total / r.period.expense : 0,
+                worse ? 'danger' : better ? 'positive' : null, { thin: true }),
+              c.usual ? h('div.t-xs.faint', { style: { marginTop: '4px' } },
+                'habituellement ' + L.format.money(c.usual, { decimals: 0 })) : null
+            ]);
+          }))
+        ])
+      ]) : null,
+
+      /* --- fixe contre variable --- */
+      r.period.expense ? h('div.section', [
+        L.views.sectionHead('Structure des dépenses'),
+        h('div.grid.grid--2', [
+          L.views.stat('Charges fixes', L.format.money(r.fixed, { decimals: 0 }),
+            r.period.income ? L.format.percent(r.fixedShare, 0) + ' de tes revenus' : 'engagements récurrents',
+            { bar: L.util.clamp(r.fixedShare, 0, 1), barVariant: r.fixedShare > 0.5 ? 'danger' : null }),
+          L.views.stat('Dépenses libres', L.format.money(r.variable, { decimals: 0 }),
+            'ce sur quoi tu peux agir ce mois-ci')
+        ])
+      ]) : null,
+
+      /* --- la fiabilité de l'analyse --- */
+      h('div.section', [
+        h('div.card.card--flat', [
+          h('div.between.wrap', { style: { gap: 'var(--sp-3)' } }, [
+            h('div.grow', { style: { minWidth: 0 } }, [
+              h('div.t-s.w-600', r.coverage.missing
+                ? r.coverage.missing + ' opérations sans catégorie'
+                : 'Toutes les opérations sont classées'),
+              h('p.t-xs.muted', { style: { marginTop: '4px' } },
+                r.coverage.missing
+                  ? 'L\'analyse porte sur ' + L.format.percent(r.coverage.ratio, 0) + ' de tes dépenses du mois.'
+                  : 'L\'analyse porte sur l\'intégralité du mois.')
+            ]),
+            h('div.row', { style: { gap: '6px' } }, [
+              r.coverage.missing ? h('button.btn.btn--s', {
+                onclick: function () { L.forms.sortUncategorized(); }
+              }, 'Classer') : null,
+              h('button.btn.btn--s', {
+                onclick: function () { L.forms.importStatement(); }
+              }, [L.icon('upload'), 'Importer un relevé'])
+            ])
+          ])
+        ])
+      ])
+    ];
+  }
+
   /* ---------------- catégories & comptes ---------------- */
   function structure() {
     return [
@@ -405,6 +566,7 @@
     var month = params.month || D.monthKey(D.today());
 
     var body = tab === 'transactions' ? transactions(params, month)
+      : tab === 'bilan' ? bilan(month)
       : tab === 'budgets' ? budgets(month)
       : tab === 'structure' ? structure()
       : overview(month);
@@ -423,7 +585,9 @@
               'aria-label': 'Autres actions',
               onclick: function (e) {
                 L.menu(e.currentTarget, [
-                  { icon: 'upload', label: 'Importer un relevé (.csv)', run: function () { L.forms.importStatement(); } },
+                  { icon: 'upload', label: 'Importer un relevé (CSV, OFX, QIF)', run: function () { L.forms.importStatement(); } },
+                  { icon: 'tag', label: 'Classer les opérations sans catégorie', hint: String(L.rules.uncategorized().length),
+                    run: function () { L.forms.sortUncategorized(); } },
                   { icon: 'download', label: 'Exporter les transactions (.csv)', run: function () {
                     var rows = [['Date', 'Type', 'Catégorie', 'Description', 'Montant', 'Compte']];
                     L.finance.all().forEach(function (t) {
@@ -447,6 +611,7 @@
         h('div.toolbar', { style: { marginTop: 'var(--sp-5)' } }, [
           L.dom.segmented([
             { id: 'overview', label: "Vue d'ensemble" },
+            { id: 'bilan', label: 'Bilan', icon: 'sparkle' },
             { id: 'transactions', label: 'Transactions' },
             { id: 'budgets', label: 'Budgets' },
             { id: 'structure', label: 'Comptes & catégories' }
