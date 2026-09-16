@@ -199,6 +199,50 @@
     ]), { align: 'right' });
   }
 
+  /* ---------------- minuteur ----------------
+     La barre vit en dehors du rendu des écrans : elle se met à jour chaque
+     seconde sans redessiner l'application. */
+  var timerNode = null, timerTime = null;
+
+  function renderTimer() {
+    var running = L.timer.current();
+    if (!running) {
+      if (timerNode) { timerNode.remove(); timerNode = null; timerTime = null; }
+      return;
+    }
+    var task = L.timer.task();
+    var title = task ? task.title : (running.label || 'Concentration');
+    var paused = !running.startedAt;
+
+    if (!timerNode) {
+      timerTime = h('span.timerbar__time', L.timer.label());
+      timerNode = h('div.timerbar', [
+        h('span.timerbar__pulse'),
+        h('span.timerbar__title.truncate.grow', title),
+        timerTime,
+        h('button.timerbar__btn', {
+          'aria-label': 'Pause',
+          onclick: function () { L.timer.running() ? L.timer.pause() : L.timer.resume(); }
+        }, L.icon(paused ? 'play' : 'pause')),
+        h('button.timerbar__btn', {
+          'aria-label': 'Terminer la tâche',
+          onclick: function () { L.timer.stop({ complete: true }); }
+        }, L.icon('check')),
+        h('button.timerbar__btn', {
+          'aria-label': 'Arrêter',
+          onclick: function () { L.timer.stop(); }
+        }, L.icon('x'))
+      ]);
+      document.body.appendChild(timerNode);
+    } else {
+      timerNode.querySelector('.timerbar__title').textContent = title;
+    }
+    timerNode.classList.toggle('timerbar--paused', paused);
+    var toggle = timerNode.querySelectorAll('.timerbar__btn')[0];
+    L.dom.mount(toggle, L.icon(paused ? 'play' : 'pause'));
+    if (timerTime) timerTime.textContent = L.timer.label();
+  }
+
   /* ---------------- rendu ---------------- */
   function renderView() {
     var route = L.router.current();
@@ -240,6 +284,7 @@
     ]);
 
     document.title = (L.schema.SECTIONS.filter(function (s) { return s.id === route.view; })[0] || { label: 'LifeOS' }).label + ' — LifeOS';
+    renderTimer();
 
     var y = scrollMemory[route.view];
     window.scrollTo(0, route.params && route.params.scroll === 'top' ? 0 : (y || 0));
@@ -408,6 +453,7 @@
         App.applyTheme();
         L.router.init();
         L.notify.init();
+        L.timer.init();
         queueRender();
 
         if (info && info.fresh) setTimeout(welcome, 400);
@@ -472,6 +518,9 @@
       App.applyCachedTheme();
       L.shortcuts.init();
 
+      L.timer.on('tick', function () { renderTimer(); });
+      L.timer.on('start', function () { renderTimer(); });
+      L.timer.on('stop', function () { renderTimer(); queueRender(); });
       L.router.on('change', function () { queueRender(); });
       L.store.on('change', function () { queueRender(); });
       L.store.on('error', function (err) {

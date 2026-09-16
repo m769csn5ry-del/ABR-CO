@@ -70,7 +70,18 @@
 
     taskMenu: function (anchor, task) {
       var open = L.tasks.OPEN_STATUS[task.status];
+      var timed = L.timer.current();
+      var isTimed = timed && timed.taskId === task.id;
       L.menu(anchor, [
+        open ? {
+          icon: isTimed ? 'pause' : 'play',
+          label: isTimed ? 'Arrêter le minuteur' : 'Démarrer le minuteur',
+          hint: isTimed ? L.timer.label() : D.duration(task.estimate),
+          run: function () {
+            if (isTimed) L.timer.stop();
+            else { L.timer.start(task.id, { goal: task.estimate }); L.toast.show('Minuteur lancé — ' + task.title); }
+          }
+        } : null,
         { icon: 'edit', label: 'Modifier', run: function () { L.forms.task(task); } },
         open ? { icon: 'play', label: task.status === 'doing' ? 'Marquer à faire' : 'Marquer en cours',
           run: function () { L.tasks.setStatus(task.id, task.status === 'doing' ? 'todo' : 'doing'); } } : null,
@@ -179,10 +190,20 @@
         },
         footerSplit: true,
         footer: function (api) {
+          var isTimed = L.timer.current() && L.timer.current().taskId === task.id;
           return [
-            h('button.btn.btn--ghost', {
-              onclick: function () { api.close(); setTimeout(function () { V.taskMenuFallback(task); }, 120); }
-            }, 'Reporter…'),
+            h('div.row', [
+              h('button.btn.btn--ghost', {
+                onclick: function () { api.close(); setTimeout(function () { V.taskMenuFallback(task); }, 120); }
+              }, 'Reporter…'),
+              L.tasks.OPEN_STATUS[task.status] ? h('button.btn', {
+                onclick: function () {
+                  if (isTimed) { L.timer.stop(); }
+                  else { L.timer.start(task.id, { goal: task.estimate }); L.toast.show('Minuteur lancé'); }
+                  api.close();
+                }
+              }, [L.icon(isTimed ? 'pause' : 'play'), isTimed ? 'Arrêter' : 'Démarrer']) : null
+            ]),
             h('div.row', [
               h('button.btn', { onclick: function () { api.close(); } }, 'Fermer'),
               h('button.btn.btn--primary', {
@@ -420,6 +441,14 @@
                 ].join(''))
               ]),
               opts.actions === false ? null : h('div.row', { style: { gap: '4px' } }, [
+                b.type === 'task' && ref && !doneTask ? h('button.iconbtn', {
+                  'aria-label': 'Démarrer le minuteur',
+                  title: 'Démarrer le minuteur',
+                  onclick: function () {
+                    L.timer.start(ref.id, { goal: b.minutes });
+                    L.toast.show('Minuteur lancé — ' + ref.title);
+                  }
+                }, L.icon('play')) : null,
                 b.type === 'task' && ref ? L.dom.checkbox(doneTask, function () {
                   L.tasks.setStatus(ref.id, doneTask ? 'todo' : 'done');
                 }, { round: true, label: 'Terminer' }) : null,
@@ -514,11 +543,12 @@
                 a.kind === 'task' || a.kind === 'habit' ? h('div.row', { style: { marginTop: '12px', gap: '6px' } }, [
                   h('button.btn.btn--s.btn--primary', {
                     onclick: function () {
-                      if (a.kind === 'task') L.tasks.setStatus(a.id, 'doing');
+                      if (a.kind === 'task') L.timer.start(a.id, { goal: a.minutes });
+                      else L.timer.start(null, { label: a.title, goal: a.minutes });
                       api.close();
-                      L.toast.show('C\'est parti : ' + a.title);
+                      L.toast.show('C\'est parti : ' + a.title + ' — minuteur lancé');
                     }
-                  }, 'Je commence'),
+                  }, [L.icon('play'), 'Je commence']),
                   h('button.btn.btn--s', {
                     onclick: function () {
                       if (a.kind === 'task') { L.tasks.setStatus(a.id, 'done'); L.toast.undo('Terminée'); }

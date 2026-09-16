@@ -358,6 +358,7 @@
       plans: {},             // { 'AAAA-MM-JJ': {blocks, status, createdAt} }
       weekPlans: {},         // { 'AAAA-Snn': {...} }
       chat: [],
+      timer: null,           // { taskId, startedAt, accumulated, goal }
       meta: { createdAt: Date.now(), updatedAt: Date.now(), seeded: false }
     };
   }

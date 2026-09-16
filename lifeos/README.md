@@ -48,6 +48,7 @@ C'est le point important : rien n'est une page isolée.
 | Tu dépasses un budget | L'accueil, les finances et la confirmation d'ajout le signalent |
 | Un objectif décroche | Ses tâches remontent dans les priorités, le planning et « Je suis perdu » |
 | Tu acceptes un planning | Les tâches reçoivent leur date et leur heure — le calendrier et les rappels suivent |
+| Tu lances le minuteur sur une tâche | Le temps mesuré s'ajoute à son temps réel, puis aux statistiques de temps par domaine et par projet |
 
 Aucun chiffre affiché n'est stocké : tout est recalculé depuis les données
 brutes (tâches, transactions, relevés d'habitudes). Un nombre affiché est
@@ -87,6 +88,17 @@ semaine, objectifs qui décrochent, projets à risque, journées qui vont
 déborder, tâches à reporter. Validée, elle donne son jour à chaque tâche.
 
 Déclenchée à la main, ou annoncée chaque dimanche à 10 h (réglable).
+
+### Le minuteur (`src/services/timer.js`)
+
+Le temps réellement passé ne s'estime pas, il se mesure. Démarré depuis une
+tâche, un bloc du planning ou le bouton « Je commence », le minuteur affiche
+une barre flottante, passe la tâche « en cours », et inscrit à l'arrêt les
+minutes mesurées dans son temps réel — celui-là même qui alimente les
+statistiques de temps par domaine et par projet.
+
+Il ne garde qu'un instant de départ : fermer l'onglet, recharger la page ou
+verrouiller le téléphone ne lui fait rien perdre.
 
 ### « Je suis perdu » (`src/domain/focus.js`)
 
@@ -211,7 +223,7 @@ lifeos/
       domains tasks projects goals finance habits calendar
       notes stats search planner weekly focus
     services/           ponts vers le monde extérieur
-      notifications ics auth nlp assistant
+      timer notifications ics auth nlp assistant
     ui/                 briques d'affichage réutilisables
       dom icons overlay charts forms palette shortcuts router
     views/              un fichier par écran

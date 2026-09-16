@@ -366,6 +366,39 @@ input[type="range"]::-moz-range-thumb{ width:15px; height:15px; border:1px solid
 .toast__action{ margin-left:auto; font-weight:600; color:inherit; opacity:.75; }
 .toast__action:hover{ opacity:1; }
 
+/* ---------- minuteur ---------- */
+.timerbar{
+  position:fixed; z-index:150; left:50%; transform:translateX(-50%);
+  bottom:calc(var(--sp-5) + env(safe-area-inset-bottom));
+  display:flex; align-items:center; gap:var(--sp-3);
+  padding:9px 10px 9px var(--sp-4);
+  background:var(--ink); color:var(--bg);
+  border-radius:var(--r-full); box-shadow:var(--shadow-3);
+  max-width:min(440px,calc(100% - 24px));
+  animation:toast-in var(--t-base) var(--ease-out) both;
+}
+@media (max-width:900px){ .timerbar{ bottom:calc(var(--tabbar) + var(--sp-2)); } }
+.timerbar__pulse{
+  width:8px; height:8px; border-radius:50%; background:var(--bg); flex:none;
+  animation:pulse 2s var(--ease) infinite;
+}
+.timerbar--paused .timerbar__pulse{ animation:none; opacity:.4; }
+@keyframes pulse{ 0%,100%{ opacity:1; transform:scale(1); } 50%{ opacity:.35; transform:scale(.8); } }
+.timerbar__title{ font-size:var(--fs-s); font-weight:550; min-width:0; }
+.timerbar__time{
+  font-variant-numeric:tabular-nums; font-size:var(--fs-s); font-weight:650;
+  letter-spacing:-.01em; opacity:.9; flex:none;
+}
+.timerbar__btn{
+  width:30px; height:30px; border-radius:50%; flex:none;
+  display:grid; place-items:center; color:inherit;
+  background:rgba(255,255,255,.12);
+  transition:background var(--t-fast) var(--ease);
+}
+:root[data-theme="dark"] .timerbar__btn{ background:rgba(0,0,0,.14); }
+.timerbar__btn:hover{ background:rgba(255,255,255,.24); }
+.timerbar__btn svg{ width:15px; height:15px; }
+
 /* ---------- états vides ---------- */
 .empty{
   display:flex; flex-direction:column; align-items:center; justify-content:center;

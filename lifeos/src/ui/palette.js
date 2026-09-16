@@ -33,6 +33,14 @@
       });
     });
 
+    if (L.timer.current()) {
+      out.push({
+        id: 'act:timer-stop', group: 'Faire', icon: 'pause',
+        label: 'Arrêter le minuteur (' + L.timer.label() + ')',
+        run: function () { L.timer.stop(); }
+      });
+    }
+
     out.push(
       { id: 'new:task', group: 'Créer', label: 'Nouvelle tâche', icon: 'check', hint: 'T', run: function () { L.forms.quickTask(); } },
       { id: 'new:task-full', group: 'Créer', label: 'Nouvelle tâche détaillée', icon: 'check', run: function () { L.forms.task(); } },
