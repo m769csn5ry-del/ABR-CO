@@ -1,4 +1,8 @@
-# Publie Orga sur GitHub Pages.
+# Publie les applications du dépôt sur GitHub Pages.
+#
+# Deux applications cohabitent sur le même site :
+#   /            Orga        (dossier todo/)
+#   /lifeos/     LifeOS      (dossier lifeos/)
 #
 # Pages est servi depuis la branche `gh-pages` (c'est sa création qui a activé
 # Pages : un workflow n'a pas le droit de créer le site lui-même — le jeton
@@ -9,13 +13,14 @@
 # /ABR-CO/ et non /ABR-CO/todo/, ce qui garde la portée du service worker et les
 # chemins du manifeste corrects.
 
-name: Publier Orga
+name: Publier les apps
 
 on:
   push:
     branches: [main]
     paths:
       - 'todo/**'
+      - 'lifeos/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -48,7 +53,22 @@ jobs:
             || { echo "::error::le manifeste n'est pas lié dans index.html"; exit 1; }
           grep -q 'data:font/woff2;base64' todo/index.html \
             || { echo "::error::la police display n'est pas encastrée"; exit 1; }
-          echo "Paquet complet : $(du -sh todo | cut -f1)"
+          echo "Orga : $(du -sh todo | cut -f1)"
+
+          for f in lifeos/index.html lifeos/manifest.webmanifest lifeos/sw.js \
+                   lifeos/src/app.js lifeos/styles/tokens.css \
+                   lifeos/icons/icon-180.png lifeos/icons/icon-512.png; do
+            [ -f "$f" ] || { echo "::error::fichier manquant : $f"; exit 1; }
+          done
+          # Chaque script listé dans la page doit exister, et chacun doit être
+          # mis en cache par le service worker : sinon l'app casse hors ligne.
+          manquants=0
+          for src in $(grep -o 'src="\./src/[^"]*"' lifeos/index.html | sed 's/src="\.\///;s/"//'); do
+            [ -f "lifeos/$src" ] || { echo "::error::script introuvable : lifeos/$src"; manquants=1; }
+            grep -q "$src" lifeos/sw.js || { echo "::error::script absent du cache hors ligne : $src"; manquants=1; }
+          done
+          [ "$manquants" = "0" ] || exit 1
+          echo "LifeOS : $(du -sh lifeos | cut -f1)"
 
       - name: Publier sur gh-pages
         id: sync
@@ -65,7 +85,13 @@ jobs:
           git -C ../site checkout -B gh-pages
 
           # `--delete` : un fichier retiré de todo/ doit disparaître du site.
-          rsync -a --delete --exclude '.git' --exclude 'README.md' todo/ ../site/
+          # `lifeos` est exclu ici : ce dossier est synchronisé juste après.
+          rsync -a --delete --exclude '.git' --exclude 'README.md' \
+                --exclude 'lifeos' --exclude 'lifeos/**' todo/ ../site/
+
+          # LifeOS vit dans son propre sous-dossier, servi tel quel.
+          mkdir -p ../site/lifeos
+          rsync -a --delete --exclude 'README.md' lifeos/ ../site/lifeos/
           touch ../site/.nojekyll
           # sert de témoin : la vérification attend de voir CE commit en ligne.
           echo "$sha" > ../site/version.txt
@@ -117,11 +143,18 @@ jobs:
             if [ "$code" = "$2" ]; then echo "  OK   $3 ($code)"
             else echo "::error::$3 — attendu $2, reçu $code ($1)"; fail=1; fi
           }
-          check "$base/"                     200 "page d'accueil"
-          check "$base/manifest.webmanifest" 200 "manifeste"
-          check "$base/sw.js"                200 "service worker"
-          check "$base/icons/icon-180.png"   200 "icône 180"
-          check "$base/icons/icon-512.png"   200 "icône 512"
+          check "$base/"                     200 "Orga — page d'accueil"
+          check "$base/manifest.webmanifest" 200 "Orga — manifeste"
+          check "$base/sw.js"                200 "Orga — service worker"
+          check "$base/icons/icon-180.png"   200 "Orga — icône 180"
+          check "$base/icons/icon-512.png"   200 "Orga — icône 512"
+
+          check "$base/lifeos/"                     200 "LifeOS — page d'accueil"
+          check "$base/lifeos/manifest.webmanifest" 200 "LifeOS — manifeste"
+          check "$base/lifeos/sw.js"                200 "LifeOS — service worker"
+          check "$base/lifeos/src/app.js"           200 "LifeOS — assemblage"
+          check "$base/lifeos/styles/tokens.css"    200 "LifeOS — jetons de design"
+          check "$base/lifeos/icons/icon-180.png"   200 "LifeOS — icône 180"
 
           html=$(curl -sSL --max-time 30 "$base/")
           for m in 'rel="manifest"' 'apple-mobile-web-app-capable' 'Bodoni Moda' 'data-tab="today"'; do
@@ -136,7 +169,18 @@ jobs:
             *) echo "  OK   police encastrée, aucun appel externe" ;;
           esac
 
+          life=$(curl -sSL --max-time 30 "$base/lifeos/")
+          for m in 'rel="manifest"' 'apple-mobile-web-app-capable' 'src/app.js' 'id="app"'; do
+            case "$life" in
+              *"$m"*) echo "  OK   LifeOS — marqueur présent : $m" ;;
+              *) echo "::error::LifeOS — marqueur absent de la page servie : $m"; fail=1 ;;
+            esac
+          done
+
           [ "$fail" = "0" ] || { echo "::error::vérification en ligne en échec"; exit 1; }
-          { echo "## L'app répond en ligne"; echo ""; echo "**$base/**"; echo ""
-            echo "Commit \`$ATTENDU\` — page, manifeste, service worker et icônes vérifiés."
+          { echo "## Les apps répondent en ligne"; echo ""
+            echo "- Orga : **$base/**"
+            echo "- LifeOS : **$base/lifeos/**"
+            echo ""
+            echo "Commit \`$ATTENDU\` — pages, manifestes, service workers et icônes vérifiés."
           } >> "$GITHUB_STEP_SUMMARY"
