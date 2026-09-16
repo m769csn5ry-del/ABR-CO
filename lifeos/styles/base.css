@@ -1,0 +1,117 @@
+/* ==========================================================================
+   LifeOS — socle : remise à zéro, typographie, utilitaires
+   ========================================================================== */
+
+*,*::before,*::after{ box-sizing:border-box; }
+
+html{
+  -webkit-text-size-adjust:100%;
+  height:100%;
+}
+
+body{
+  margin:0;
+  min-height:100%;
+  background:var(--bg-sunken);
+  color:var(--ink);
+  font-family:var(--ui);
+  font-size:var(--fs-base);
+  line-height:1.5;
+  letter-spacing:-.005em;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  overscroll-behavior-y:none;
+}
+
+h1,h2,h3,h4{ margin:0; font-weight:600; letter-spacing:var(--tracking-tight); line-height:1.2; }
+h1{ font-size:var(--fs-2xl); }
+h2{ font-size:var(--fs-xl); }
+h3{ font-size:var(--fs-l); }
+h4{ font-size:var(--fs-m); }
+p{ margin:0; }
+ul,ol{ margin:0; padding:0; list-style:none; }
+a{ color:inherit; text-decoration:none; }
+
+button{
+  font:inherit; color:inherit; background:none; border:none; padding:0; margin:0;
+  cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+}
+input,textarea,select{ font:inherit; color:inherit; }
+img,canvas{ display:block; max-width:100%; }
+/* Une icône est un caractère, pas une image : taille fixe par défaut,
+   que les composants redéfinissent au besoin. */
+svg{ display:block; flex:none; width:18px; height:18px; }
+/* Les dessins qui portent leur propre géométrie (anneaux, graphiques)
+   gardent la taille qu'ils se donnent. */
+.ring svg,.chart svg{ width:auto; height:auto; }
+
+:focus{ outline:none; }
+:focus-visible{
+  outline:2px solid var(--accent);
+  outline-offset:2px;
+  border-radius:var(--r-s);
+}
+
+::selection{ background:var(--accent-soft); }
+
+/* Barres de défilement fines, dans le ton du thème. */
+*{ scrollbar-width:thin; scrollbar-color:var(--line-strong) transparent; }
+*::-webkit-scrollbar{ width:9px; height:9px; }
+*::-webkit-scrollbar-track{ background:transparent; }
+*::-webkit-scrollbar-thumb{ background:var(--line-strong); border-radius:var(--r-full); border:3px solid transparent; background-clip:content-box; }
+*::-webkit-scrollbar-thumb:hover{ background:var(--ink-4); background-clip:content-box; }
+
+/* ---------- utilitaires ----------
+   `min-width:0` sur les conteneurs souples : sans lui, un élément large
+   (contrôle segmenté, titre long) refuse de rétrécir et pousse la page hors
+   de l'écran sur un téléphone. */
+.row{ display:flex; align-items:center; gap:var(--sp-3); min-width:0; }
+.row-top{ display:flex; align-items:flex-start; gap:var(--sp-3); min-width:0; }
+.col{ display:flex; flex-direction:column; gap:var(--sp-3); min-width:0; }
+.between{ display:flex; align-items:center; justify-content:space-between; gap:var(--sp-3); min-width:0; }
+.wrap{ flex-wrap:wrap; }
+.grow{ flex:1 1 auto; min-width:0; }
+.center{ display:flex; align-items:center; justify-content:center; }
+.hidden{ display:none !important; }
+.nowrap{ white-space:nowrap; }
+
+.truncate{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.clamp-2{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.clamp-3{ display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+
+.eyebrow{
+  font-size:var(--fs-micro); font-weight:600; letter-spacing:var(--tracking-caps);
+  text-transform:uppercase; color:var(--ink-3);
+}
+.muted{ color:var(--ink-3); }
+.faint{ color:var(--ink-4); }
+.mono{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+.num{ font-variant-numeric:tabular-nums; letter-spacing:-.01em; }
+.t-xs{ font-size:var(--fs-xs); }
+.t-s{ font-size:var(--fs-s); }
+.t-m{ font-size:var(--fs-m); }
+.t-l{ font-size:var(--fs-l); }
+.t-xl{ font-size:var(--fs-xl); }
+.t-2xl{ font-size:var(--fs-2xl); }
+.t-3xl{ font-size:var(--fs-3xl); }
+.w-500{ font-weight:500; } .w-600{ font-weight:600; } .w-700{ font-weight:700; }
+.positive{ color:var(--positive); }
+.negative{ color:var(--danger); }
+.warning{ color:var(--warning); }
+.accent{ color:var(--accent); }
+.strike{ text-decoration:line-through; }
+
+.sr-only{
+  position:absolute; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0;
+}
+
+/* Le mouvement reste un détail : on l'enlève sans rien casser. */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
