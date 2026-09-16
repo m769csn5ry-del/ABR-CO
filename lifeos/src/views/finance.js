@@ -132,7 +132,7 @@
             var cat = u.model.categoryId ? L.finance.category(u.model.categoryId) : null;
             return h('div.list__item', [
               h('span.t-xs.muted.num', { style: { width: '62px', flex: 'none' } }, D.format(u.date, 'short')),
-              h('div.tx__icon', { style: cat ? { color: cat.color } : null }, cat ? cat.icon : '↻'),
+              h('div.tx__icon', { style: cat ? { background: cat.color + '22' } : null }, cat ? cat.icon : '↻'),
               h('div.grow', { style: { minWidth: 0 } }, [
                 h('div.t-s.truncate', u.model.description || (cat ? cat.name : 'Mouvement')),
                 h('div.t-xs.faint', D.recurrenceLabel(u.model.recurrence) + ' · ' + D.relative(u.date, { caps: false }))
@@ -199,18 +199,19 @@
     return [
       h('div.toolbar', { style: { marginBottom: 'var(--sp-4)' } }, [
         h('input.input', {
-          placeholder: 'Rechercher…', value: params.q || '', style: { maxWidth: '220px' },
+          placeholder: 'Rechercher…', 'aria-label': 'Rechercher une transaction',
+          value: params.q || '', style: { maxWidth: '220px' },
           oninput: L.util.debounce(function (e) { L.router.setParams({ q: e.target.value }, { replace: true }); }, 250)
         }),
         L.forms.select([{ value: 'all', label: 'Tous les types' }].concat(L.schema.TX_TYPES.map(function (t) {
           return { value: t.id, label: t.label };
-        })), params.type || 'all', function (v) { L.router.setParams({ type: v }); }),
+        })), params.type || 'all', function (v) { L.router.setParams({ type: v }); }, { 'aria-label': 'Filtrer par type' }),
         L.forms.select([{ value: '', label: 'Toutes catégories' }].concat(L.finance.categories().map(function (c) {
           return { value: c.id, label: c.name };
-        })), params.category || '', function (v) { L.router.setParams({ category: v }); }),
+        })), params.category || '', function (v) { L.router.setParams({ category: v }); }, { 'aria-label': 'Filtrer par catégorie' }),
         L.forms.select([{ value: '', label: 'Tous les comptes' }].concat(L.finance.accounts().map(function (a) {
           return { value: a.id, label: a.name };
-        })), params.account || '', function (v) { L.router.setParams({ account: v }); }),
+        })), params.account || '', function (v) { L.router.setParams({ account: v }); }, { 'aria-label': 'Filtrer par compte' }),
         h('button.chip.chip--tap' + (params.all === '1' ? '.chip--accent' : ''), {
           onclick: function () { L.router.setParams({ all: params.all === '1' ? '' : '1' }); }
         }, 'Tout l\'historique')
@@ -291,10 +292,11 @@
               h('div.row', [
                 h('span.t-xs.num' + (line && line.state === 'over' ? '.negative' : line && line.state === 'near' ? '.warning' : '.muted'),
                   L.format.money(spent, { decimals: 0 }) + (c.budget ? ' / ' + L.format.money(c.budget, { decimals: 0 }) : '')),
-                h('input.input', {
+                h('input.input.input--mini', {
                   type: 'number', min: '0', step: '10', placeholder: 'budget',
+                  'aria-label': 'Budget mensuel de ' + c.name,
                   value: c.budget === null || c.budget === undefined ? '' : String(c.budget),
-                  style: { width: '96px', height: '28px', fontSize: 'var(--fs-xs)' },
+                  style: { width: '104px' },
                   onchange: function (e) {
                     L.finance.saveCategory(c.id, { budget: e.target.value === '' ? null : +e.target.value });
                   }
@@ -326,7 +328,7 @@
             h('div.list--framed', models.map(function (m) {
               var cat = m.categoryId ? L.finance.category(m.categoryId) : null;
               return h('button.tx', { onclick: function () { L.forms.transaction(m); } }, [
-                h('div.tx__icon', { style: cat ? { color: cat.color } : null }, cat ? cat.icon : '↻'),
+                h('div.tx__icon', { style: cat ? { background: cat.color + '22' } : null }, cat ? cat.icon : '↻'),
                 h('div.grow', { style: { minWidth: 0 } }, [
                   h('div.t-s.w-500.truncate', m.description || (cat ? cat.name : 'Mouvement')),
                   h('div.t-xs.faint.truncate', D.recurrenceLabel(m.recurrence) +
@@ -414,7 +416,7 @@
             h('h1.view__title', 'Finances'),
             h('p.view__lead', 'Revenus, dépenses, épargne et budgets — au même endroit que le reste de ta vie.')
           ]),
-          h('div.row.wrap', [
+          h('div.row.wrap', { style: { gap: 'var(--sp-2)' } }, [
             tab !== 'structure' ? monthNav(month, function (m) { L.router.setParams({ month: m }); }) : null,
             h('button.btn.btn--primary', { onclick: function () { L.forms.transaction(null, { type: 'expense' }); } }, [L.icon('plus'), 'Transaction']),
             h('button.iconbtn', {

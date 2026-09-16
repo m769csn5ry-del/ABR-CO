@@ -171,9 +171,23 @@
     ], { align: 'right' });
   }
 
+  /* Les quatre premiers écrans visibles, dans l'ordre choisi : réordonner les
+     sections réordonne aussi la barre d'onglets du téléphone. */
+  function mobileTabs() {
+    var visible = visibleSections().filter(function (s) { return s.id !== 'settings'; });
+    var preferred = visible.filter(function (s) { return s.mobile; });
+    var list = visible.slice(0, 4);
+    /* L'accueil reste toujours atteignable en un geste. */
+    if (!list.some(function (s) { return s.id === 'home'; }) && preferred.length) {
+      list = [visible.filter(function (s) { return s.id === 'home'; })[0] || preferred[0]]
+        .concat(list.slice(0, 3));
+    }
+    return list.filter(Boolean);
+  }
+
   function tabbar() {
     var currentView = L.router.current().view;
-    var list = visibleSections().filter(function (s) { return s.mobile; }).slice(0, 4);
+    var list = mobileTabs();
     var nodes = list.map(function (s) {
       return h('a.tabbar__item', {
         href: '#/' + s.id,
@@ -188,7 +202,7 @@
   }
 
   function moreMenu(anchor) {
-    var shown = visibleSections().filter(function (s) { return s.mobile; }).slice(0, 4).map(function (s) { return s.id; });
+    var shown = mobileTabs().map(function (s) { return s.id; });
     var rest = visibleSections().filter(function (s) { return shown.indexOf(s.id) === -1; });
     L.menu(anchor, rest.map(function (s) {
       return { icon: s.icon, label: s.label, run: function () { L.router.go(s.id); } };
@@ -541,6 +555,13 @@
       window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
         if ((L.store.state.settings.theme || 'auto') === 'auto') App.applyTheme();
       });
+
+      /* Certains écrans se dessinent autrement sur téléphone : passer d'un
+         format à l'autre (rotation, fenêtre redimensionnée) les reconstruit. */
+      var narrow = window.matchMedia(L.util.MOBILE_QUERY);
+      var onFormat = function () { queueRender(); };
+      if (narrow.addEventListener) narrow.addEventListener('change', onFormat);
+      else if (narrow.addListener) narrow.addListener(onFormat);
 
       /* Le passage au jour suivant doit rafraîchir les écrans du jour. */
       var lastDay = D.today();

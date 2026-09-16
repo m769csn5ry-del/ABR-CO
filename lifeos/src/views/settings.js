@@ -10,6 +10,15 @@
   var h = L.h, D = L.date;
 
   function setting(title, desc, control) {
+    /* Un intitulé visible ne suffit pas à un lecteur d'écran : on le rattache
+       explicitement au champ qu'il commande. */
+    if (control && control.querySelectorAll) {
+      var fields = control.matches && control.matches('input,select,textarea')
+        ? [control] : control.querySelectorAll('input,select,textarea');
+      Array.prototype.forEach.call(fields, function (el) {
+        if (!el.getAttribute('aria-label') && !el.closest('label')) el.setAttribute('aria-label', title);
+      });
+    }
     return h('div.setting', [
       h('div.setting__text', [
         h('div.setting__title', title),
@@ -145,6 +154,9 @@
     var homeOrder = (s.home && s.home.widgets) || [];
     var homeHidden = (s.home && s.home.hidden) || [];
 
+    var shortcuts = (s.home && s.home.shortcuts) || [];
+    var shortcutDefs = L.views.homeShortcuts || {};
+
     return h('div.col', [
       h('div.card', [
         h('div.card__head', [h('div.card__title', 'Ordre des sections')]),
@@ -156,6 +168,37 @@
           next.splice(to, 0, moved);
           L.store.setSetting('sections', next);
         })
+      ]),
+      h('div.card', [
+        h('div.card__head', [h('div.card__title', "Raccourcis de l'accueil")]),
+        h('p.t-xs.faint', { style: { marginBottom: 'var(--sp-4)' } },
+          'Les boutons de la barre d\'actions rapides, dans l\'ordre où tu veux les voir.'),
+        reorderList(shortcuts.filter(function (id) { return shortcutDefs[id]; }).map(function (id) {
+          return {
+            content: h('span.grow.row', { style: { minWidth: 0 } }, [
+              L.icon(shortcutDefs[id].icon),
+              h('span.t-s.truncate', shortcutDefs[id].label)
+            ]),
+            trailing: h('button.iconbtn', {
+              'aria-label': 'Retirer ' + shortcutDefs[id].label,
+              onclick: function () {
+                L.store.setSetting('home.shortcuts', shortcuts.filter(function (x) { return x !== id; }));
+              }
+            }, L.icon('x'))
+          };
+        }), function (from, to) {
+          var next = shortcuts.slice();
+          var moved = next.splice(from, 1)[0];
+          next.splice(to, 0, moved);
+          L.store.setSetting('home.shortcuts', next);
+        }),
+        h('div.row.wrap', { style: { gap: '6px', marginTop: 'var(--sp-3)' } },
+          Object.keys(shortcutDefs).filter(function (id) { return shortcuts.indexOf(id) === -1; })
+            .map(function (id) {
+              return h('button.chip.chip--tap', {
+                onclick: function () { L.store.setSetting('home.shortcuts', shortcuts.concat([id])); }
+              }, [L.icon('plus'), shortcutDefs[id].label]);
+            }))
       ]),
       h('div.card', [
         h('div.card__head', [h('div.card__title', "Blocs de l'accueil")]),

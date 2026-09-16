@@ -302,7 +302,9 @@
       sections: SECTIONS.map(function (s) { return { id: s.id, hidden: false }; }),
       home: {
         widgets: ['planning', 'tasks', 'next', 'goals', 'habits', 'finance', 'time', 'week'],
-        hidden: []
+        hidden: [],
+        /* Les boutons de la barre d'actions rapides, dans l'ordre. */
+        shortcuts: ['lost', 'task', 'note', 'expense', 'assistant']
       },
       day: {
         start: '08:00',

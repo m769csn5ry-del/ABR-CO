@@ -29,15 +29,31 @@
     ]);
   }
 
+  /* Raccourcis disponibles pour la barre d'actions rapides. L'ordre et la
+     sélection se règlent dans Paramètres → Navigation. */
+  var SHORTCUTS = {
+    lost:      { label: 'Je suis perdu', icon: 'compass', strong: true, run: function () { L.views.lost(); } },
+    task:      { label: 'Tâche', icon: 'check', run: function () { L.forms.quickTask(); } },
+    note:      { label: 'Note', icon: 'note', run: function () { L.forms.note(); } },
+    expense:   { label: 'Dépense', icon: 'wallet', run: function () { L.forms.transaction(null, { type: 'expense' }); } },
+    assistant: { label: 'Assistant', icon: 'sparkle', run: function () { L.router.go('assistant'); } },
+    event:     { label: 'Événement', icon: 'calendar', run: function () { L.forms.event(null, { date: D.today() }); } },
+    project:   { label: 'Projet', icon: 'folder', run: function () { L.forms.project(); } },
+    goal:      { label: 'Objectif', icon: 'target', run: function () { L.forms.goal(); } },
+    habit:     { label: 'Habitude', icon: 'repeat', run: function () { L.forms.habit(); } },
+    planning:  { label: 'Organiser', icon: 'layout', run: function () { L.router.go('planning', { generate: 'day' }); } },
+    search:    { label: 'Rechercher', icon: 'search', run: function () { L.palette.open(); } }
+  };
+
   function quickbar() {
-    return h('div.quickbar', [
-      h('button.quick.quick--strong', { onclick: function () { L.views.lost(); } },
-        [L.icon('compass'), 'Je suis perdu']),
-      h('button.quick', { onclick: function () { L.forms.quickTask(); } }, [L.icon('check'), 'Tâche']),
-      h('button.quick', { onclick: function () { L.forms.note(); } }, [L.icon('note'), 'Note']),
-      h('button.quick', { onclick: function () { L.forms.transaction(null, { type: 'expense' }); } }, [L.icon('wallet'), 'Dépense']),
-      h('button.quick', { onclick: function () { L.router.go('assistant'); } }, [L.icon('sparkle'), 'Assistant'])
-    ]);
+    var home = L.store.state.settings.home || {};
+    var list = (home.shortcuts && home.shortcuts.length ? home.shortcuts : ['lost', 'task', 'note', 'expense', 'assistant'])
+      .filter(function (id) { return SHORTCUTS[id]; });
+    return h('div.quickbar', list.map(function (id) {
+      var def = SHORTCUTS[id];
+      return h('button.quick' + (def.strong ? '.quick--strong' : ''), { onclick: def.run },
+        [L.icon(def.icon), def.label]);
+    }));
   }
 
   /* ---------------- widgets ---------------- */
@@ -316,6 +332,64 @@
       ]);
     },
 
+    /* Premiers pas : visible tant que l'application est vide, et seulement
+       là. Chaque étape se coche d'elle-même quand elle est faite. */
+    start: function () {
+      var S = L.store.state;
+      var steps = [
+        {
+          done: S.tasks.length > 0,
+          title: 'Ajoute ta première tâche',
+          detail: 'Une phrase suffit : « réviser les stats demain 14h, 1 h ».',
+          label: 'Ajouter', run: function () { L.forms.quickTask(); }
+        },
+        {
+          done: Object.keys(S.plans).length > 0,
+          title: 'Laisse LifeOS organiser ta journée',
+          detail: 'Il place tes tâches dans tes créneaux libres et explique pourquoi.',
+          label: 'Organiser', run: function () { L.router.go('planning', { generate: 'day' }); }
+        },
+        {
+          done: S.goals.length > 0,
+          title: 'Pose un objectif',
+          detail: 'Il devient un rythme à tenir, pas une intention vague.',
+          label: 'Créer', run: function () { L.forms.goal(); }
+        },
+        {
+          done: S.transactions.some(function (t) { return t.fixed; }),
+          title: 'Déclare tes revenus et charges fixes',
+          detail: 'Loyer, abonnements, salaire : ils se réenregistrent seuls chaque mois.',
+          label: 'Déclarer', run: function () { L.forms.transaction(null, { type: 'expense', fixed: true }); }
+        },
+        {
+          done: L.habits.dayCompletion().done > 0,
+          title: 'Coche une habitude du jour',
+          detail: 'La régularité se voit au bout de trois jours.',
+          label: 'Voir', run: function () { L.router.go('habits'); }
+        }
+      ];
+      var done = steps.filter(function (x) { return x.done; }).length;
+
+      return h('div.card', [
+        h('div.card__head', [
+          h('div.card__title', 'Premiers pas'),
+          h('span.t-xs.muted.num', done + ' / ' + steps.length)
+        ]),
+        h('div', { style: { marginBottom: 'var(--sp-4)' } }, [L.dom.bar(done / steps.length, done === steps.length ? 'positive' : null, { thin: true })]),
+        h('div.col', { style: { gap: 'var(--sp-3)' } }, steps.map(function (step) {
+          return h('div.row-top', { style: { opacity: step.done ? '.5' : '1' } }, [
+            h('span', { style: { color: step.done ? 'var(--positive)' : 'var(--ink-4)', marginTop: '1px' } },
+              L.icon(step.done ? 'check' : 'circle', 16)),
+            h('div.grow', { style: { minWidth: 0 } }, [
+              h('div.t-s.w-500' + (step.done ? '.strike' : ''), step.title),
+              h('div.t-xs.faint', step.detail)
+            ]),
+            step.done ? null : h('button.btn.btn--s', { onclick: step.run }, step.label)
+          ]);
+        }))
+      ]);
+    },
+
     /* Le soir, l'accueil prépare déjà demain. */
     tomorrow: function () {
       var tomorrow = D.addDays(D.today(), 1);
@@ -351,7 +425,16 @@
     if (hour >= 19 && list.indexOf('tomorrow') === -1) list.splice(1, 0, 'tomorrow');
     if (hour < 19) list = list.filter(function (id) { return id !== 'tomorrow'; });
 
-    var big = ['planning', 'tasks'];
+    /* Tant que l'application est quasi vide, l'accueil montre par où commencer
+       plutôt que des cartes sans contenu. */
+    var S = L.store.state;
+    var young = S.tasks.length < 6 && S.goals.length < 2 && S.projects.length < 2;
+    var everyStepDone = S.tasks.length > 0 && Object.keys(S.plans).length > 0 &&
+      S.goals.length > 0 && S.transactions.some(function (t) { return t.fixed; }) &&
+      L.habits.dayCompletion().done > 0;
+    if (young && !everyStepDone && hidden.indexOf('start') === -1) list.unshift('start');
+
+    var big = ['start', 'planning', 'tasks'];
     var primary = list.filter(function (id) { return big.indexOf(id) > -1; });
     var secondary = list.filter(function (id) { return big.indexOf(id) === -1; });
 
@@ -370,4 +453,5 @@
   };
 
   L.views.homeWidgets = WIDGETS;
+  L.views.homeShortcuts = SHORTCUTS;
 })(window.LifeOS = window.LifeOS || {});

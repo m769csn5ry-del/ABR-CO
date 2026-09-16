@@ -116,7 +116,7 @@
     var history = L.assistant.history();
     var settings = L.store.state.settings.ai;
     var composer = h('textarea.composer__input', {
-      placeholder: 'Pose ta question, ou demande une action…',
+      placeholder: 'Écris ta demande…',
       rows: '1',
       oninput: function (e) {
         e.target.style.height = 'auto';

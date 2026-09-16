@@ -81,6 +81,7 @@
           h('button.iconbtn', { 'aria-label': 'Jour précédent', onclick: function () { draft = null; L.router.setParams({ date: D.addDays(day, -1), generate: '' }); } }, L.icon('chevron-left')),
           h('input.input', {
             type: 'date', value: day, style: { width: '150px' },
+            'aria-label': 'Jour à organiser',
             oninput: function (e) { draft = null; L.router.setParams({ date: e.target.value || D.today(), generate: '' }); }
           }),
           h('button.iconbtn', { 'aria-label': 'Jour suivant', onclick: function () { draft = null; L.router.setParams({ date: D.addDays(day, 1), generate: '' }); } }, L.icon('chevron-right'))

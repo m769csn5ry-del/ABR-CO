@@ -123,6 +123,9 @@ Ce qu'on fait vingt fois par jour ne doit pas demander trois gestes.
   près en vue semaine.
 - **Retouche du planning** — chaque bloc s'avance, se retarde, se place à une
   heure précise ou se retire, sans tout recalculer.
+- **Tout se règle** — ordre et visibilité des sections, blocs de l'accueil,
+  boutons d'actions rapides, domaines, catégories, thème, accent, densité,
+  rythme de la journée et niveau d'énergie.
 
 ## Finances : ce qui se fait tout seul
 
@@ -285,13 +288,23 @@ raccourcis suivent.
 ```bash
 npx http-server lifeos -p 8099 -c-1 &
 
-# parcours complet des écrans, captures et erreurs de console
+# parcours des treize écrans, gestes, sélection multiple, glisser-déposer,
+# captures et erreurs de console
 NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-check.js ./captures
 
 # 69 contrôles : calculs, liens entre modules, récurrences, import de relevé,
 # isolation des profils, chiffrement, sauvegardes, hors ligne
 NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-test.js
+
+# accessibilité : noms accessibles, étiquettes, contrastes (clair et sombre),
+# cibles tactiles, visibilité du focus
+NODE_PATH=/opt/node22/lib/node_modules node scripts/lifeos-a11y.js
 ```
+
+L'audit d'accessibilité passe sans réserve : chaque texte tient le rapport de
+contraste 4,5:1 sur toutes les surfaces des deux thèmes, chaque élément
+actionnable a un nom, chaque champ une étiquette, et aucune cible tactile ne
+descend sous 24 px.
 
 Les icônes d'écran d'accueil se régénèrent avec
 `node scripts/lifeos-icons.js`.

@@ -17,8 +17,25 @@
   function monthView(anchor, selected) {
     var matrix = L.calendar.monthMatrix(anchor);
     var first = L.store.state.settings.firstDayOfWeek;
+    var compact = L.util.isMobile();
     var dows = [];
     for (var i = 0; i < 7; i++) dows.push(D.DAYS_SHORT[(first + i) % 7]);
+
+    /* Sur sept colonnes de moins de soixante pixels, un titre ne tient pas :
+       on montre la densité de la journée, et le détail s'affiche dessous. */
+    function dots(items) {
+      var kinds = { event: 0, due: 0, task: 0 };
+      items.forEach(function (i) {
+        if (i.kind === 'task' && i.ref && i.ref.status === 'done') return;
+        if (kinds[i.kind] !== undefined) kinds[i.kind]++;
+      });
+      var out = [];
+      ['event', 'due', 'task'].forEach(function (kind) {
+        var n = Math.min(kinds[kind], 3);
+        for (var k = 0; k < n; k++) out.push(h('span.cal-dot.cal-dot--' + kind));
+      });
+      return out.length ? h('div.cal-dots', out.slice(0, 5)) : null;
+    }
 
     return h('div.card', { style: { padding: '0', overflow: 'hidden' } }, [
       h('div.cal-month', dows.map(function (d) { return h('div.cal-dow', d); })
@@ -51,11 +68,12 @@
             }
           }, [
             h('span.cal-day__n', String(+cell.date.slice(8, 10))),
-            h('div.col', { style: { gap: '2px' } }, shown.map(function (item) {
+            compact ? dots(items) : h('div.col', { style: { gap: '2px' } }, shown.map(function (item) {
               var domain = item.domainId ? L.domains.get(item.domainId) : null;
               var done = item.kind === 'task' && item.ref && item.ref.status === 'done';
               return h('span.cal-pill' + pillClass(item.kind) + (done ? '.cal-pill--done' : ''), {
-                style: domain && item.kind === 'event' ? { color: domain.color } : null,
+                style: domain && item.kind === 'event'
+                  ? { borderLeft: '2px solid ' + domain.color, paddingLeft: '4px' } : null,
                 title: item.title + ' — glisser pour déplacer',
                 draggable: 'true',
                 ondragstart: function (e) {
@@ -68,7 +86,9 @@
                 item.title
               ]);
             })),
-            items.length > shown.length ? h('span.cal-more', '+' + (items.length - shown.length)) : null
+            compact || items.length <= shown.length
+              ? null
+              : h('span.cal-more', '+' + (items.length - shown.length))
           ]);
         })))
     ]);
@@ -273,9 +293,9 @@
   function dayPanel(day) {
     var agenda = L.calendar.agenda(day, { habits: false });
     return h('div.card', [
-      h('div.card__head', [
-        h('div.card__title', D.caps(D.format(day, 'long'))),
-        h('div.row', [
+      h('div.card__head.wrap', [
+        h('div.card__title.grow', D.caps(D.format(day, 'long'))),
+        h('div.row', { style: { gap: '6px' } }, [
           h('button.btn.btn--s', { onclick: function () { L.forms.event(null, { date: day }); } }, [L.icon('plus'), 'Événement']),
           h('button.btn.btn--s', { onclick: function () { L.forms.task(null, { date: day }); } }, [L.icon('plus'), 'Tâche'])
         ])
@@ -312,18 +332,17 @@
             h('h1.view__title', { style: { fontSize: 'var(--fs-2xl)' } }, D.caps(title)),
             h('p.view__lead', 'Événements, tâches datées et échéances au même endroit.')
           ]),
-          h('div.row.wrap', [
+          h('div.row.wrap', { style: { gap: 'var(--sp-2)' } }, [
             L.dom.segmented([
               { id: 'month', label: 'Mois' },
               { id: 'week', label: 'Semaine' },
               { id: 'day', label: 'Jour' }
             ], mode, function (id) { L.router.setParams({ mode: id }); }),
-            h('div.row', { style: { gap: '2px' } }, [
+            h('div.row.grow', { style: { gap: '2px', justifyContent: 'flex-end' } }, [
               h('button.iconbtn', { 'aria-label': 'Précédent', onclick: function () { shift(-1); } }, L.icon('chevron-left')),
               h('button.btn.btn--s', { onclick: function () { L.router.setParams({ date: D.today() }); } }, "Aujourd'hui"),
-              h('button.iconbtn', { 'aria-label': 'Suivant', onclick: function () { shift(1); } }, L.icon('chevron-right'))
-            ]),
-            h('button.iconbtn', {
+              h('button.iconbtn', { 'aria-label': 'Suivant', onclick: function () { shift(1); } }, L.icon('chevron-right')),
+              h('button.iconbtn', {
               'aria-label': 'Options du calendrier',
               onclick: function (e) {
                 L.menu(e.currentTarget, [
@@ -354,6 +373,7 @@
                 ], { align: 'right' });
               }
             }, L.icon('more'))
+            ])
           ])
         ])
       ]),

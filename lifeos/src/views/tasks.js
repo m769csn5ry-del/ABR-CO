@@ -113,8 +113,8 @@
     { id: 'done', label: 'Terminées', icon: 'check' }
   ];
 
-  function select(options, value, onChange) {
-    return L.forms.select(options, value, onChange);
+  function select(options, value, onChange, label) {
+    return L.forms.select(options, value, onChange, label ? { 'aria-label': label } : null);
   }
 
   function resolve(params) {
@@ -248,16 +248,17 @@
 
     var toolbar = h('div.toolbar', { style: { marginBottom: 'var(--sp-4)' } }, [
       h('input.input', {
-        placeholder: 'Filtrer…', value: params.q || '', style: { maxWidth: '240px' },
+        placeholder: 'Filtrer…', 'aria-label': 'Filtrer les tâches',
+        value: params.q || '', style: { maxWidth: '240px' },
         oninput: L.util.debounce(function (e) { L.router.setParams({ q: e.target.value }, { replace: true }); }, 250)
       }),
       select([{ value: '', label: 'Tous les projets' }].concat(L.projects.all().map(function (p) {
         return { value: p.id, label: p.name };
-      })), params.project || '', function (v) { L.router.setParams({ project: v }); }),
+      })), params.project || '', function (v) { L.router.setParams({ project: v }); }, 'Filtrer par projet'),
       select([
         { value: '', label: 'Toutes priorités' }
       ].concat(L.schema.PRIORITIES.map(function (p) { return { value: p.id, label: p.label }; })),
-        params.priority === undefined ? '' : params.priority, function (v) { L.router.setParams({ priority: v }); }),
+        params.priority === undefined ? '' : params.priority, function (v) { L.router.setParams({ priority: v }); }, 'Filtrer par priorité'),
       select([
         { value: 'smart', label: 'Tri intelligent' },
         { value: 'due', label: 'Par échéance' },
@@ -265,7 +266,7 @@
         { value: 'created', label: 'Par création' },
         { value: 'estimate', label: 'Par durée' },
         { value: 'alpha', label: 'Alphabétique' }
-      ], params.sort || 'smart', function (v) { L.router.setParams({ sort: v }); }),
+      ], params.sort || 'smart', function (v) { L.router.setParams({ sort: v }); }, 'Trier les tâches'),
       h('button.btn.btn--s' + (selectMode ? '.btn--primary' : ''), {
         onclick: function () {
           selectMode = !selectMode;
@@ -280,7 +281,7 @@
         { value: 'priority', label: 'Grouper par priorité' },
         { value: 'status', label: 'Grouper par statut' },
         { value: 'none', label: 'Sans regroupement' }
-      ], groupMode, function (v) { L.router.setParams({ group: v }); }),
+      ], groupMode, function (v) { L.router.setParams({ group: v }); }, 'Regrouper les tâches'),
       (params.domain || params.project || params.tag || params.q || params.priority)
         ? h('button.btn.btn--s.btn--ghost', {
             onclick: function () { L.router.setParams({ domain: '', project: '', tag: '', q: '', priority: '' }); }

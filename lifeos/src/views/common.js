@@ -478,7 +478,7 @@
       return h('button.tx', {
         onclick: function () { L.forms.transaction(tx); }
       }, [
-        h('div.tx__icon', { style: cat ? { color: cat.color } : null }, cat ? cat.icon : '•'),
+        h('div.tx__icon', { style: cat ? { background: cat.color + '22' } : null }, cat ? cat.icon : '•'),
         h('div.grow', { style: { minWidth: 0 } }, [
           h('div.t-s.w-500.truncate', tx.description || (cat ? cat.name : 'Transaction')),
           h('div.t-xs.faint.truncate', [

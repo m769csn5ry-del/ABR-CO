@@ -131,13 +131,26 @@
     },
 
     segmented: function (items, active, onPick) {
-      return h('div.segmented', { role: 'tablist' }, items.map(function (item) {
+      var nodes = items.map(function (item) {
         return h('button.segmented__item', {
           role: 'tab', type: 'button',
           'aria-selected': item.id === active ? 'true' : 'false',
           onclick: function () { onPick(item.id); }
         }, [item.icon ? L.icon(item.icon) : null, item.label]);
-      }));
+      });
+      var wrap = h('div.segmented', { role: 'tablist' }, nodes);
+
+      /* Sur écran étroit, le contrôle défile : le choix actif doit rester
+         visible sans avoir à le chercher. */
+      requestAnimationFrame(function () {
+        if (wrap.scrollWidth <= wrap.clientWidth + 2) return;
+        var current = nodes[items.map(function (i) { return i.id; }).indexOf(active)];
+        if (!current) return;
+        var target = current.offsetLeft - (wrap.clientWidth - current.offsetWidth) / 2;
+        wrap.scrollLeft = Math.max(0, target);
+        wrap.classList.add('segmented--scrollable');
+      });
+      return wrap;
     },
 
     empty: function (icon, title, text, action) {

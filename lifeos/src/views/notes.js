@@ -58,7 +58,7 @@
         h('span.eyebrow', 'Dossiers'),
         h('button.iconbtn', {
           'aria-label': 'Nouveau dossier',
-          style: { width: '22px', height: '22px' },
+          style: { width: '26px', height: '26px' },
           onclick: function () {
             L.modal.prompt({ title: 'Nouveau dossier', label: 'Nom' }).then(function (v) { if (v) L.notes.createFolder(v); });
           }

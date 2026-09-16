@@ -43,9 +43,10 @@
           onclick: function () { tags = tags.filter(function (t) { return t !== tag; }); onChange(tags); draw(); }
         }, L.icon('x'))]);
       }).concat([
-        h('input.input', {
+        h('input.input.input--mini', {
           placeholder: '+ étiquette', list: 'lifeos-tags',
-          style: { width: '130px', height: '26px', fontSize: 'var(--fs-xs)' },
+          'aria-label': 'Ajouter une étiquette',
+          style: { width: '140px' },
           onkeydown: function (e) {
             if (e.key !== 'Enter' || !e.target.value.trim()) return;
             e.preventDefault();

@@ -10,6 +10,12 @@
 .hero__date{ font-size:var(--fs-s); color:var(--ink-3); }
 .hero__greet{ font-size:var(--fs-3xl); font-weight:680; letter-spacing:-.035em; margin-top:2px; }
 .hero__clock{ font-size:var(--fs-3xl); font-weight:300; letter-spacing:-.04em; font-variant-numeric:tabular-nums; color:var(--ink-2); }
+@media (max-width:819px),(max-height:599px){
+  /* Sur un téléphone, une salutation ne doit pas manger le tiers de l'écran. */
+  .hero{ margin-bottom:var(--sp-5); }
+  .hero__greet{ font-size:var(--fs-2xl); }
+  .quickbar{ gap:6px; }
+}
 
 .quickbar{ display:flex; gap:var(--sp-2); flex-wrap:wrap; }
 .quick{
@@ -80,7 +86,7 @@
   animation:toast-in var(--t-base) var(--ease-out) both;
 }
 .selbar::-webkit-scrollbar{ display:none; }
-@media (max-width:900px){ .selbar{ bottom:calc(var(--tabbar) + var(--sp-2)); } }
+@media (max-width:819px),(max-height:599px){ .selbar{ bottom:calc(var(--tabbar) + var(--sp-2)); } }
 .selbar__count{ font-size:var(--fs-s); font-weight:650; white-space:nowrap; }
 .selbar__btn{
   height:30px; padding:0 11px; border-radius:var(--r-full); white-space:nowrap;
@@ -150,16 +156,16 @@
 }
 .cal-pill{
   display:block; width:100%;
-  font-size:10px; line-height:1.4; padding:2px 5px; border-radius:4px;
+  font-size:11px; line-height:1.4; padding:2px 5px; border-radius:4px;
   background:var(--surface-3); color:var(--ink-2);
   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
   text-align:left;
 }
 .cal-pill--done{ opacity:.45; text-decoration:line-through; }
-.cal-pill--event{ background:var(--info-soft); color:var(--info); }
+.cal-pill--event{ background:var(--info-soft); color:var(--ink-2); }
 .cal-pill--due{ background:var(--danger-soft); color:var(--danger); }
 .cal-pill--task{ background:var(--accent-soft); color:var(--accent); }
-.cal-more{ font-size:10px; color:var(--ink-4); padding-left:5px; }
+.cal-more{ font-size:11px; color:var(--ink-4); padding-left:5px; }
 
 .cal-week{ display:grid; grid-template-columns:48px repeat(7,minmax(0,1fr)); }
 .cal-week__head{
@@ -169,10 +175,10 @@
 }
 .cal-week__col{ border-left:1px solid var(--line-soft); position:relative; }
 .cal-hour{ height:44px; border-bottom:1px solid var(--line-soft); }
-.cal-gutter{ font-size:10px; color:var(--ink-4); text-align:right; padding-right:6px; height:44px; transform:translateY(-6px); font-variant-numeric:tabular-nums; }
+.cal-gutter{ font-size:11px; color:var(--ink-4); text-align:right; padding-right:6px; height:44px; transform:translateY(-6px); font-variant-numeric:tabular-nums; }
 .cal-ev{
   position:absolute; left:2px; right:2px; border-radius:6px; padding:3px 5px;
-  font-size:10px; line-height:1.25; overflow:hidden;
+  font-size:11px; line-height:1.25; overflow:hidden;
   background:var(--accent-soft); color:var(--accent); border-left:2px solid var(--accent);
   cursor:pointer;
 }
@@ -180,10 +186,21 @@
 .cal-ev--habit{ background:var(--positive-soft); color:var(--positive); border-left-color:var(--positive); }
 .cal-now{ position:absolute; left:0; right:0; height:1px; background:var(--danger); z-index:4; }
 .cal-now::before{ content:""; position:absolute; left:-3px; top:-2.5px; width:6px; height:6px; border-radius:50%; background:var(--danger); }
-@media (max-width:900px){
-  .cal-day{ min-height:74px; }
-  .cal-week{ grid-template-columns:38px repeat(7,minmax(40px,1fr)); min-width:540px; }
-  .cal-scroll{ overflow-x:auto; }
+/* Densité d'une journée, quand le texte ne tient pas. */
+.cal-dots{ display:flex; flex-wrap:wrap; gap:3px; margin-top:auto; padding-bottom:2px; }
+.cal-dot{ width:5px; height:5px; border-radius:50%; background:var(--ink-4); }
+.cal-dot--event{ background:var(--info); }
+.cal-dot--due{ background:var(--danger); }
+.cal-dot--task{ background:var(--accent); }
+
+@media (max-width:819px),(max-height:599px){
+  /* Sept colonnes sur un téléphone : la grille montre la forme du mois,
+     le détail du jour s'affiche juste en dessous. */
+  .cal-day{ min-height:58px; padding:5px 4px; align-items:center; gap:3px; }
+  .cal-day__n{ align-self:center; font-size:var(--fs-s); }
+  .cal-dow{ padding:6px 2px; font-size:11px; letter-spacing:.02em; }
+  .cal-week{ grid-template-columns:34px repeat(7,minmax(68px,1fr)); min-width:520px; }
+  .cal-scroll{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
 }
 
 /* ---------- Projets ---------- */
@@ -204,7 +221,7 @@
 .habit-day{
   flex:1 1 0; min-width:0; aspect-ratio:1; border-radius:8px;
   background:var(--surface-2); border:1px solid var(--line-soft);
-  display:grid; place-items:center; font-size:10px; color:var(--ink-4); font-weight:600;
+  display:grid; place-items:center; font-size:11px; color:var(--ink-4); font-weight:600;
   transition:background var(--t-fast) var(--ease), color var(--t-fast) var(--ease);
 }
 .habit-day--done{ background:var(--accent); border-color:transparent; color:var(--accent-ink); }
@@ -223,7 +240,7 @@
 
 /* ---------- Notes ---------- */
 .notes-layout{ display:grid; grid-template-columns:238px minmax(0,1fr); gap:var(--sp-5); align-items:start; }
-@media (max-width:900px){ .notes-layout{ grid-template-columns:minmax(0,1fr); } }
+@media (max-width:819px),(max-height:599px){ .notes-layout{ grid-template-columns:minmax(0,1fr); } }
 .note-card{
   display:flex; flex-direction:column; gap:6px; padding:var(--sp-4);
   border:1px solid var(--line); border-radius:var(--r-m); background:var(--surface);
@@ -268,7 +285,11 @@
   border:1px solid var(--line); background:var(--surface); font-size:var(--fs-s);
 }
 .composer__input:focus{ border-color:var(--accent-line); box-shadow:0 0 0 3px var(--accent-soft); }
-@media (max-width:900px){ .composer{ bottom:0; } }
+@media (max-width:819px),(max-height:599px){
+  .composer{ bottom:calc(var(--tabbar) - 6px); }
+  /* 16 px : sinon iOS agrandit la page à chaque prise de parole. */
+  .composer__input{ font-size:16px; min-height:48px; padding:13px var(--sp-4); }
+}
 
 .suggest{ display:flex; gap:var(--sp-2); flex-wrap:wrap; }
 .suggest__item{

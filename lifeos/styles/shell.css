@@ -141,17 +141,24 @@ kbd{
 .tabbar{ display:none; }
 .mobile-only{ display:none; }
 
-@media (max-width:900px){
+@media (max-width:819px),(max-height:599px){
   .shell{ grid-template-columns:minmax(0,1fr); }
   .sidebar{ display:none; }
   .mobile-only{ display:flex; }
   .desktop-only{ display:none !important; }
 
-  .topbar{ padding:0 var(--sp-4); height:52px; }
+  .topbar{
+    padding:0 calc(var(--sp-4) + env(safe-area-inset-right)) 0 calc(var(--sp-4) + env(safe-area-inset-left));
+    height:calc(52px + env(safe-area-inset-top));
+    padding-top:env(safe-area-inset-top);
+  }
   .searchbtn{ min-width:0; width:32px; padding:0; justify-content:center; }
   .searchbtn span,.searchbtn kbd{ display:none; }
 
-  .view{ padding:var(--sp-5) var(--sp-4) calc(var(--tabbar) + var(--sp-8)); }
+  .view{
+    padding:var(--sp-5) calc(var(--sp-4) + env(safe-area-inset-right))
+            calc(var(--tabbar) + var(--sp-8)) calc(var(--sp-4) + env(safe-area-inset-left));
+  }
   .view__title{ font-size:var(--fs-2xl); }
 
   .tabbar{
@@ -176,7 +183,7 @@ kbd{
 }
 
 /* iPad et petits portables : la barre latérale reste, le contenu respire moins. */
-@media (min-width:901px) and (max-width:1120px){
+@media (min-width:820px) and (max-width:1120px) and (min-height:600px){
   :root{ --sidebar:216px; }
   .view{ padding-left:var(--sp-5); padding-right:var(--sp-5); }
 }

@@ -184,7 +184,10 @@
       });
     },
 
-    isMobile: function () { return window.matchMedia('(max-width:900px)').matches; },
+    /* Format téléphone : écran étroit, ou trop bas pour une barre latérale
+       (un iPhone en paysage fait 852 px de large mais 393 de haut). */
+    MOBILE_QUERY: '(max-width:819px),(max-height:599px)',
+    isMobile: function () { return window.matchMedia(util.MOBILE_QUERY).matches; },
     isApple: function () { return /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent); },
     modKey: function () { return util.isApple() ? '⌘' : 'Ctrl'; }
   };
