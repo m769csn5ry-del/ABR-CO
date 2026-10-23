@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Fabrique un aperçu d'une seule page par fichier HTML du site : styles, script, polices,
-logo et photos présentes sont embarqués. Utile pour montrer le site sans le mettre en ligne.
+"""Fabrique un aperçu d'une seule page par fichier HTML du site : styles, scripts, polices
+et images sont embarqués. Sert à montrer le site sans le mettre en ligne.
 
     python3 apercu.py <dossier-de-sortie>
+
+L'aperçu garde une seule taille par image (celle de l'attribut src) pour rester léger.
 """
 import base64
 import mimetypes
@@ -11,38 +13,41 @@ import re
 import sys
 
 SITE = pathlib.Path(__file__).resolve().parents[2] / "shemtov"
-PAGES = ["index.html", "mentions-legales.html"]
+PAGES = ["index.html", "mentions-legales.html", "confidentialite.html"]
+SCRIPTS = ["assets/donnees.js", "assets/vendor/gsap.min.js", "assets/vendor/ScrollTrigger.min.js", "assets/site.js", "assets/anim.js"]
 
 
 def data_uri(path: pathlib.Path) -> str:
-    mime = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
-    if path.suffix == ".woff2":
-        mime = "font/woff2"
+    mime = "font/woff2" if path.suffix == ".woff2" else (mimetypes.guess_type(path.name)[0] or "application/octet-stream")
     return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode()}"
 
 
 def build(page: str) -> str:
     html = (SITE / page).read_text(encoding="utf-8")
 
-    # Feuille de style : polices en data URI, puis balise <style>
+    # Styles avec polices embarquées
     css = (SITE / "assets" / "style.css").read_text(encoding="utf-8")
     css = re.sub(r'url\("fonts/([^"]+)"\)', lambda m: f'url("{data_uri(SITE / "assets" / "fonts" / m.group(1))}")', css)
-    html = re.sub(r'<link rel="preload"[^>]*>\n?', "", html)
     html = html.replace('<link rel="stylesheet" href="assets/style.css">', f"<style>\n{css}\n</style>")
+    html = re.sub(r'<link rel="preload"[^>]*>\n?', "", html)
 
-    # Script
-    js = (SITE / "assets" / "site.js").read_text(encoding="utf-8")
-    html = html.replace('<script src="assets/site.js"></script>', f"<script>\n{js}\n</script>")
+    # Scripts : retirés de l'en-tête, embarqués en fin de page dans l'ordre d'exécution
+    html = re.sub(r'<script src="assets/[^"]+" defer></script>\n?', "", html)
+    if "assets/site.js" in (SITE / page).read_text(encoding="utf-8"):
+        blocs = "".join(f"<script>\n{(SITE / s).read_text(encoding='utf-8')}\n</script>\n" for s in SCRIPTS)
+        html = html.replace("</body>", blocs + "</body>")
 
-    # Images : logo et photos présentes
+    # Images : une seule taille, embarquée
+    html = re.sub(r'\s(?:srcset|sizes)="[^"]*"', "", html)
     for f in sorted((SITE / "assets").rglob("*")):
         if f.suffix.lower() in (".png", ".jpg", ".jpeg", ".webp") and f.is_file():
             rel = f.relative_to(SITE).as_posix()
-            html = html.replace(f'"{rel}"', f'"{data_uri(f)}"')
+            if f'"{rel}"' in html:
+                html = html.replace(f'"{rel}"', f'"{data_uri(f)}"')
 
     # Liens entre pages
     for p in PAGES:
-        html = html.replace(f'href="{p}"', f'href="apercu-{p}"')
+        html = html.replace(f'href="{p}', f'href="apercu-{p}')
     return html
 
 

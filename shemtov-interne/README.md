@@ -1,44 +1,64 @@
 # Shemtov Foch · site vitrine
 
-Document technique interne. Le site publié est uniquement le dossier `shemtov/` ; ce dossier-ci (`shemtov-interne/`) n'est jamais mis en ligne.
+Document technique interne. Seul le dossier `shemtov/` est mis en ligne ; `shemtov-interne/` ne l'est jamais.
+
+- `RAPPORT.md` : audit, choix, performance, accessibilité, sécurité, conformité, déploiement
+- `SUIVI.md` : ce qui est vérifié, ce qui reste à confirmer
+- `rapports/tests.md` : résultat du dernier passage des tests
 
 ## Organisation
-- `shemtov/index.html` : la page d'accueil
-- `shemtov/mentions-legales.html` : mentions légales (données vérifiées uniquement)
-- `shemtov/assets/style.css`, `site.js` : styles et script
-- `shemtov/assets/fonts/` : polices Fredoka et Figtree (licence SIL OFL), hébergées avec le site
-- `shemtov/assets/logo.png` : logo fourni (217 × 233 px), à remplacer par une version haute définition
-- `shemtov-interne/SUIVI.md` : ce qui est vérifié, ce qui reste à confirmer
-- `shemtov-interne/plan/` : plan 2D du magasin (voir plus bas)
-- `shemtov-interne/outils/apercu.py` : fabrique un aperçu d'une seule page, sans dépendance
 
-## Ce qui est automatique
-- **Ouvert / fermé** en haut de page, calculé à l'heure de Paris.
-- **Jour en cours** surligné dans le tableau des horaires.
-- **Prochaines fêtes** : les fêtes passées disparaissent, la suivante est mise en avant avec le nombre de jours restants. Dates dans les attributs `data-start` et `data-end` de chaque `<li class="fete">` (source : calendrier Hebcal, diaspora). La liste va jusqu'à Roch Hachana 5788 (octobre 2027).
+```
+shemtov/                      site publié (HTML statique, aucune compilation)
+  index.html                  accueil : présentation, rayons, visite guidée, infos pratiques
+  mentions-legales.html, confidentialite.html, 404.html
+  _headers, vercel.json       en-têtes de sécurité (Netlify, Vercel)
+  robots.txt                  généré
+  assets/
+    style.css                 styles (thème clair et sombre)
+    site.js                   statut ouvert/fermé, menu, copie d'adresse, visite guidée
+    anim.js                   animations GSAP, chargées seulement si le mouvement est autorisé
+    donnees.js                généré depuis donnees.json
+    vendor/                   GSAP 3.13.0 et ScrollTrigger (licence standard GreenSock)
+    fonts/                    Fredoka et Figtree (licence SIL OFL)
+    photos/                   photos optimisées (WebP), générées
+    logo.png, logo-128.png, favicon.png, apple-touch-icon.png, og.jpg
+shemtov-interne/
+  contenu/donnees.json        SOURCE UNIQUE : coordonnées, horaires, exceptions, fêtes, informations légales
+  outils/synchroniser.py      reporte donnees.json dans les pages
+  outils/photos.py            prépare les photos depuis les originaux
+  outils/apercu.py            fabrique un aperçu d'une seule page par fichier HTML
+  plan/generer_plan.py        plan 2D (image de travail et version web interactive)
+  tests/tester.mjs            banc de tests (Playwright, axe-core)
+  tests/serveur.mjs           serveur local avec les en-têtes de sécurité
+```
 
-## Changer les horaires
-- **Horaires habituels** : attributs `data-open` et `data-close` des lignes du tableau `#hours` dans `index.html`. Le texte affiché, le statut et le jour surligné sont recalculés à partir d'eux. Mettre aussi à jour le bloc JSON-LD du `<head>`.
-- **Horaires exceptionnels** : liste `EXCEPTIONS` en haut de `shemtov/assets/site.js`, une ligne par date, avec un exemple en commentaire. Un encadré orange apparaît en haut de page pendant les 14 jours qui précèdent la date, et le statut Ouvert / Fermé en tient compte.
+## Commandes
+
+```
+python3 shemtov-interne/outils/synchroniser.py              # après toute modification de donnees.json
+python3 shemtov-interne/outils/photos.py <dossier-originaux> # après ajout ou changement de photos
+python3 shemtov-interne/plan/generer_plan.py                # après modification du plan, puis synchroniser
+node shemtov-interne/tests/serveur.mjs 8080                 # voir le site sur http://127.0.0.1:8080/
+AXE_PATH=<chemin>/axe.min.js node shemtov-interne/tests/tester.mjs   # tests
+python3 shemtov-interne/outils/apercu.py <dossier>          # aperçus autonomes
+```
+
+## Horaires exceptionnels
+
+Dans `donnees.json`, liste `exceptions`, une entrée par date :
+
+```json
+{ "date": "2026-12-04", "horaires": ["08:00", "15:00"], "note": "Veille de Hanoukah : fermeture à 15h." }
+{ "date": "2026-12-12", "horaires": null }
+```
+
+`null` signifie fermé toute la journée. Un encadré orange apparaît en haut de page pendant les 14 jours qui précèdent, et le statut ouvert/fermé en tient compte.
 
 ## Photos
-Déposer les fichiers dans `shemtov/assets/photos/` avec ces noms exacts : ils s'affichent tout seuls, et sans fichier le site reste propre (pictogramme à la place de la photo).
-- `facade.jpg` : façade du magasin
-- `rayon-epicerie.jpg`, `rayon-frais.jpg`, `rayon-viande.jpg`, `rayon-poisson.jpg`, `rayon-surgeles.jpg`, `rayon-vin.jpg`, `rayon-douceurs.jpg`, `rayon-sans-gluten.jpg`
 
-Format conseillé : JPEG horizontal, 1600 px de large, moins de 400 Ko chacun. Une zone photo reste cachée tant que son fichier n'existe pas. Quand les photos sont toutes là, ajouter `loading="lazy"` aux balises `<img>` des tuiles pour alléger le chargement.
-
-## Aperçu d'une seule page
-```
-python3 shemtov-interne/outils/apercu.py <dossier-de-sortie>
-```
-Écrit `apercu-index.html` et `apercu-mentions-legales.html`, qui embarquent styles, script, polices et logo.
-
-## Plan 2D du magasin
-`python3 shemtov-interne/plan/generer_plan.py` régénère `plan-2d-v1.svg` après avoir vérifié les consignes (ordre des meubles, pas de chevauchement, entrée dégagée). La 3D ne démarre qu'après validation du plan.
+Noms attendus des originaux : voir `PHOTOS` dans `outils/photos.py` (`01-fromages.png`, `15-epicerie-vue.png`, `17-bonbons.png`…). Les originaux ne sont pas dans le dépôt (3 à 4 Mo chacun). Le script recadre, produit des WebP en plusieurs largeurs sans jamais agrandir, et supprime les métadonnées.
 
 ## Mise en ligne
-- **Netlify** : nouveau site relié à ce dépôt, *Base directory* = `shemtov`.
-- **Vercel** : nouveau projet relié à ce dépôt, *Root Directory* = `shemtov`.
 
-Le `netlify.toml` et le `vercel.json` à la racine du dépôt servent à un autre projet (`todo/`) : ne pas les modifier.
+Voir `RAPPORT.md`, section 8. Le `netlify.toml` et le `vercel.json` à la racine du dépôt servent à un autre projet (`todo/`) : ne pas les modifier.

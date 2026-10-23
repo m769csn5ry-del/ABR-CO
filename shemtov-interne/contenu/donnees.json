@@ -1,0 +1,103 @@
+{
+  "domaine": null,
+  "nom": "Shemtov Foch",
+  "description": "Épicerie casher de proximité à Strasbourg : épicerie, produits frais, viandes et poissons, surgelés, biscuits et chocolats, boissons et vins.",
+  "telephone": {
+    "affiche": "03 88 11 96 92",
+    "international": "+33388119692"
+  },
+  "adresse": {
+    "rue": "6 rue du Maréchal-Foch",
+    "codePostal": "67000",
+    "ville": "Strasbourg",
+    "pays": "FR"
+  },
+  "liens": {
+    "itineraire": "https://www.google.com/maps/dir/?api=1&destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg",
+    "ficheGoogle": "https://share.google/WKe2Zp5OEH1JKOaMW",
+    "facebook": "https://www.facebook.com/Shemtov.Strasbourg",
+    "consistoire": "https://cibr.fr/cacherout/ou-manger-cacher/"
+  },
+  "horaires": {
+    "lundi": [
+      "08:00",
+      "20:00"
+    ],
+    "mardi": [
+      "08:00",
+      "20:00"
+    ],
+    "mercredi": [
+      "08:00",
+      "20:00"
+    ],
+    "jeudi": [
+      "08:00",
+      "20:00"
+    ],
+    "vendredi": [
+      "08:00",
+      "17:00"
+    ],
+    "samedi": null,
+    "dimanche": [
+      "09:30",
+      "13:00"
+    ]
+  },
+  "exceptions": [],
+  "fetes": [
+    {
+      "nom": "Hanoukah",
+      "debut": "2026-12-04",
+      "fin": "2026-12-12",
+      "texte": "Du soir du 4 au 12 décembre 2026"
+    },
+    {
+      "nom": "Tou biChvat",
+      "debut": "2027-01-23",
+      "fin": "2027-01-23",
+      "texte": "23 janvier 2027"
+    },
+    {
+      "nom": "Pourim",
+      "debut": "2027-03-22",
+      "fin": "2027-03-23",
+      "texte": "Du soir du 22 au 23 mars 2027"
+    },
+    {
+      "nom": "Pessah",
+      "debut": "2027-04-21",
+      "fin": "2027-04-29",
+      "texte": "Du soir du 21 au 29 avril 2027"
+    },
+    {
+      "nom": "Chavouot",
+      "debut": "2027-06-10",
+      "fin": "2027-06-12",
+      "texte": "Du soir du 10 au 12 juin 2027"
+    },
+    {
+      "nom": "Roch Hachana 5788",
+      "debut": "2027-10-01",
+      "fin": "2027-10-03",
+      "texte": "Du soir du 1er au 3 octobre 2027"
+    }
+  ],
+  "legal": {
+    "denomination": "SHEMTOV",
+    "formeCourte": "SARL",
+    "forme": "société à responsabilité limitée (SARL)",
+    "capital": "3 000 €",
+    "siege": "6 rue du Maréchal-Foch, 67000 Strasbourg, France",
+    "gerant": "Yves MAAREK",
+    "siren": "794 645 978",
+    "siret": "794 645 978 00014",
+    "rcs": "794 645 978 RCS Strasbourg",
+    "ape": "47.11B (commerce d'alimentation générale)",
+    "tva": "FR83794645978",
+    "email": null,
+    "responsablePublication": null,
+    "hebergeur": null
+  }
+}

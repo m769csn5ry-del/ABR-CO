@@ -3,208 +3,302 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Shemtov Foch, épicerie casher à Strasbourg</title>
-<meta name="description" content="Shemtov Foch, épicerie casher de proximité à Strasbourg : épicerie, produits frais, surgelés, vins. 6 rue du Maréchal-Foch, 03 88 11 96 92. Horaires et accès.">
-<link rel="icon" href="assets/logo.png">
+<title>Shemtov Foch · Épicerie casher à Strasbourg</title>
+<meta name="description" content="Shemtov Foch, épicerie casher de proximité au 6 rue du Maréchal-Foch à Strasbourg : épicerie, produits frais, viandes et poissons, surgelés, vins. Horaires, plan du magasin et accès.">
+<meta name="theme-color" content="#17111B">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="fr_FR">
+<meta property="og:site_name" content="Shemtov Foch">
+<meta property="og:title" content="Shemtov Foch · Épicerie casher à Strasbourg">
+<meta property="og:description" content="Épicerie casher de proximité au 6 rue du Maréchal-Foch, Strasbourg. Rayons, plan du magasin, horaires et accès.">
+<meta name="twitter:card" content="summary_large_image">
+<!-- donnees:seo --><!-- /donnees:seo -->
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preload" href="assets/fonts/fredoka-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" as="image" href="assets/photos/hero-940.webp" imagesrcset="assets/photos/hero-480.webp 480w, assets/photos/hero-760.webp 760w, assets/photos/hero-940.webp 940w" imagesizes="(min-width: 900px) 42vw, 100vw" fetchpriority="high">
 <link rel="stylesheet" href="assets/style.css">
-<script type="application/ld+json">
-{"@context":"https://schema.org","@type":"GroceryStore","name":"Shemtov Foch","legalName":"SHEMTOV","vatID":"FR83794645978","description":"Épicerie casher de proximité à Strasbourg : épicerie, produits frais, surgelés, vins.","telephone":"+33388119692","address":{"@type":"PostalAddress","streetAddress":"6 rue du Maréchal-Foch","postalCode":"67000","addressLocality":"Strasbourg","addressCountry":"FR"},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday"],"opens":"08:00","closes":"20:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Friday","opens":"08:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Sunday","opens":"09:30","closes":"13:00"}],"sameAs":["https://www.facebook.com/Shemtov.Strasbourg"]}
-</script>
+<script src="assets/donnees.js" defer></script>
+<script src="assets/site.js" defer></script>
+<!-- donnees:jsonld -->
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "GroceryStore", "name": "Shemtov Foch", "legalName": "SHEMTOV", "vatID": "FR83794645978", "identifier": {"@type": "PropertyValue", "propertyID": "SIRET", "value": "79464597800014"}, "description": "Épicerie casher de proximité à Strasbourg : épicerie, produits frais, viandes et poissons, surgelés, biscuits et chocolats, boissons et vins.", "telephone": "+33388119692", "address": {"@type": "PostalAddress", "streetAddress": "6 rue du Maréchal-Foch", "postalCode": "67000", "addressLocality": "Strasbourg", "addressCountry": "FR"}, "openingHoursSpecification": [{"@type": "OpeningHoursSpecification", "dayOfWeek": "Sunday", "opens": "09:30", "closes": "13:00"}, {"@type": "OpeningHoursSpecification", "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday"], "opens": "08:00", "closes": "20:00"}, {"@type": "OpeningHoursSpecification", "dayOfWeek": "Friday", "opens": "08:00", "closes": "17:00"}], "sameAs": ["https://www.facebook.com/Shemtov.Strasbourg"]}</script>
+<!-- /donnees:jsonld -->
 </head>
-<body id="top">
+<body>
+<a class="skip" href="#contenu">Aller au contenu</a>
 
-<div class="demo">Démo du futur site · photos et textes à finaliser</div>
-
-<div class="exc" id="exceptions" hidden>
-  <div class="wrap">
-    <strong>Horaires exceptionnels</strong>
-    <ul id="exc-list"></ul>
-  </div>
-</div>
-
-<header class="top">
-  <div class="wrap top-in">
-    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="46" height="46"><span>Shemtov Foch</span></a>
-    <nav class="nav" aria-label="Navigation principale">
+<header class="site-header" id="haut">
+  <div class="wrap header-in">
+    <a class="brand" href="#accueil" aria-label="Shemtov Foch, retour en haut de page"><img src="assets/logo-128.png" alt="" width="44" height="44"><span>Shemtov Foch</span></a>
+    <nav class="nav-desktop" aria-label="Navigation principale">
       <a href="#magasin">Le magasin</a>
-      <a href="#rayons">Rayons</a>
-      <a href="#infos">Horaires et accès</a>
-      <a class="btn btn-pink sm" href="tel:+33388119692">Appeler</a>
+      <a href="#rayons">Nos rayons</a>
+      <a href="#visite">Visite</a>
+      <a href="#infos">Infos pratiques</a>
     </nav>
+    <a class="btn btn-pink btn-sm header-cta" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire</a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-mobile"><span class="menu-ico" aria-hidden="true"></span><span class="menu-txt">Menu</span></button>
   </div>
 </header>
 
-<main>
-<section class="hero">
-  <span class="deco d1" aria-hidden="true"></span>
-  <span class="deco d2" aria-hidden="true"></span>
-  <span class="deco d3" aria-hidden="true"></span>
-  <span class="deco d4" aria-hidden="true"></span>
-  <div class="wrap hero-in">
-    <div class="hero-badge">
-      <div class="badge"><img src="assets/logo.png" alt="Logo Shemtov, épicerie" width="217" height="233"></div>
+<div class="menu-mobile" id="menu-mobile" hidden>
+  <nav class="wrap" aria-label="Navigation mobile">
+    <a href="#magasin">Le magasin</a>
+    <a href="#rayons">Nos rayons</a>
+    <a href="#visite">Visite du magasin</a>
+    <a href="#infos">Infos pratiques</a>
+    <div class="menu-actions">
+      <a class="btn btn-pink" href="tel:+33388119692">Appeler le 03 88 11 96 92</a>
+      <a class="btn btn-outline" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire</a>
     </div>
-    <div>
-      <div class="eyebrow">Shemtov Foch · Épicerie casher · Strasbourg</div>
-      <h1>Votre épicerie casher de proximité</h1>
-      <p class="lead">Épicerie, produits frais et surgelés pour vos courses du quotidien et vos repas de Chabbat. 6 rue du Maréchal-Foch.</p>
-      <div class="status" id="status" data-state="off" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="status-text">Horaires ci-dessous</span></div>
-      <div class="actions">
-        <a class="btn btn-white" href="tel:+33388119692"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Appeler le 03 88 11 96 92</a>
-        <a class="btn btn-line" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Itinéraire</a>
+  </nav>
+</div>
+
+<main id="contenu" tabindex="-1">
+  <p class="demo">Version de travail · non publiée</p>
+
+  <div class="exc" data-exceptions hidden>
+    <div class="wrap"><strong>Horaires exceptionnels</strong><ul data-exc-list></ul></div>
+  </div>
+
+  <section class="hero" id="accueil" aria-labelledby="titre-accueil">
+    <div class="wrap hero-grid">
+      <div class="hero-media">
+        <figure class="hero-photo"><img src="assets/photos/hero-940.webp" srcset="assets/photos/hero-480.webp 480w, assets/photos/hero-760.webp 760w, assets/photos/hero-940.webp 940w" sizes="(min-width: 900px) 42vw, 100vw" width="940" height="1175" alt="Le coin épicerie du magasin : pâtes, conserves, sauces et épices sur des étagères blanches" fetchpriority="high"></figure>
+        <figure class="hero-photo-2"><img src="assets/photos/magasin-b-480.webp" width="480" height="600" alt="Pain de mie, œufs et lait stérilisé en rayon" loading="lazy"></figure>
+        <div class="hero-badge"><img src="assets/logo.png" alt="" width="217" height="233"></div>
       </div>
-    </div>
-  </div>
-</section>
-
-<section class="sec" id="magasin">
-  <div class="wrap about">
-    <div class="about-text">
-      <div class="sec-head">
-        <div class="kicker">Le magasin</div>
-        <h2>Shemtov Foch, votre épicerie de proximité</h2>
-      </div>
-      <p>Shemtov Foch est votre épicerie casher de proximité à Strasbourg. Retrouvez-nous au 6 rue du Maréchal-Foch.</p>
-      <p>Découvrez une sélection de produits d'épicerie, de produits frais et de surgelés.</p>
-      <p>Préparez vos courses du quotidien et vos repas de Chabbat. Notre équipe vous accueille et vous accompagne dans vos choix.</p>
-      <p>Pour connaître nos horaires et les produits disponibles, contactez-nous au <a href="tel:+33388119692">03 88 11 96 92</a>.</p>
-      <p class="cacher">Épicerie casher référencée par le Consistoire Israélite du Bas-Rhin. <a href="https://cibr.fr/cacherout/ou-manger-cacher/" target="_blank" rel="noopener">Voir la liste du Consistoire</a></p>
-    </div>
-    <!-- Photo de la façade : déposer le fichier dans assets/photos/facade.jpg, elle s'affiche toute seule. -->
-    <figure class="about-photo" data-photo><img src="assets/photos/facade.jpg" alt="La façade du magasin Shemtov Foch, rue du Maréchal-Foch" decoding="async"></figure>
-  </div>
-</section>
-
-<section class="sec alt" id="rayons">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="kicker">En magasin</div>
-      <h2>Nos rayons</h2>
-      <p>Huit rayons pour les courses de la semaine et celles de Chabbat.</p>
-    </div>
-    <div class="tiles">
-      <!-- Chaque tuile accueille sa photo : déposer assets/photos/rayon-<nom>.jpg, elle remplace le pictogramme toute seule. -->
-      <article class="tile t-epicerie">
-        <div class="tile-photo" data-photo><img src="assets/photos/rayon-epicerie.jpg" alt="Le rayon épicerie" decoding="async"></div>
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M16 8h16v5H16z"/><path d="M14 13h20v3c3 2 4 5 4 8v14a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3V24c0-3 1-6 4-8z"/><path d="M16 26h16v8H16z"/></svg></div>
-        <h3>Épicerie</h3>
-        <p>Conserves, épices, sauces tomates, pesto, thon et maquereaux, couverts, assiettes et verres.</p>
-      </article>
-      <article class="tile t-frais">
-        <div class="tile-photo" data-photo><img src="assets/photos/rayon-frais.jpg" alt="Le rayon fromages et crémerie" decoding="async"></div>
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 30 42 12v22a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><circle cx="16" cy="31" r="2"/><circle cx="30" cy="26" r="2.4"/><circle cx="36" cy="31" r="1.6"/></svg></div>
-        <h3>Fromages et crémerie</h3>
-        <p>Fromages, yaourts et produits laitiers, lait, œufs et pain de mie.</p>
-      </article>
-      <article class="tile t-viande">
-        <div class="tile-photo" data-photo><img src="assets/photos/rayon-viande.jpg" alt="Le rayon viandes et charcuterie" decoding="async"></div>
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 25C8 14 17 7 28 8c8 1 13 6 12 14-1 10-10 18-21 18C12 40 8 33 8 25z"/><circle cx="28" cy="22" r="5.5"/></svg></div>
-        <h3>Viandes et charcuterie</h3>
-        <p>Viande et charcuterie au frais, bœuf et poulet surgelés.</p>
-      </article>
-      <article class="tile t-poisson">
-        <div class="tile-photo" data-photo><img src="assets/photos/rayon-poisson.jpg" alt="Le rayon poissons" decoding="async"></div>
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 24c6-9 16-12 26-6l8-6v24l-8-6c-10 6-20 3-26-6z"/><circle cx="14" cy="23" r="1.5"/></svg></div>
-        <h3>Poissons</h3>
-        <p>Surimi, poissons panés et autres poissons au frais, poisson surgelé.</p>
-      </article>
-      <article class="tile t-surgele">
-        <div class="tile-photo" data-photo><img src="assets/photos/rayon-surgeles.jpg" alt="Le rayon surgelés" decoding="async"></div>
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6v36M8.4 15l31.2 18M8.4 33l31.2-18M19 9l5 4 5-4M19 39l5-4 5 4"/></svg></div>
-        <h3>Surgelés</h3>
-        <p>Glaces, pizzas, légumes, frites et pommes de terre.</p>
-      </article>
-      <article class="tile t-vin">
-        <div class="tile-photo" data-photo><img src="assets/photos/rayon-vin.jpg" alt="Le rayon vins" decoding="async"></div>
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M20 5h8v9c0 3 5 5 5 12v15a2 2 0 0 1-2 2H17a2 2 0 0 1-2-2V26c0-7 5-9 5-12z"/><path d="M15 30h18M15 38h18"/></svg></div>
-        <h3>Vins</h3>
-        <p>Une sélection de vins casher.</p>
-      </article>
-      <article class="tile t-douceur">
-        <div class="tile-photo" data-photo><img src="assets/photos/rayon-douceurs.jpg" alt="Le rayon gâteaux, chocolats et snacks" decoding="async"></div>
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="9"/><path d="M15 24 6 18v12zM33 24l9-6v12z"/></svg></div>
-        <h3>Douceurs et snacks</h3>
-        <p>Gâteaux, crackers, chips, bonbons, tablettes de chocolat et confitures.</p>
-      </article>
-      <article class="tile t-vegan">
-        <div class="tile-photo" data-photo><img src="assets/photos/rayon-sans-gluten.jpg" alt="Le rayon sans gluten et végan" decoding="async"></div>
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 38C8 20 20 10 38 10c0 18-10 28-28 28z"/><path d="M10 38 30 18"/></svg></div>
-        <h3>Sans gluten et végan</h3>
-        <p>Des produits sans gluten, végan et casher.</p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<section class="sec" id="infos">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="kicker">Horaires et accès</div>
-      <h2>Venir nous voir</h2>
-    </div>
-    <div class="infos">
-      <div class="panel">
-        <h3>Nous trouver</h3>
-        <dl>
-          <dt>Adresse</dt>
-          <dd>6 rue du Maréchal-Foch<br>67000 Strasbourg</dd>
-          <dt>Téléphone</dt>
-          <dd><a href="tel:+33388119692">03 88 11 96 92</a></dd>
-          <dt>En ligne</dt>
-          <dd><a href="https://www.facebook.com/Shemtov.Strasbourg" target="_blank" rel="noopener">Facebook</a> · <a href="https://share.google/WKe2Zp5OEH1JKOaMW" target="_blank" rel="noopener">Fiche Google</a></dd>
-        </dl>
+      <div class="hero-copy">
+        <p class="eyebrow">Épicerie casher · Strasbourg</p>
+        <h1 class="hero-title" id="titre-accueil"><span class="line"><span>Shemtov</span></span><span class="line accent"><span>Foch</span></span></h1>
+        <p class="hero-lead">Les courses du quotidien, de Chabbat et des fêtes, au 6 rue du Maréchal-Foch.</p>
+        <p class="status" data-status data-state="off" aria-live="polite"><span class="dot" aria-hidden="true"></span><span data-status-text>Horaires dans les infos pratiques</span></p>
         <div class="actions">
-          <a class="btn btn-pink" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Itinéraire</a>
-          <a class="btn btn-outline" href="tel:+33388119692"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Appeler</a>
+          <a class="btn btn-pink" href="#magasin">Découvrir le magasin</a>
+          <a class="btn btn-ghost" href="#infos">Nous trouver</a>
         </div>
       </div>
-      <div class="panel">
-        <h3>Horaires</h3>
-        <!-- Source unique des horaires : data-open / data-close (heure de Paris). Le texte affiché est recalculé par le script. -->
-        <table id="hours">
-          <tbody>
-            <tr data-day="1" data-open="08:00" data-close="20:00"><th scope="row">Lundi</th><td>8h – 20h</td></tr>
-            <tr data-day="2" data-open="08:00" data-close="20:00"><th scope="row">Mardi</th><td>8h – 20h</td></tr>
-            <tr data-day="3" data-open="08:00" data-close="20:00"><th scope="row">Mercredi</th><td>8h – 20h</td></tr>
-            <tr data-day="4" data-open="08:00" data-close="20:00"><th scope="row">Jeudi</th><td>8h – 20h</td></tr>
-            <tr data-day="5" data-open="08:00" data-close="17:00"><th scope="row">Vendredi</th><td>8h – 17h</td></tr>
-            <tr data-day="6"><th scope="row">Samedi</th><td class="off">Fermé</td></tr>
-            <tr data-day="0" data-open="09:30" data-close="13:00"><th scope="row">Dimanche</th><td>9h30 – 13h</td></tr>
-          </tbody>
-        </table>
-        <p class="note">Horaires habituels, susceptibles de changer les jours de fête.</p>
+    </div>
+    <a class="scroll-cue" href="#magasin"><span class="sr">Faire défiler vers la présentation du magasin</span><span class="scroll-line" aria-hidden="true"></span></a>
+  </section>
+
+  <section class="sec magasin" id="magasin" aria-labelledby="titre-magasin">
+    <div class="wrap magasin-grid">
+      <div class="magasin-text">
+        <p class="kicker">Le magasin</p>
+        <h2 class="statement" id="titre-magasin" data-words>Les courses de tous les jours, Chabbat et les fêtes, au même endroit.</h2>
+        <div class="prose-lg" data-reveal>
+          <p>Shemtov Foch est votre épicerie casher de proximité à Strasbourg. Retrouvez-nous au 6 rue du Maréchal-Foch.</p>
+          <p>Découvrez une sélection de produits d'épicerie, de produits frais et de surgelés. Préparez vos courses du quotidien et vos repas de Chabbat : notre équipe vous accueille et vous accompagne dans vos choix.</p>
+          <p>Pour connaître nos horaires et les produits disponibles, contactez-nous au <a href="tel:+33388119692">03 88 11 96 92</a>.</p>
+        </div>
+        <ul class="facts" data-reveal>
+          <li><strong>Du dimanche au vendredi</strong><span>Fermé le samedi</span></li>
+          <li><strong>Casher</strong><span>Épicerie référencée par le Consistoire Israélite du Bas-Rhin. <a href="https://cibr.fr/cacherout/ou-manger-cacher/" target="_blank" rel="noopener">Voir la liste</a></span></li>
+          <li><strong>Strasbourg</strong><span>6 rue du Maréchal-Foch, 67000</span></li>
+        </ul>
       </div>
-      <div class="panel wide" id="fetes">
-        <h3>Fêtes à venir</h3>
-        <p class="note" style="margin-top:0">Chaque fête commence la veille au soir. Les horaires exceptionnels s'affichent en haut de page.</p>
-        <ol class="fetes" id="fetes-list">
-          <li class="fete" data-start="2026-12-04" data-end="2026-12-12"><div class="date"><b>4</b><span>déc</span></div><div><div class="fname">Hanoukah</div><div class="fwhen">Du soir du 4 au 12 décembre 2026</div></div><span class="pill"></span></li>
-          <li class="fete" data-start="2027-01-23" data-end="2027-01-23"><div class="date"><b>23</b><span>janv</span></div><div><div class="fname">Tou biChvat</div><div class="fwhen">23 janvier 2027</div></div><span class="pill"></span></li>
-          <li class="fete" data-start="2027-03-22" data-end="2027-03-23"><div class="date"><b>22</b><span>mars</span></div><div><div class="fname">Pourim</div><div class="fwhen">Du soir du 22 au 23 mars 2027</div></div><span class="pill"></span></li>
-          <li class="fete" data-start="2027-04-21" data-end="2027-04-29"><div class="date"><b>21</b><span>avr</span></div><div><div class="fname">Pessah</div><div class="fwhen">Du soir du 21 au 29 avril 2027</div></div><span class="pill"></span></li>
-          <li class="fete" data-start="2027-06-10" data-end="2027-06-12"><div class="date"><b>10</b><span>juin</span></div><div><div class="fname">Chavouot</div><div class="fwhen">Du soir du 10 au 12 juin 2027</div></div><span class="pill"></span></li>
-          <li class="fete" data-start="2027-10-01" data-end="2027-10-03"><div class="date"><b>1</b><span>oct</span></div><div><div class="fname">Roch Hachana 5788</div><div class="fwhen">Du soir du 1<sup>er</sup> au 3 octobre 2027</div></div><span class="pill"></span></li>
+      <div class="magasin-media">
+        <figure class="m-photo m-photo-a" data-speed="-6"><img src="assets/photos/magasin-a-480.webp" srcset="assets/photos/magasin-a-480.webp 480w, assets/photos/magasin-a-940.webp 940w" sizes="(min-width: 900px) 26vw, 60vw" width="480" height="600" alt="Bocaux de cornichons et de sauces, huiles et vinaigres dans le rayon épicerie" loading="lazy"></figure>
+        <figure class="m-photo m-photo-b" data-speed="8"><img src="assets/photos/u-frais-480.webp" srcset="assets/photos/u-frais-480.webp 480w, assets/photos/u-frais-940.webp 940w" sizes="(min-width: 900px) 20vw, 46vw" width="480" height="640" alt="Le frigo à fromages : emmental râpé, roquefort, camemberts et fromages à pâte pressée" loading="lazy"></figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec rayons" id="rayons" aria-labelledby="titre-rayons">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <p class="kicker">Nos rayons</p>
+        <h2 id="titre-rayons">Six univers, du frais à l'épicerie.</h2>
+        <p>Chaque univers renvoie à son emplacement sur le plan du magasin.</p>
+      </div>
+    </div>
+    <div class="univers-scroll" role="region" aria-label="Les six univers du magasin, faire défiler horizontalement sur téléphone" tabindex="0">
+      <ul class="univers-list">
+        <li class="univers c-green">
+          <figure><img src="assets/photos/u-epicerie-480.webp" srcset="assets/photos/u-epicerie-480.webp 480w, assets/photos/u-epicerie-940.webp 940w" sizes="(min-width: 900px) 30vw, 78vw" width="480" height="640" alt="Pâtes, épices et conserves dans le rayon épicerie" loading="lazy"></figure>
+          <div class="univers-body">
+            <h3><a href="#etape-epicerie">Épicerie</a></h3>
+            <p>Pâtes, conserves, épices, sauces, huiles, olives et condiments, vaisselle jetable pour recevoir, et des produits sans gluten et végan.</p>
+            <span class="more" aria-hidden="true">Voir sur le plan</span>
+          </div>
+        </li>
+        <li class="univers c-orange">
+          <figure><img src="assets/photos/u-frais-480.webp" srcset="assets/photos/u-frais-480.webp 480w, assets/photos/u-frais-940.webp 940w" sizes="(min-width: 900px) 30vw, 78vw" width="480" height="640" alt="Fromages et produits laitiers au frais" loading="lazy"></figure>
+          <div class="univers-body">
+            <h3><a href="#etape-cremerie">Produits frais</a></h3>
+            <p>Fromages, yaourts, beurre et crèmerie, lait, œufs et pain de mie, salades et spécialités traiteur.</p>
+            <span class="more" aria-hidden="true">Voir sur le plan</span>
+          </div>
+        </li>
+        <li class="univers c-pink">
+          <figure><img src="assets/photos/u-viandes-480.webp" srcset="assets/photos/u-viandes-480.webp 480w, assets/photos/u-viandes-940.webp 940w" sizes="(min-width: 900px) 30vw, 78vw" width="480" height="640" alt="Viandes sous vide, saucisses et charcuterie dans le frigo" loading="lazy"></figure>
+          <div class="univers-body">
+            <h3><a href="#etape-frais">Viandes et poissons</a></h3>
+            <p>Viande et charcuterie au frais, saumon fumé, surimi et poissons panés, bœuf et poulet surgelés.</p>
+            <span class="more" aria-hidden="true">Voir sur le plan</span>
+          </div>
+        </li>
+        <li class="univers c-teal">
+          <figure><img src="assets/photos/u-surgeles-480.webp" width="429" height="572" alt="Légumes surgelés dans un congélateur bac" loading="lazy"></figure>
+          <div class="univers-body">
+            <h3><a href="#etape-congelateurs">Surgelés</a></h3>
+            <p>Glaces et pizzas, légumes, frites et pommes de terre, poisson, bœuf et poulet.</p>
+            <span class="more" aria-hidden="true">Voir sur le plan</span>
+          </div>
+        </li>
+        <li class="univers c-purple">
+          <figure><img src="assets/photos/u-sucre-480.webp" srcset="assets/photos/u-sucre-480.webp 480w, assets/photos/u-sucre-940.webp 940w" sizes="(min-width: 900px) 30vw, 78vw" width="480" height="640" alt="Pâtes à tartiner, tablettes de chocolat et préparations pour la pâtisserie" loading="lazy"></figure>
+          <div class="univers-body">
+            <h3><a href="#etape-centre">Sucré et snacks</a></h3>
+            <p>Biscuits, gâteaux et crackers, chocolats et pâtes à tartiner, confitures, bonbons, chips et produits pour la pâtisserie.</p>
+            <span class="more" aria-hidden="true">Voir sur le plan</span>
+          </div>
+        </li>
+        <li class="univers c-ink">
+          <figure><img src="assets/photos/u-boissons-480.webp" srcset="assets/photos/u-boissons-480.webp 480w, assets/photos/u-boissons-940.webp 940w" sizes="(min-width: 900px) 30vw, 78vw" width="480" height="640" alt="Bouteilles de vin rouge rangées dans des casiers blancs" loading="lazy"></figure>
+          <div class="univers-body">
+            <h3><a href="#etape-vins">Boissons et vins</a></h3>
+            <p>Sodas et boissons, vins casher rouges, blancs et rosés, et une sélection de spiritueux.</p>
+            <p class="evin">L'abus d'alcool est dangereux pour la santé, à consommer avec modération.</p>
+            <span class="more" aria-hidden="true">Voir sur le plan</span>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec visite" id="visite" aria-labelledby="titre-visite">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <p class="kicker">Visite du magasin</p>
+        <h2 id="titre-visite">Faites le tour, de l'entrée jusqu'à l'épicerie.</h2>
+        <p>Plan indicatif, non à l'échelle. Touchez une zone du plan pour aller à l'étape correspondante.</p>
+      </div>
+      <div class="visite-grid">
+        <div class="plan-col">
+          <div class="plan-box" data-plan>
+            <!-- donnees:plan -->
+<svg class="plan" viewBox="150 180 680 1215" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="plan-titre plan-desc" data-vb="150 180 680 1215"><title id="plan-titre">Plan indicatif du magasin Shemtov Foch</title><desc id="plan-desc">Vue du dessus, non à l'échelle. Entrée en bas ; caisse, lait et œufs à droite en entrant ; vins et chocolat à gauche ; congélateurs et snacks au centre ; fromages et crèmerie contre le mur de gauche ; poisson, viande et charcuterie contre le mur de droite ; épicerie au fond à gauche.</desc><g class="murs"><path d="M180,200 L180,540 Q165,565 165,590 L180,1290 L600,1240"/><path d="M720,1240 L810,1210 L810,510 L790,495 L510,510 L510,250 L410,250 L340,215 L180,200"/><path d="M610,1250 L625,1345"/><path d="M720,1250 L735,1345"/><path d="M380,530 L510,530"/><path d="M510,530 L510,510"/><path d="M180,900 L335,885"/><path d="M630,825 L810,825"/></g><g class="zone" data-etape="entree"><g class="meuble k-caisse"><rect x="740" y="880" width="63" height="130" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 771.5 945.0)"><tspan x="771.5" y="952.7">CAISSE</tspan></text></g><g class="meuble k-etagere"><rect x="745" y="1060" width="58" height="135" rx="6"/><text class="lbl" font-size="18" transform="rotate(-90 774.0 1127.5)"><tspan x="774.0" y="1133.8">LAIT · ŒUFS</tspan></text></g></g><g class="zone" data-etape="vins"><g class="meuble k-etagere"><rect x="188" y="918" width="60" height="215" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 218.0 1025.5)"><tspan x="218.0" y="1033.2">VINS</tspan></text></g><g class="meuble k-etagere"><rect x="205" y="1205" width="150" height="42" rx="6"/><text class="lbl" font-size="22"><tspan x="280.0" y="1233.7">CHOCOLAT</tspan></text></g></g><g class="zone" data-etape="centre"><g class="meuble k-congelateur"><rect x="390" y="1030" width="72" height="140" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 426.0 1100.0)"><tspan x="426.0" y="1107.7">LÉGUMES</tspan></text></g><g class="meuble k-congelateur"><rect x="480" y="1030" width="72" height="140" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 516.0 1100.0)"><tspan x="516.0" y="1095.7">BŒUF</tspan><tspan x="516.0" y="1119.7">POULET</tspan></text></g><g class="meuble k-etagere"><rect x="390" y="1190" width="162" height="34" rx="6"/><text class="lbl" font-size="22"><tspan x="471.0" y="1214.7">BONBONS</tspan></text></g><g class="meuble k-etagere"><rect x="430" y="965" width="170" height="40" rx="6"/><text class="lbl" font-size="22"><tspan x="515.0" y="992.7">CHIPS</tspan></text></g><g class="meuble k-etagere"><rect x="430" y="910" width="170" height="40" rx="6"/><text class="lbl" font-size="22"><tspan x="515.0" y="937.7">CRACKERS</tspan></text></g></g><g class="zone" data-etape="congelateurs"><g class="meuble k-congelateur"><rect x="340" y="650" width="270" height="90" rx="6"/><text class="lbl" font-size="22"><tspan x="475.0" y="702.7">POISSON SURGELÉ</tspan></text></g><g class="meuble k-congelateur"><rect x="340" y="770" width="270" height="90" rx="6"/><text class="lbl" font-size="22"><tspan x="475.0" y="822.7">GLACES · PIZZAS</tspan></text></g><g class="meuble k-etagere"><rect x="400" y="555" width="220" height="42" rx="6"/><text class="lbl" font-size="22"><tspan x="510.0" y="583.7">GÂTEAUX</tspan></text></g></g><g class="zone" data-etape="cremerie"><g class="meuble k-frigo"><rect x="188" y="575" width="60" height="145" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 218.0 647.5)"><tspan x="218.0" y="655.2">FROMAGES</tspan></text></g><g class="meuble k-frigo"><rect x="188" y="728" width="60" height="145" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 218.0 800.5)"><tspan x="218.0" y="808.2">YAOURTS</tspan></text></g></g><g class="zone" data-etape="frais"><g class="meuble k-frigo"><rect x="745" y="525" width="58" height="110" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 774.0 580.0)"><tspan x="774.0" y="587.7">POISSON</tspan></text></g><g class="meuble k-frigo"><rect x="745" y="643" width="58" height="110" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 774.0 698.0)"><tspan x="774.0" y="705.7">VIANDE</tspan></text></g><g class="meuble k-etagere"><rect x="690" y="770" width="113" height="40" rx="6"/><text class="lbl" font-size="16.5"><tspan x="746.5" y="795.8">CONFITURES</tspan></text></g></g><g class="zone" data-etape="epicerie"><g class="meuble k-etagere"><rect x="205" y="228" width="125" height="56" rx="6"/><text class="lbl" font-size="20.5"><tspan x="267.5" y="263.2">CONSERVES</tspan></text></g><g class="meuble k-etagere"><rect x="350" y="266" width="150" height="46" rx="6"/><text class="lbl" font-size="22"><tspan x="425.0" y="296.7">SAUCES</tspan></text></g><g class="meuble k-etagere"><rect x="462" y="330" width="38" height="140" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 481.0 400.0)"><tspan x="481.0" y="407.7">ÉPICES</tspan></text></g><g class="meuble k-etagere"><rect x="190" y="300" width="42" height="170" rx="6"/><text class="lbl" font-size="22" transform="rotate(-90 211.0 385.0)"><tspan x="211.0" y="392.7">VAISSELLE</tspan></text></g></g><g class="entree-plan"><path d="M672 1360 L672 1316 M662 1328 L672 1314 L682 1328"/><text x="672" y="1384" class="lbl" font-size="22">ENTRÉE</text></g></svg>
+<!-- /donnees:plan -->
+            <p class="plan-progress" aria-hidden="true"><span data-plan-step>Plan du magasin</span><span class="bar"><i data-plan-bar></i></span></p>
+          </div>
+        </div>
+        <ol class="etapes">
+          <li class="etape" id="etape-entree" data-etape="entree">
+            <figure><img src="assets/photos/v-entree-480.webp" srcset="assets/photos/v-entree-480.webp 480w, assets/photos/v-entree-940.webp 940w" sizes="(min-width: 900px) 34vw, 92vw" width="480" height="360" alt="Étagère de pain de mie, plateaux d'œufs et briques de lait" loading="lazy"></figure>
+            <div class="etape-txt"><p class="etape-n">Étape 1 sur 7</p><h3>L'entrée et la caisse</h3><p>En entrant, la caisse est sur la droite, avec le lait, les œufs et le pain de mie juste à côté, dans l'angle.</p></div>
+          </li>
+          <li class="etape" id="etape-vins" data-etape="vins">
+            <figure><img src="assets/photos/v-vins-480.webp" srcset="assets/photos/v-vins-480.webp 480w, assets/photos/v-vins-940.webp 940w" sizes="(min-width: 900px) 34vw, 92vw" width="480" height="360" alt="Casiers de vins et de spiritueux" loading="lazy"></figure>
+            <div class="etape-txt"><p class="etape-n">Étape 2 sur 7</p><h3>Vins et chocolat</h3><p>Sur la gauche, le grand rayon des vins le long du mur, et le rayon chocolat près du mur du bas.</p><p class="evin">L'abus d'alcool est dangereux pour la santé, à consommer avec modération.</p></div>
+          </li>
+          <li class="etape" id="etape-centre" data-etape="centre">
+            <figure><img src="assets/photos/v-centre-480.webp" srcset="assets/photos/v-centre-480.webp 480w, assets/photos/v-centre-940.webp 940w" sizes="(min-width: 900px) 34vw, 92vw" width="480" height="360" alt="Rayon de bonbons, sachets de confiseries et barres chocolatées" loading="lazy"></figure>
+            <div class="etape-txt"><p class="etape-n">Étape 3 sur 7</p><h3>Le centre du magasin</h3><p>Deux congélateurs côte à côte, légumes et frites d'un côté, bœuf et poulet de l'autre, le rayon bonbons, puis les chips et les crackers.</p></div>
+          </li>
+          <li class="etape" id="etape-congelateurs" data-etape="congelateurs">
+            <figure><img src="assets/photos/v-congelateurs-480.webp" srcset="assets/photos/v-congelateurs-480.webp 480w, assets/photos/v-congelateurs-940.webp 940w" sizes="(min-width: 900px) 34vw, 92vw" width="480" height="360" alt="Biscuits en rayon au-dessus d'un congélateur bac" loading="lazy"></figure>
+            <div class="etape-txt"><p class="etape-n">Étape 4 sur 7</p><h3>Congélateurs et gâteaux</h3><p>En remontant vers le fond : le congélateur à poisson, celui des glaces et des pizzas, puis l'étagère à gâteaux.</p></div>
+          </li>
+          <li class="etape" id="etape-cremerie" data-etape="cremerie">
+            <figure><img src="assets/photos/v-cremerie-480.webp" srcset="assets/photos/v-cremerie-480.webp 480w, assets/photos/v-cremerie-940.webp 940w" sizes="(min-width: 900px) 34vw, 92vw" width="480" height="360" alt="Yaourts, beurre, desserts et crèmes dans le frigo crèmerie" loading="lazy"></figure>
+            <div class="etape-txt"><p class="etape-n">Étape 5 sur 7</p><h3>Fromages et crèmerie</h3><p>Contre le mur de gauche, le frigo à fromages puis le frigo des yaourts et de la crèmerie.</p></div>
+          </li>
+          <li class="etape" id="etape-frais" data-etape="frais">
+            <figure><img src="assets/photos/v-frais-480.webp" srcset="assets/photos/v-frais-480.webp 480w, assets/photos/v-frais-940.webp 940w" sizes="(min-width: 900px) 34vw, 92vw" width="480" height="360" alt="Saumon fumé, salades et spécialités au frais" loading="lazy"></figure>
+            <div class="etape-txt"><p class="etape-n">Étape 6 sur 7</p><h3>Poisson, viande et charcuterie</h3><p>Contre le mur de droite : le frigo poisson avec le surimi et les poissons panés, le frigo viande et charcuterie, puis les chocolats et les confitures.</p></div>
+          </li>
+          <li class="etape" id="etape-epicerie" data-etape="epicerie">
+            <figure><img src="assets/photos/v-epicerie-480.webp" srcset="assets/photos/v-epicerie-480.webp 480w, assets/photos/v-epicerie-940.webp 940w" sizes="(min-width: 900px) 34vw, 92vw" width="480" height="360" alt="Olives, cornichons, sauces et barquettes en aluminium dans l'épicerie" loading="lazy"></figure>
+            <div class="etape-txt"><p class="etape-n">Étape 7 sur 7</p><h3>L'épicerie, au fond</h3><p>Au fond à gauche, l'épicerie : conserves, thon et maquereaux, sauces tomates et pesto, épices, couverts, assiettes et verres.</p></div>
+          </li>
         </ol>
       </div>
     </div>
-  </div>
-</section>
+  </section>
+
+  <section class="sec infos" id="infos" aria-labelledby="titre-infos">
+    <div class="wrap">
+      <div class="sec-head" data-reveal>
+        <p class="kicker">Infos pratiques</p>
+        <h2 id="titre-infos">Venir chez Shemtov Foch</h2>
+      </div>
+      <div class="infos-grid">
+        <div class="panel panel-adresse" data-reveal>
+          <h3>Nous trouver</h3>
+          <p class="adresse">6 rue du Maréchal-Foch<br>67000 Strasbourg</p>
+          <p class="tel"><a href="tel:+33388119692">03 88 11 96 92</a></p>
+          <div class="actions">
+            <a class="btn btn-pink" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire</a>
+            <a class="btn btn-outline" href="tel:+33388119692">Appeler</a>
+            <button class="btn btn-outline" type="button" data-copy="6 rue du Maréchal-Foch, 67000 Strasbourg">Copier l'adresse</button>
+          </div>
+          <p class="copy-msg" data-copy-msg aria-live="polite"></p>
+          <p class="liens">Suivez le magasin sur <a href="https://www.facebook.com/Shemtov.Strasbourg" target="_blank" rel="noopener">Facebook</a> · <a href="https://share.google/WKe2Zp5OEH1JKOaMW" target="_blank" rel="noopener">fiche Google</a></p>
+        </div>
+        <div class="panel panel-horaires" data-reveal>
+          <h3>Horaires</h3>
+          <p class="status status-light" data-status data-state="off"><span class="dot" aria-hidden="true"></span><span data-status-text>Horaires habituels</span></p>
+          <table class="hours">
+            <caption class="sr">Horaires d'ouverture habituels</caption>
+            <tbody>
+<!-- donnees:horaires -->
+<tr data-jour="1"><th scope="row">Lundi</th><td>8h – 20h</td></tr>
+<tr data-jour="2"><th scope="row">Mardi</th><td>8h – 20h</td></tr>
+<tr data-jour="3"><th scope="row">Mercredi</th><td>8h – 20h</td></tr>
+<tr data-jour="4"><th scope="row">Jeudi</th><td>8h – 20h</td></tr>
+<tr data-jour="5"><th scope="row">Vendredi</th><td>8h – 17h</td></tr>
+<tr data-jour="6"><th scope="row">Samedi</th><td class="off">Fermé</td></tr>
+<tr data-jour="0"><th scope="row">Dimanche</th><td>9h30 – 13h</td></tr>
+<!-- /donnees:horaires -->
+            </tbody>
+          </table>
+          <div class="exc-inline" data-exceptions hidden><strong>Horaires exceptionnels</strong><ul data-exc-list></ul></div>
+          <p class="note">Horaires habituels, susceptibles de changer les jours de fête.</p>
+        </div>
+        <div class="panel panel-fetes" data-reveal>
+          <h3>Fêtes à venir</h3>
+          <p class="note">Chaque fête commence la veille au soir. Les horaires exceptionnels s'affichent en haut de page.</p>
+          <ol class="fetes">
+<!-- donnees:fetes -->
+<li class="fete" data-start="2026-12-04" data-end="2026-12-12"><div class="date"><b>4</b><span>déc</span></div><div><div class="fname">Hanoukah</div><div class="fwhen">Du soir du 4 au 12 décembre 2026</div></div><span class="pill"></span></li>
+<li class="fete" data-start="2027-01-23" data-end="2027-01-23"><div class="date"><b>23</b><span>janv</span></div><div><div class="fname">Tou biChvat</div><div class="fwhen">23 janvier 2027</div></div><span class="pill"></span></li>
+<li class="fete" data-start="2027-03-22" data-end="2027-03-23"><div class="date"><b>22</b><span>mars</span></div><div><div class="fname">Pourim</div><div class="fwhen">Du soir du 22 au 23 mars 2027</div></div><span class="pill"></span></li>
+<li class="fete" data-start="2027-04-21" data-end="2027-04-29"><div class="date"><b>21</b><span>avr</span></div><div><div class="fname">Pessah</div><div class="fwhen">Du soir du 21 au 29 avril 2027</div></div><span class="pill"></span></li>
+<li class="fete" data-start="2027-06-10" data-end="2027-06-12"><div class="date"><b>10</b><span>juin</span></div><div><div class="fname">Chavouot</div><div class="fwhen">Du soir du 10 au 12 juin 2027</div></div><span class="pill"></span></li>
+<li class="fete" data-start="2027-10-01" data-end="2027-10-03"><div class="date"><b>1</b><span>oct</span></div><div><div class="fname">Roch Hachana 5788</div><div class="fwhen">Du soir du 1<sup>er</sup> au 3 octobre 2027</div></div><span class="pill"></span></li>
+<!-- /donnees:fetes -->
+          </ol>
+        </div>
+      </div>
+    </div>
+  </section>
 </main>
 
-<footer>
-  <div class="wrap">
-    <img src="assets/logo.png" alt="" width="64" height="64">
-    <p><strong>Shemtov Foch</strong> · Épicerie casher<br>6 rue du Maréchal-Foch, 67000 Strasbourg · 03 88 11 96 92</p>
-    <p class="legal">SHEMTOV, SARL au capital de 3 000 € · SIRET 794 645 978 00014 · RCS Strasbourg 794 645 978 · <a href="mentions-legales.html">Mentions légales</a></p>
+<footer class="site-footer">
+  <div class="wrap footer-in">
+    <div class="footer-brand">
+      <img src="assets/logo-128.png" alt="" width="64" height="64">
+      <p><strong>Shemtov Foch</strong><br>Épicerie casher<br>6 rue du Maréchal-Foch, 67000 Strasbourg<br><a href="tel:+33388119692">03 88 11 96 92</a></p>
+    </div>
+    <nav class="footer-nav" aria-label="Pied de page">
+      <a href="#magasin">Le magasin</a>
+      <a href="#rayons">Nos rayons</a>
+      <a href="#visite">Visite</a>
+      <a href="#infos">Infos pratiques</a>
+      <a href="mentions-legales.html">Mentions légales</a>
+      <a href="confidentialite.html">Confidentialité</a>
+    </nav>
+    <p class="legal"><!-- donnees:legal-court -->
+SHEMTOV, SARL au capital de 3 000 € · SIRET 794 645 978 00014 · 794 645 978 RCS Strasbourg
+<!-- /donnees:legal-court --></p>
   </div>
 </footer>
 
-<div class="dock">
-  <a class="btn btn-pink" href="tel:+33388119692"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Appeler</a>
-  <a class="btn btn-outline" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Itinéraire</a>
+<div class="dock" data-dock>
+  <a class="btn btn-pink" href="tel:+33388119692">Appeler</a>
+  <a class="btn btn-outline" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire</a>
 </div>
-
-<script src="assets/site.js"></script>
 </body>
 </html>

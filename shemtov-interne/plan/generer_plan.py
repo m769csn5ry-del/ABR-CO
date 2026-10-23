@@ -248,6 +248,71 @@ def svg():
     return "\n".join(out)
 
 
+# ---------------------------------------------------------------- version web (plan interactif du site)
+# Étiquettes courtes, lisibles une fois le plan réduit à la taille d'un écran de téléphone.
+COURTS = {
+    "ep_conserves": ["CONSERVES"], "ep_sauces": ["SAUCES"], "ep_epices": ["ÉPICES"], "ep_vaisselle": ["VAISSELLE"],
+    "frigo_fromage": ["FROMAGES"], "frigo_yaourt": ["YAOURTS"], "gateaux": ["GÂTEAUX"],
+    "cong_poisson": ["POISSON SURGELÉ"], "cong_glaces": ["GLACES · PIZZAS"], "crackers": ["CRACKERS"], "chips": ["CHIPS"],
+    "frigo_poisson": ["POISSON"], "frigo_viande": ["VIANDE"], "choco_confiture": ["CONFITURES"],
+    "vin": ["VINS"], "chocolat": ["CHOCOLAT"], "cong_legumes": ["LÉGUMES"], "cong_boeuf": ["BŒUF", "POULET"],
+    "bonbons": ["BONBONS"], "caisse": ["CAISSE"], "lait": ["LAIT · ŒUFS"],
+}
+# Étapes de la visite, de l'entrée vers le fond du magasin
+ETAPES = {
+    "entree": ["caisse", "lait"],
+    "vins": ["vin", "chocolat"],
+    "centre": ["cong_legumes", "cong_boeuf", "bonbons", "chips", "crackers"],
+    "congelateurs": ["cong_poisson", "cong_glaces", "gateaux"],
+    "cremerie": ["frigo_fromage", "frigo_yaourt"],
+    "frais": ["frigo_poisson", "frigo_viande", "choco_confiture"],
+    "epicerie": ["ep_conserves", "ep_sauces", "ep_epices", "ep_vaisselle"],
+}
+VIEWBOX_WEB = (150, 180, 680, 1215)
+
+
+def texte_web(x, y, w, h, lignes, fs_max=22, fs_min=12):
+    vertical = h > w * 1.25
+    dispo_long = (h if vertical else w) - 10
+    dispo_court = (w if vertical else h) - 6
+    fs = fs_max
+    while fs > fs_min and (max(len(t) for t in lignes) * 0.62 * fs > dispo_long or len(lignes) * (fs + 2) > dispo_court):
+        fs -= 0.5
+    cx, cy = x + w / 2, y + h / 2
+    interligne = fs + 2
+    top = cy - (len(lignes) - 1) * interligne / 2
+    tspans = "".join(f'<tspan x="{cx:.1f}" y="{top + i * interligne + fs * 0.35:.1f}">{escape(t)}</tspan>'
+                     for i, t in enumerate(lignes))
+    rot = f' transform="rotate(-90 {cx:.1f} {cy:.1f})"' if vertical else ""
+    return f'<text class="lbl" font-size="{fs:g}"{rot}>{tspans}</text>'
+
+
+def svg_web():
+    assert sorted(sum(ETAPES.values(), [])) == sorted(F), "chaque meuble doit appartenir à une seule étape"
+    vb = " ".join(str(v) for v in VIEWBOX_WEB)
+    out = [f'<svg class="plan" viewBox="{vb}" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="plan-titre plan-desc" data-vb="{vb}">',
+           '<title id="plan-titre">Plan indicatif du magasin Shemtov Foch</title>',
+           '<desc id="plan-desc">Vue du dessus, non à l\'échelle. Entrée en bas ; caisse, lait et œufs à droite en entrant ; '
+           'vins et chocolat à gauche ; congélateurs et snacks au centre ; fromages et crèmerie contre le mur de gauche ; '
+           'poisson, viande et charcuterie contre le mur de droite ; épicerie au fond à gauche.</desc>',
+           '<g class="murs">',
+           f'<path d="{OUTER_LEFT}"/><path d="{OUTER_RIGHT}"/>']
+    for (a, b) in WALL_SEGMENTS.values():
+        out.append(f'<path d="M{a[0]},{a[1]} L{b[0]},{b[1]}"/>')
+    out.append('</g>')
+    for etape, ids in ETAPES.items():
+        out.append(f'<g class="zone" data-etape="{etape}">')
+        for fid in ids:
+            _, kind, x, y, w, h, _ = F[fid]
+            out.append(f'<g class="meuble k-{kind}"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6"/>'
+                       f'{texte_web(x, y, w, h, COURTS[fid])}</g>')
+        out.append('</g>')
+    out.append('<g class="entree-plan"><path d="M672 1360 L672 1316 M662 1328 L672 1314 L682 1328"/>'
+               '<text x="672" y="1384" class="lbl" font-size="22">ENTRÉE</text></g>')
+    out.append('</svg>')
+    return "".join(out)
+
+
 if __name__ == "__main__":
     erreurs = verifier()
     if erreurs:
@@ -257,4 +322,6 @@ if __name__ == "__main__":
         sys.exit(1)
     cible = pathlib.Path(__file__).with_name("plan-2d-v1.svg")
     cible.write_text(svg(), encoding="utf-8")
-    print(f"OK · {len(FURNITURE)} meubles, tous les contrôles passent · {cible.name}")
+    web = pathlib.Path(__file__).with_name("plan-web.svg")
+    web.write_text(svg_web(), encoding="utf-8")
+    print(f"OK · {len(FURNITURE)} meubles, tous les contrôles passent · {cible.name}, {web.name}")
