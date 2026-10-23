@@ -1,0 +1,4 @@
+# Site statique : aucun build. À utiliser avec « Base directory = shemtov » dans Netlify.
+[build]
+  publish = "."
+  command = ""
