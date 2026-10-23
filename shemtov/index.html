@@ -3,227 +3,33 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="claude:viewport-fit-sides" content="cover">
-<title>Shemtov, épicerie casher à Strasbourg</title>
-<meta name="description" content="Shemtov, épicerie casher Anvers & Foch à Strasbourg : vins, boucherie en libre-service, fromages, surgelés, épicerie sèche, sans gluten et végan. 6 rue du Maréchal-Foch, 03 88 11 96 92.">
+<title>Shemtov Foch, épicerie casher à Strasbourg</title>
+<meta name="description" content="Shemtov Foch, épicerie casher de proximité à Strasbourg : épicerie, produits frais, surgelés, vins. 6 rue du Maréchal-Foch, 03 88 11 96 92. Horaires et accès.">
 <link rel="icon" href="assets/logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fredoka:wght@500;600;700&display=swap">
-<style>
-/* Concept : site de quartier, pensé pour le téléphone. Un seul moment fort (bandeau rose + pastille du logo), le reste reste calme. */
-:root{
-  --bg:#F4F9F8; --surface:#FFFFFF; --card:#FFFFFF; --surface-2:#E7F1EF; --line:#D6E3E0;
-  --ink:#201820; --ink-soft:#5A4D5C;
-  --pink:#D9007C; --pink-text:#C2006F; --teal:#14B9A7; --teal-text:#00776D;
-  --orange:#EF9121; --purple:#9B6AAD; --green:#8CC240;
-  --today-bg:#FCE4F1;
-  --shadow:0 1px 2px rgba(32,24,32,.06), 0 10px 28px rgba(32,24,32,.10);
-  /* Valeurs identiques dans les deux thèmes : bandeaux de marque et pastilles blanches */
-  --band:#D9007C; --on-band:#FFFFFF; --band-ink:#201820;
-  --chip-bg:#FFFFFF; --chip-ink:#201820; --chip-soft:#5A4D5C;
-  --on-teal:#201820;
-  --st-open:#17803D; --st-soon:#B45309; --st-off:#6B6270;
-  --f-display:"Fredoka","Baloo 2",ui-rounded,system-ui,sans-serif;
-  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --radius:22px;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#150F18; --surface:#1F1623; --card:#261B2B; --surface-2:#30233A; --line:#3C2E44;
-    --ink:#F7EFF4; --ink-soft:#C0B3C4;
-    --pink-text:#FF6BBB; --teal-text:#3FDAC9; --today-bg:#4A1D39;
-    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.4);
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#150F18; --surface:#1F1623; --card:#261B2B; --surface-2:#30233A; --line:#3C2E44;
-  --ink:#F7EFF4; --ink-soft:#C0B3C4;
-  --pink-text:#FF6BBB; --teal-text:#3FDAC9; --today-bg:#4A1D39;
-  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px rgba(0,0,0,.4);
-  color-scheme:dark;
-}
-
-*,*::before,*::after{box-sizing:border-box}
-html{scroll-behavior:smooth}
-@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}.btn{transition:none}}
-body{margin:0;background:var(--bg);color:var(--ink);font:400 17px/1.55 var(--f-body);-webkit-text-size-adjust:100%}
-img{max-width:100%}
-a{color:inherit}
-:focus-visible{outline:3px solid var(--pink-text);outline-offset:3px}
-
-.wrap{max-width:1080px;margin-inline:auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-
-/* Bandeau démo */
-.demo{background:var(--band-ink);color:#fff;font-size:13px;text-align:center;padding:7px 16px;letter-spacing:.02em}
-
-/* En-tête */
-.top{background:var(--surface);border-bottom:1px solid var(--line)}
-.top-in{display:flex;align-items:center;gap:22px;min-height:66px}
-.brand{display:flex;align-items:center;gap:10px;text-decoration:none;font:700 23px var(--f-display)}
-.brand img{width:46px;height:46px;object-fit:contain;background:#fff;border-radius:50%;padding:2px}
-.nav{margin-left:auto;display:flex;align-items:center;gap:24px}
-.nav a:not(.btn){text-decoration:none;font-weight:600}
-.nav a:not(.btn):hover{color:var(--pink-text)}
-@media (max-width:759px){.nav{display:none}}
-
-/* Boutons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:50px;padding:0 24px;border-radius:999px;border:2px solid transparent;font:700 17px var(--f-body);text-decoration:none;cursor:pointer;transition:transform .12s ease}
-.btn:hover{transform:translateY(-1px)}
-.btn .ic{width:20px;height:20px;flex:none}
-.ic{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.btn-pink{background:var(--pink);color:#fff}
-.btn-outline{border-color:var(--ink);color:var(--ink)}
-.btn-white{background:#fff;color:var(--band)}
-.btn-line{border-color:#fff;color:#fff}
-.btn-ink{background:var(--band-ink);color:#fff}
-.btn-ink-line{border-color:var(--on-teal);color:var(--on-teal)}
-.btn.sm{min-height:42px;padding:0 18px;font-size:16px}
-
-/* Hero */
-.hero{position:relative;overflow:hidden;background:var(--band);color:var(--on-band)}
-.hero :focus-visible{outline-color:#fff}
-.hero-in{position:relative;z-index:1;display:grid;gap:26px;padding-block:34px 42px}
-.badge{width:clamp(124px,22vw,250px);aspect-ratio:1;border-radius:50%;background:#fff;display:grid;place-items:center;box-shadow:0 12px 32px rgba(32,24,32,.30)}
-.badge img{width:88%;height:88%;object-fit:contain}
-.deco{position:absolute;border-radius:50%;z-index:0}
-.d1{width:230px;height:230px;background:var(--teal);right:-70px;top:-90px}
-.d2{width:62px;height:62px;background:var(--orange);right:96px;top:76px}
-.d3{width:38px;height:38px;background:var(--purple);right:26px;top:140px}
-.d4{width:24px;height:24px;background:var(--green);right:150px;top:30px}
-.eyebrow{font:700 13px/1.3 var(--f-body);letter-spacing:.09em;text-transform:uppercase}
-h1{font:700 clamp(34px,6.4vw,58px)/1.04 var(--f-display);text-wrap:balance;margin:10px 0 14px}
-.lead{font-size:clamp(17px,2.2vw,20px);max-width:34em;margin:0 0 20px}
-.status{display:inline-flex;align-items:center;gap:10px;background:var(--chip-bg);color:var(--chip-ink);border-radius:999px;padding:8px 16px 8px 14px;font-weight:700;margin-bottom:18px}
-.dot{width:11px;height:11px;border-radius:50%;background:var(--st-off);flex:none}
-.status[data-state="open"] .dot{background:var(--st-open)}
-.status[data-state="soon"] .dot{background:var(--st-soon)}
-.actions{display:flex;flex-wrap:wrap;gap:12px}
-.rating{margin:20px 0 0;font-weight:600}
-.rating .stars{letter-spacing:.12em}
-@media (min-width:820px){
-  .hero-in{grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);align-items:center;gap:48px;padding-block:64px 72px}
-  .hero-badge{order:2;justify-self:center}
-  .d1{width:380px;height:380px;right:-100px;top:auto;bottom:-150px}
-  .d2{width:92px;height:92px;right:24%;top:-34px}
-  .d3{width:54px;height:54px;right:6%;top:22%}
-  .d4{width:30px;height:30px;right:30%;bottom:40px;top:auto}
-}
-
-/* Sections */
-.sec{padding-block:56px}
-.sec.alt{background:var(--surface);--card:var(--bg)}
-.sec-head{max-width:40em;margin-bottom:28px}
-.kicker{font:700 13px/1.3 var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--pink-text)}
-h2{font:600 clamp(28px,4.6vw,40px)/1.1 var(--f-display);margin:6px 0 10px;text-wrap:balance}
-.sec-head p{margin:0;color:var(--ink-soft)}
-h3{font:600 20px/1.2 var(--f-display);margin:0}
-
-/* Rayons */
-.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
-.tile p{margin:0;color:var(--ink-soft);font-size:15.5px}
-.disc{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--disc);color:var(--disc-ink,var(--band-ink))}
-.disc svg{width:34px;height:34px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
-.t-vin{--disc:var(--purple);--disc-ink:#fff}
-.t-boucherie{--disc:var(--pink);--disc-ink:#fff}
-.t-fromage{--disc:var(--orange)}
-.t-surgele{--disc:var(--teal)}
-.t-epicerie{--disc:var(--green)}
-.t-vegan{--disc:var(--band-ink);--disc-ink:#fff}
-@media (min-width:760px){.tiles{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.tile{padding:22px}}
-.shop-note{margin:22px 0 0;font-weight:600}
-
-/* Fêtes */
-.fetes{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-.fete{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:16px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 16px 12px 12px}
-.date{width:64px;height:64px;border-radius:16px;background:var(--surface-2);display:grid;align-content:center;justify-items:center;gap:3px;line-height:1}
-.date b{font:700 26px var(--f-display)}
-.date span{font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft)}
-.fname{font:600 20px/1.2 var(--f-display)}
-.fwhen{font-size:15px;color:var(--ink-soft);margin-top:2px}
-.pill{font:700 13px var(--f-body);border-radius:999px;padding:6px 12px;background:var(--surface-2);white-space:nowrap}
-.fete.next{background:var(--band);color:var(--on-band);border-color:transparent}
-.fete.next .date{background:var(--chip-bg);color:var(--chip-ink)}
-.fete.next .date span{color:var(--chip-soft)}
-.fete.next .fwhen{color:var(--on-band)}
-.fete.next .pill{background:var(--chip-bg);color:var(--chip-ink)}
-.note{margin:16px 0 0;font-size:14px;color:var(--ink-soft)}
-@media (max-width:460px){
-  .fete{grid-template-columns:56px minmax(0,1fr);gap:6px 14px}
-  .date{width:56px;height:56px;grid-row:span 2}
-  .pill{grid-column:2;justify-self:start}
-}
-
-/* Actualités */
-.news{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
-.post{position:relative;background:var(--card);border:2px dashed var(--line);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
-.photo{aspect-ratio:4/3;border-radius:14px;background:var(--surface-2);display:grid;place-items:center;color:var(--ink-soft);font-size:14px;font-weight:600}
-.tag{align-self:flex-start;font:700 12px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--teal-text)}
-.post p{margin:0;color:var(--ink-soft);font-size:15.5px}
-.ex{position:absolute;top:12px;right:12px;font:700 12px var(--f-body);letter-spacing:.06em;text-transform:uppercase;background:var(--band-ink);color:#fff;border-radius:999px;padding:4px 10px}
-
-/* Avis */
-.band-teal{background:var(--teal);color:var(--on-teal);padding-block:56px}
-.band-teal :focus-visible{outline-color:var(--on-teal)}
-.avis{display:grid;gap:24px;align-items:center}
-.rate{font:700 clamp(84px,16vw,132px)/.9 var(--f-display)}
-.rate small{font-size:.32em;font-weight:600}
-.band-teal .stars{font-size:26px;letter-spacing:.1em}
-.band-teal .count{font-weight:700;font-size:18px}
-.he{font:700 30px/1.2 var(--f-body)}
-.band-teal h2{margin-top:2px}
-.band-teal p{margin:0 0 20px;max-width:34em}
-@media (min-width:760px){.avis{grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:56px}}
-
-/* Infos */
-.infos{display:grid;gap:18px}
-@media (min-width:760px){.infos{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:22px;min-width:0}
-.panel h3{margin-bottom:6px}
-dl{margin:0}
-dt{font:700 13px var(--f-body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);margin-top:18px}
-dd{margin:3px 0 0;font-size:19px;font-weight:600;overflow-wrap:anywhere}
-dd a{text-decoration-thickness:2px;text-underline-offset:3px}
-.panel .actions{margin-top:22px}
-table{border-collapse:collapse;width:100%;margin-top:6px}
-th,td{padding:11px 12px;text-align:left;border-bottom:1px solid var(--line);font-size:17px}
-th{font-weight:600}
-td{text-align:right;font-variant-numeric:tabular-nums}
-tr:last-child th,tr:last-child td{border-bottom:0}
-tr.today{background:var(--today-bg);font-weight:700}
-td.off{color:var(--ink-soft)}
-
-/* Pied de page */
-footer{background:var(--band-ink);color:#fff;padding-block:34px}
-footer .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:18px 32px}
-footer img{width:64px;height:64px;object-fit:contain;background:#fff;border-radius:50%;padding:3px}
-footer p{margin:0;font-size:15px}
-footer .legal{width:100%;font-size:13px;opacity:.8}
-
-/* Barre d'actions du téléphone */
-.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;gap:10px;background:var(--surface);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-.dock .btn{flex:1;min-height:48px;padding:0 12px}
-@media (min-width:760px){.dock{display:none}}
-@media (max-width:759px){footer{padding-block-end:110px}}
-</style>
+<link rel="preload" href="assets/fonts/fredoka-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/style.css">
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"GroceryStore","name":"Shemtov","description":"Épicerie casher à Strasbourg : vins, boucherie en libre-service, fromages, surgelés, épicerie sèche, sans gluten et végan.","telephone":"+33388119692","address":{"@type":"PostalAddress","streetAddress":"6 rue du Maréchal-Foch","postalCode":"67000","addressLocality":"Strasbourg","addressCountry":"FR"},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday"],"opens":"08:00","closes":"20:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Friday","opens":"08:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Sunday","opens":"09:30","closes":"13:00"}],"sameAs":["https://www.facebook.com/groups/276347742556165/"]}
+{"@context":"https://schema.org","@type":"GroceryStore","name":"Shemtov Foch","legalName":"SHEMTOV","vatID":"FR83794645978","description":"Épicerie casher de proximité à Strasbourg : épicerie, produits frais, surgelés, vins.","telephone":"+33388119692","address":{"@type":"PostalAddress","streetAddress":"6 rue du Maréchal-Foch","postalCode":"67000","addressLocality":"Strasbourg","addressCountry":"FR"},"openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Monday","Tuesday","Wednesday","Thursday"],"opens":"08:00","closes":"20:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Friday","opens":"08:00","closes":"17:00"},{"@type":"OpeningHoursSpecification","dayOfWeek":"Sunday","opens":"09:30","closes":"13:00"}],"sameAs":["https://www.facebook.com/Shemtov.Strasbourg"]}
 </script>
 </head>
 <body id="top">
 
 <div class="demo">Démo du futur site · photos et textes à finaliser</div>
 
+<div class="exc" id="exceptions" hidden>
+  <div class="wrap">
+    <strong>Horaires exceptionnels</strong>
+    <ul id="exc-list"></ul>
+  </div>
+</div>
+
 <header class="top">
   <div class="wrap top-in">
-    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="46" height="46"><span>Shemtov</span></a>
+    <a class="brand" href="#top"><img src="assets/logo.png" alt="" width="46" height="46"><span>Shemtov Foch</span></a>
     <nav class="nav" aria-label="Navigation principale">
+      <a href="#magasin">Le magasin</a>
       <a href="#rayons">Rayons</a>
-      <a href="#fetes">Fêtes</a>
-      <a href="#avis">Avis</a>
-      <a href="#infos">Infos pratiques</a>
+      <a href="#infos">Horaires et accès</a>
       <a class="btn btn-pink sm" href="tel:+33388119692">Appeler</a>
     </nav>
   </div>
@@ -237,120 +43,104 @@ footer .legal{width:100%;font-size:13px;opacity:.8}
   <span class="deco d4" aria-hidden="true"></span>
   <div class="wrap hero-in">
     <div class="hero-badge">
-      <div class="badge"><img src="assets/logo.png" alt="Logo Shemtov, épicerie Anvers &amp; Foch" width="217" height="233"></div>
+      <div class="badge"><img src="assets/logo.png" alt="Logo Shemtov, épicerie" width="217" height="233"></div>
     </div>
     <div>
-      <div class="eyebrow">Épicerie casher · Anvers &amp; Foch</div>
-      <h1>Votre épicerie casher à Strasbourg</h1>
-      <p class="lead">Vins, boucherie en libre-service, fromages, surgelés, épicerie sèche, produits sans gluten et végan. 6 rue du Maréchal-Foch.</p>
+      <div class="eyebrow">Shemtov Foch · Épicerie casher · Strasbourg</div>
+      <h1>Votre épicerie casher de proximité</h1>
+      <p class="lead">Épicerie, produits frais et surgelés pour vos courses du quotidien et vos repas de Chabbat. 6 rue du Maréchal-Foch.</p>
       <div class="status" id="status" data-state="off" aria-live="polite"><span class="dot" aria-hidden="true"></span><span id="status-text">Horaires ci-dessous</span></div>
       <div class="actions">
         <a class="btn btn-white" href="tel:+33388119692"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>Appeler le 03 88 11 96 92</a>
         <a class="btn btn-line" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Itinéraire</a>
       </div>
-      <p class="rating"><span class="stars" aria-hidden="true">★★★★★</span> 4,8 sur 5 · 86 avis Google</p>
     </div>
   </div>
 </section>
 
-<section class="sec" id="rayons">
+<section class="sec" id="magasin">
+  <div class="wrap about">
+    <div class="about-text">
+      <div class="sec-head">
+        <div class="kicker">Le magasin</div>
+        <h2>Shemtov Foch, votre épicerie de proximité</h2>
+      </div>
+      <p>Shemtov Foch est votre épicerie casher de proximité à Strasbourg. Retrouvez-nous au 6 rue du Maréchal-Foch.</p>
+      <p>Découvrez une sélection de produits d'épicerie, de produits frais et de surgelés.</p>
+      <p>Préparez vos courses du quotidien et vos repas de Chabbat. Notre équipe vous accueille et vous accompagne dans vos choix.</p>
+      <p>Pour connaître nos horaires et les produits disponibles, contactez-nous au <a href="tel:+33388119692">03 88 11 96 92</a>.</p>
+      <p class="cacher">Épicerie casher référencée par le Consistoire Israélite du Bas-Rhin. <a href="https://cibr.fr/cacherout/ou-manger-cacher/" target="_blank" rel="noopener">Voir la liste du Consistoire</a></p>
+    </div>
+    <!-- Photo de la façade : déposer le fichier dans assets/photos/facade.jpg, elle s'affiche toute seule. -->
+    <figure class="about-photo" data-photo><img src="assets/photos/facade.jpg" alt="La façade du magasin Shemtov Foch, rue du Maréchal-Foch" decoding="async"></figure>
+  </div>
+</section>
+
+<section class="sec alt" id="rayons">
   <div class="wrap">
     <div class="sec-head">
       <div class="kicker">En magasin</div>
       <h2>Nos rayons</h2>
-      <p>Six rayons pour les courses de la semaine et celles des fêtes.</p>
+      <p>Huit rayons pour les courses de la semaine et celles de Chabbat.</p>
     </div>
     <div class="tiles">
-      <!-- Chaque tuile accueillera une vraie photo du rayon à la place du pictogramme. -->
-      <article class="tile t-vin">
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M20 5h8v9c0 3 5 5 5 12v15a2 2 0 0 1-2 2H17a2 2 0 0 1-2-2V26c0-7 5-9 5-12z"/><path d="M15 30h18M15 38h18"/></svg></div>
-        <h3>Vins casher</h3>
-        <p>Une sélection de vins casher.</p>
+      <!-- Chaque tuile accueille sa photo : déposer assets/photos/rayon-<nom>.jpg, elle remplace le pictogramme toute seule. -->
+      <article class="tile t-epicerie">
+        <div class="tile-photo" data-photo><img src="assets/photos/rayon-epicerie.jpg" alt="Le rayon épicerie" decoding="async"></div>
+        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M16 8h16v5H16z"/><path d="M14 13h20v3c3 2 4 5 4 8v14a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3V24c0-3 1-6 4-8z"/><path d="M16 26h16v8H16z"/></svg></div>
+        <h3>Épicerie</h3>
+        <p>Conserves, épices, sauces tomates, pesto, thon et maquereaux, couverts, assiettes et verres.</p>
       </article>
-      <article class="tile t-boucherie">
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 25C8 14 17 7 28 8c8 1 13 6 12 14-1 10-10 18-21 18C12 40 8 33 8 25z"/><circle cx="28" cy="22" r="5.5"/></svg></div>
-        <h3>Boucherie et charcuterie</h3>
-        <p>Rayon boucherie en libre-service et charcuterie.</p>
-      </article>
-      <article class="tile t-fromage">
+      <article class="tile t-frais">
+        <div class="tile-photo" data-photo><img src="assets/photos/rayon-frais.jpg" alt="Le rayon fromages et crémerie" decoding="async"></div>
         <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 30 42 12v22a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2z"/><circle cx="16" cy="31" r="2"/><circle cx="30" cy="26" r="2.4"/><circle cx="36" cy="31" r="1.6"/></svg></div>
         <h3>Fromages et crémerie</h3>
-        <p>Des fromages et des produits de crémerie variés.</p>
+        <p>Fromages, yaourts et produits laitiers, lait, œufs et pain de mie.</p>
+      </article>
+      <article class="tile t-viande">
+        <div class="tile-photo" data-photo><img src="assets/photos/rayon-viande.jpg" alt="Le rayon viandes et charcuterie" decoding="async"></div>
+        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M8 25C8 14 17 7 28 8c8 1 13 6 12 14-1 10-10 18-21 18C12 40 8 33 8 25z"/><circle cx="28" cy="22" r="5.5"/></svg></div>
+        <h3>Viandes et charcuterie</h3>
+        <p>Viande et charcuterie au frais, bœuf et poulet surgelés.</p>
+      </article>
+      <article class="tile t-poisson">
+        <div class="tile-photo" data-photo><img src="assets/photos/rayon-poisson.jpg" alt="Le rayon poissons" decoding="async"></div>
+        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M6 24c6-9 16-12 26-6l8-6v24l-8-6c-10 6-20 3-26-6z"/><circle cx="14" cy="23" r="1.5"/></svg></div>
+        <h3>Poissons</h3>
+        <p>Surimi, poissons panés et autres poissons au frais, poisson surgelé.</p>
       </article>
       <article class="tile t-surgele">
+        <div class="tile-photo" data-photo><img src="assets/photos/rayon-surgeles.jpg" alt="Le rayon surgelés" decoding="async"></div>
         <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M24 6v36M8.4 15l31.2 18M8.4 33l31.2-18M19 9l5 4 5-4M19 39l5-4 5 4"/></svg></div>
         <h3>Surgelés</h3>
-        <p>Les produits surgelés casher.</p>
+        <p>Glaces, pizzas, légumes, frites et pommes de terre.</p>
       </article>
-      <article class="tile t-epicerie">
-        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M16 8h16v5H16z"/><path d="M14 13h20v3c3 2 4 5 4 8v14a3 3 0 0 1-3 3H13a3 3 0 0 1-3-3V24c0-3 1-6 4-8z"/><path d="M16 26h16v8H16z"/></svg></div>
-        <h3>Épicerie et produits secs</h3>
-        <p>Les produits secs et l'épicerie du quotidien.</p>
+      <article class="tile t-vin">
+        <div class="tile-photo" data-photo><img src="assets/photos/rayon-vin.jpg" alt="Le rayon vins" decoding="async"></div>
+        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M20 5h8v9c0 3 5 5 5 12v15a2 2 0 0 1-2 2H17a2 2 0 0 1-2-2V26c0-7 5-9 5-12z"/><path d="M15 30h18M15 38h18"/></svg></div>
+        <h3>Vins</h3>
+        <p>Une sélection de vins casher.</p>
+      </article>
+      <article class="tile t-douceur">
+        <div class="tile-photo" data-photo><img src="assets/photos/rayon-douceurs.jpg" alt="Le rayon gâteaux, chocolats et snacks" decoding="async"></div>
+        <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="9"/><path d="M15 24 6 18v12zM33 24l9-6v12z"/></svg></div>
+        <h3>Douceurs et snacks</h3>
+        <p>Gâteaux, crackers, chips, bonbons, tablettes de chocolat et confitures.</p>
       </article>
       <article class="tile t-vegan">
+        <div class="tile-photo" data-photo><img src="assets/photos/rayon-sans-gluten.jpg" alt="Le rayon sans gluten et végan" decoding="async"></div>
         <div class="disc"><svg viewBox="0 0 48 48" aria-hidden="true"><path d="M10 38C8 20 20 10 38 10c0 18-10 28-28 28z"/><path d="M10 38 30 18"/></svg></div>
         <h3>Sans gluten et végan</h3>
         <p>Des produits sans gluten, végan et casher.</p>
       </article>
     </div>
-    <p class="shop-note">Pas de commande à distance : on fait ses courses en magasin.</p>
   </div>
 </section>
 
-<section class="sec alt" id="fetes">
+<section class="sec" id="infos">
   <div class="wrap">
     <div class="sec-head">
-      <div class="kicker">Calendrier</div>
-      <h2>Prochaines fêtes</h2>
-      <p>Les horaires spéciaux de chaque fête seront annoncés ici.</p>
-    </div>
-    <ol class="fetes" id="fetes-list">
-      <li class="fete" data-start="2026-12-04" data-end="2026-12-12"><div class="date"><b>4</b><span>déc</span></div><div><div class="fname">Hanoukah</div><div class="fwhen">Du soir du 4 au 12 décembre 2026</div></div><span class="pill"></span></li>
-      <li class="fete" data-start="2027-01-23" data-end="2027-01-23"><div class="date"><b>23</b><span>janv</span></div><div><div class="fname">Tou biChvat</div><div class="fwhen">23 janvier 2027</div></div><span class="pill"></span></li>
-      <li class="fete" data-start="2027-03-22" data-end="2027-03-23"><div class="date"><b>22</b><span>mars</span></div><div><div class="fname">Pourim</div><div class="fwhen">Du soir du 22 au 23 mars 2027</div></div><span class="pill"></span></li>
-      <li class="fete" data-start="2027-04-21" data-end="2027-04-29"><div class="date"><b>21</b><span>avr</span></div><div><div class="fname">Pessah</div><div class="fwhen">Du soir du 21 au 29 avril 2027</div></div><span class="pill"></span></li>
-      <li class="fete" data-start="2027-06-10" data-end="2027-06-12"><div class="date"><b>10</b><span>juin</span></div><div><div class="fname">Chavouot</div><div class="fwhen">Du soir du 10 au 12 juin 2027</div></div><span class="pill"></span></li>
-      <li class="fete" data-start="2027-10-01" data-end="2027-10-03"><div class="date"><b>1</b><span>oct</span></div><div><div class="fname">Roch Hachana 5788</div><div class="fwhen">Du soir du 1<sup>er</sup> au 3 octobre 2027</div></div><span class="pill"></span></li>
-    </ol>
-    <p class="note">Dates du calendrier Hebcal (diaspora). Chaque fête commence la veille au soir.</p>
-  </div>
-</section>
-
-<section class="sec" id="actus">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="kicker">Actualités</div>
-      <h2>Arrivages et nouveautés</h2>
-      <p>Une photo, un titre, deux lignes. C'est ici que les clients voient ce qui change en rayon.</p>
-    </div>
-    <div class="news">
-      <article class="post"><span class="ex">Exemple</span><div class="photo">Photo de l'arrivage</div><span class="tag">Arrivage</span><h3>Titre de l'arrivage</h3><p>Deux lignes pour dire ce qui vient d'arriver en rayon.</p></article>
-      <article class="post"><span class="ex">Exemple</span><div class="photo">Photo de la promo</div><span class="tag">Promotion</span><h3>Titre de la promotion</h3><p>Le produit, le prix, la durée de l'offre.</p></article>
-      <article class="post"><span class="ex">Exemple</span><div class="photo">Photo de la fête</div><span class="tag">Fête</span><h3>Horaires de la fête</h3><p>Les horaires et les produits à retrouver avant la fête.</p></article>
-    </div>
-  </div>
-</section>
-
-<section class="band-teal" id="avis">
-  <div class="wrap avis">
-    <div>
-      <div class="rate">4,8<small>/5</small></div>
-      <div class="stars" aria-hidden="true">★★★★★</div>
-      <div class="count">86 avis Google</div>
-    </div>
-    <div>
-      <div class="he" lang="he" dir="rtl">שם טוב</div>
-      <h2>Shem Tov, ça veut dire «&nbsp;bon nom&nbsp;».</h2>
-      <p>En hébreu, Shem Tov signifie «&nbsp;bon nom&nbsp;». Les clients du magasin lui donnent 4,8 sur 5 sur Google.</p>
-      <a class="btn btn-ink" href="https://share.google/WKe2Zp5OEH1JKOaMW" target="_blank" rel="noopener">Voir la fiche Google</a>
-    </div>
-  </div>
-</section>
-
-<section class="sec alt" id="infos">
-  <div class="wrap">
-    <div class="sec-head">
-      <div class="kicker">Infos pratiques</div>
+      <div class="kicker">Horaires et accès</div>
       <h2>Venir nous voir</h2>
     </div>
     <div class="infos">
@@ -361,8 +151,8 @@ footer .legal{width:100%;font-size:13px;opacity:.8}
           <dd>6 rue du Maréchal-Foch<br>67000 Strasbourg</dd>
           <dt>Téléphone</dt>
           <dd><a href="tel:+33388119692">03 88 11 96 92</a></dd>
-          <dt>Réseaux</dt>
-          <dd><a href="https://www.facebook.com/groups/276347742556165/" target="_blank" rel="noopener">Facebook</a></dd>
+          <dt>En ligne</dt>
+          <dd><a href="https://www.facebook.com/Shemtov.Strasbourg" target="_blank" rel="noopener">Facebook</a> · <a href="https://share.google/WKe2Zp5OEH1JKOaMW" target="_blank" rel="noopener">Fiche Google</a></dd>
         </dl>
         <div class="actions">
           <a class="btn btn-pink" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Itinéraire</a>
@@ -371,18 +161,31 @@ footer .legal{width:100%;font-size:13px;opacity:.8}
       </div>
       <div class="panel">
         <h3>Horaires</h3>
+        <!-- Source unique des horaires : data-open / data-close (heure de Paris). Le texte affiché est recalculé par le script. -->
         <table id="hours">
           <tbody>
-            <tr data-day="1"><th scope="row">Lundi</th><td>8h – 20h</td></tr>
-            <tr data-day="2"><th scope="row">Mardi</th><td>8h – 20h</td></tr>
-            <tr data-day="3"><th scope="row">Mercredi</th><td>8h – 20h</td></tr>
-            <tr data-day="4"><th scope="row">Jeudi</th><td>8h – 20h</td></tr>
-            <tr data-day="5"><th scope="row">Vendredi</th><td>8h – 17h</td></tr>
+            <tr data-day="1" data-open="08:00" data-close="20:00"><th scope="row">Lundi</th><td>8h – 20h</td></tr>
+            <tr data-day="2" data-open="08:00" data-close="20:00"><th scope="row">Mardi</th><td>8h – 20h</td></tr>
+            <tr data-day="3" data-open="08:00" data-close="20:00"><th scope="row">Mercredi</th><td>8h – 20h</td></tr>
+            <tr data-day="4" data-open="08:00" data-close="20:00"><th scope="row">Jeudi</th><td>8h – 20h</td></tr>
+            <tr data-day="5" data-open="08:00" data-close="17:00"><th scope="row">Vendredi</th><td>8h – 17h</td></tr>
             <tr data-day="6"><th scope="row">Samedi</th><td class="off">Fermé</td></tr>
-            <tr data-day="0"><th scope="row">Dimanche</th><td>9h30 – 13h</td></tr>
+            <tr data-day="0" data-open="09:30" data-close="13:00"><th scope="row">Dimanche</th><td>9h30 – 13h</td></tr>
           </tbody>
         </table>
-        <p class="note">Horaires habituels. Ils peuvent changer les jours de fête.</p>
+        <p class="note">Horaires habituels, susceptibles de changer les jours de fête.</p>
+      </div>
+      <div class="panel wide" id="fetes">
+        <h3>Fêtes à venir</h3>
+        <p class="note" style="margin-top:0">Chaque fête commence la veille au soir. Les horaires exceptionnels s'affichent en haut de page.</p>
+        <ol class="fetes" id="fetes-list">
+          <li class="fete" data-start="2026-12-04" data-end="2026-12-12"><div class="date"><b>4</b><span>déc</span></div><div><div class="fname">Hanoukah</div><div class="fwhen">Du soir du 4 au 12 décembre 2026</div></div><span class="pill"></span></li>
+          <li class="fete" data-start="2027-01-23" data-end="2027-01-23"><div class="date"><b>23</b><span>janv</span></div><div><div class="fname">Tou biChvat</div><div class="fwhen">23 janvier 2027</div></div><span class="pill"></span></li>
+          <li class="fete" data-start="2027-03-22" data-end="2027-03-23"><div class="date"><b>22</b><span>mars</span></div><div><div class="fname">Pourim</div><div class="fwhen">Du soir du 22 au 23 mars 2027</div></div><span class="pill"></span></li>
+          <li class="fete" data-start="2027-04-21" data-end="2027-04-29"><div class="date"><b>21</b><span>avr</span></div><div><div class="fname">Pessah</div><div class="fwhen">Du soir du 21 au 29 avril 2027</div></div><span class="pill"></span></li>
+          <li class="fete" data-start="2027-06-10" data-end="2027-06-12"><div class="date"><b>10</b><span>juin</span></div><div><div class="fname">Chavouot</div><div class="fwhen">Du soir du 10 au 12 juin 2027</div></div><span class="pill"></span></li>
+          <li class="fete" data-start="2027-10-01" data-end="2027-10-03"><div class="date"><b>1</b><span>oct</span></div><div><div class="fname">Roch Hachana 5788</div><div class="fwhen">Du soir du 1<sup>er</sup> au 3 octobre 2027</div></div><span class="pill"></span></li>
+        </ol>
       </div>
     </div>
   </div>
@@ -392,8 +195,8 @@ footer .legal{width:100%;font-size:13px;opacity:.8}
 <footer>
   <div class="wrap">
     <img src="assets/logo.png" alt="" width="64" height="64">
-    <p><strong>Shemtov</strong> · Épicerie casher<br>6 rue du Maréchal-Foch, 67000 Strasbourg · 03 88 11 96 92</p>
-    <p class="legal">© 2026 Shemtov. Mentions légales à compléter (raison sociale, SIRET, responsable de publication).</p>
+    <p><strong>Shemtov Foch</strong> · Épicerie casher<br>6 rue du Maréchal-Foch, 67000 Strasbourg · 03 88 11 96 92</p>
+    <p class="legal">SHEMTOV, SARL au capital de 3 000 € · SIRET 794 645 978 00014 · RCS Strasbourg 794 645 978 · <a href="mentions-legales.html">Mentions légales</a></p>
   </div>
 </footer>
 
@@ -402,68 +205,6 @@ footer .legal{width:100%;font-size:13px;opacity:.8}
   <a class="btn btn-outline" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Itinéraire</a>
 </div>
 
-<script>
-(function () {
-  var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
-  // [ouverture, fermeture] en minutes depuis minuit, indexé par jour (0 = dimanche). null = fermé.
-  var HORAIRES = [[570, 780], [480, 1200], [480, 1200], [480, 1200], [480, 1200], [480, 1020], null];
-
-  function fmt(m) {
-    var h = Math.floor(m / 60), mm = m % 60;
-    return h + "h" + (mm ? String(mm).padStart(2, "0") : "");
-  }
-
-  function statut(jour, minute) {
-    var t = HORAIRES[jour];
-    if (t && minute >= t[0] && minute < t[1]) {
-      return t[1] - minute <= 30
-        ? { etat: "soon", texte: "Ferme bientôt · à " + fmt(t[1]) }
-        : { etat: "open", texte: "Ouvert · ferme à " + fmt(t[1]) };
-    }
-    if (t && minute < t[0]) return { etat: "off", texte: "Fermé · ouvre à " + fmt(t[0]) };
-    for (var i = 1; i <= 7; i++) {
-      var d = (jour + i) % 7, u = HORAIRES[d];
-      if (u) return { etat: "off", texte: "Fermé · rouvre " + (i === 1 ? "demain" : JOURS[d]) + " à " + fmt(u[0]) };
-    }
-    return { etat: "off", texte: "Fermé" };
-  }
-
-  function maintenantParis() {
-    var parts = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Europe/Paris", weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23"
-    }).formatToParts(new Date());
-    var o = {};
-    parts.forEach(function (p) { o[p.type] = p.value; });
-    var jour = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }[o.weekday];
-    return { jour: jour, minute: (+o.hour) * 60 + (+o.minute) };
-  }
-
-  try {
-    var now = maintenantParis();
-    var s = statut(now.jour, now.minute);
-    var box = document.getElementById("status");
-    box.setAttribute("data-state", s.etat);
-    document.getElementById("status-text").textContent = s.texte;
-    var row = document.querySelector('#hours tr[data-day="' + now.jour + '"]');
-    if (row) row.className = "today";
-  } catch (e) { /* le texte par défaut reste affiché */ }
-
-  // Prochaines fêtes : masque les dates passées, met la suivante en avant, compte les jours.
-  function jourLocal(iso) {
-    var p = iso.split("-");
-    return new Date(+p[0], +p[1] - 1, +p[2]);
-  }
-  var auj = new Date(); auj = new Date(auj.getFullYear(), auj.getMonth(), auj.getDate());
-  var premiere = true;
-  Array.prototype.forEach.call(document.querySelectorAll("#fetes-list .fete"), function (li) {
-    var debut = jourLocal(li.getAttribute("data-start")), fin = jourLocal(li.getAttribute("data-end"));
-    var pill = li.querySelector(".pill");
-    if (fin < auj) { li.hidden = true; return; }
-    var jours = Math.round((debut - auj) / 86400000);
-    pill.textContent = jours <= 0 ? "En cours" : jours === 1 ? "Demain" : "Dans " + jours + " jours";
-    if (premiere) { li.className += " next"; premiere = false; }
-  });
-})();
-</script>
+<script src="assets/site.js"></script>
 </body>
 </html>

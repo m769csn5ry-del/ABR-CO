@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1500" width="1000" height="1500" font-family="Arial, Helvetica, sans-serif">
+<title>Plan 2D schématique de SHEMTOV FOCH, version 1</title>
+<rect width="1000" height="1500" fill="#FFFFFF"/>
+<text x="500" y="72" text-anchor="middle" font-size="30" font-weight="700" fill="#111111">SHEMTOV FOCH · PLAN 2D SCHÉMATIQUE</text>
+<text x="500" y="104" text-anchor="middle" font-size="16" fill="#444444">Version 1 · vue du dessus · proportions approximatives, sans échelle · à valider avant toute 3D</text>
+<text x="500" y="168" text-anchor="middle" font-size="14" font-weight="700" fill="#777777">▲ FOND DU MAGASIN</text>
+<g id="murs"><path d="M180,200 L180,540 Q165,565 165,590 L180,1290 L600,1240" fill="none" stroke="#C62828" stroke-width="12" stroke-linejoin="round" stroke-linecap="butt"/><path d="M720,1240 L810,1210 L810,510 L790,495 L510,510 L510,250 L410,250 L340,215 L180,200" fill="none" stroke="#C62828" stroke-width="12" stroke-linejoin="round" stroke-linecap="butt"/>
+<line x1="610" y1="1250" x2="625" y2="1345" stroke="#C62828" stroke-width="12" stroke-linecap="butt"/>
+<line x1="720" y1="1250" x2="735" y2="1345" stroke="#C62828" stroke-width="12" stroke-linecap="butt"/>
+<line x1="380" y1="530" x2="510" y2="530" stroke="#C62828" stroke-width="12" stroke-linecap="butt"/>
+<line x1="510" y1="530" x2="510" y2="510" stroke="#C62828" stroke-width="12" stroke-linecap="butt"/>
+<line x1="180" y1="900" x2="335" y2="885" stroke="#C62828" stroke-width="12" stroke-linecap="butt"/>
+<line x1="630" y1="825" x2="810" y2="825" stroke="#C62828" stroke-width="12" stroke-linecap="butt"/>
+</g>
+<text x="345" y="500" text-anchor="middle" font-size="13" font-weight="700" letter-spacing="2" fill="#999999">ZONE ÉPICERIE</text>
+<g id="meubles">
+<rect id="ep_conserves" x="205" y="228" width="125" height="56" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="13" font-weight="700" fill="#111111"><tspan x="267.5" y="244.6">CONSERVES</tspan><tspan x="267.5" y="260.6">THON</tspan><tspan x="267.5" y="276.6">MAQUEREAUX</tspan></text>
+<rect id="ep_sauces" x="350" y="266" width="150" height="46" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111"><tspan x="425.0" y="285.2">SAUCES TOMATES</tspan><tspan x="425.0" y="303.2">PESTO</tspan></text>
+<rect id="ep_epices" x="462" y="330" width="38" height="140" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111" transform="rotate(-90 481.0 400.0)"><tspan x="481.0" y="405.2">ÉPICES</tspan></text>
+<rect id="ep_vaisselle" x="190" y="300" width="42" height="170" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="12.5" font-weight="700" fill="#111111" transform="rotate(-90 211.0 385.0)"><tspan x="211.0" y="381.6">COUVERTS, ASSIETTES</tspan><tspan x="211.0" y="397.1">VERRES</tspan></text>
+<rect id="frigo_fromage" x="188" y="575" width="60" height="145" rx="3" fill="#DCEEFF" stroke="#6FA8DC" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111" transform="rotate(-90 218.0 647.5)"><tspan x="218.0" y="652.8">FRIGO FROMAGE</tspan></text>
+<rect id="frigo_yaourt" x="188" y="728" width="60" height="145" rx="3" fill="#DCEEFF" stroke="#6FA8DC" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111" transform="rotate(-90 218.0 800.5)"><tspan x="218.0" y="796.8">FRIGO YAOURT</tspan><tspan x="218.0" y="814.8">/ CRÈMERIE</tspan></text>
+<rect id="gateaux" x="400" y="555" width="220" height="42" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111"><tspan x="510.0" y="581.2">ÉTAGÈRE GÂTEAUX</tspan></text>
+<rect id="cong_poisson" x="340" y="650" width="270" height="90" rx="3" fill="#A9B8C8" stroke="#5F7388" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111"><tspan x="475.0" y="700.2">CONGÉLATEUR POISSON</tspan></text>
+<rect id="cong_glaces" x="340" y="770" width="270" height="90" rx="3" fill="#A9B8C8" stroke="#5F7388" stroke-width="2"/>
+<text text-anchor="middle" font-size="14.5" font-weight="700" fill="#111111"><tspan x="475.0" y="820.1">CONGÉLATEUR GLACES / PIZZAS</tspan></text>
+<rect id="crackers" x="430" y="910" width="170" height="40" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="13.5" font-weight="700" fill="#111111"><tspan x="515.0" y="934.7">GÂTEAUX / CRACKERS</tspan></text>
+<rect id="chips" x="430" y="965" width="170" height="40" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111"><tspan x="515.0" y="990.2">CHIPS</tspan></text>
+<rect id="frigo_poisson" x="745" y="525" width="58" height="110" rx="3" fill="#DCEEFF" stroke="#6FA8DC" stroke-width="2"/>
+<text text-anchor="middle" font-size="13.5" font-weight="700" fill="#111111" transform="rotate(-90 774.0 580.0)"><tspan x="774.0" y="568.2">FRIGO</tspan><tspan x="774.0" y="584.7">POISSON</tspan><tspan x="774.0" y="601.2">SURIMI</tspan></text>
+<rect id="frigo_viande" x="745" y="643" width="58" height="110" rx="3" fill="#DCEEFF" stroke="#6FA8DC" stroke-width="2"/>
+<text text-anchor="middle" font-size="12.5" font-weight="700" fill="#111111" transform="rotate(-90 774.0 698.0)"><tspan x="774.0" y="694.6">FRIGO VIANDE</tspan><tspan x="774.0" y="710.1">CHARCUTERIE</tspan></text>
+<rect id="choco_confiture" x="690" y="770" width="113" height="40" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="13" font-weight="700" fill="#111111"><tspan x="746.5" y="786.5">CHOCOLAT /</tspan><tspan x="746.5" y="802.5">CONFITURE</tspan></text>
+<rect id="vin" x="188" y="918" width="60" height="215" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111" transform="rotate(-90 218.0 1025.5)"><tspan x="218.0" y="1030.8">RAYON VIN</tspan></text>
+<rect id="chocolat" x="205" y="1205" width="150" height="42" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111"><tspan x="280.0" y="1231.2">RAYON CHOCOLAT</tspan></text>
+<rect id="cong_legumes" x="390" y="1030" width="72" height="140" rx="3" fill="#A9B8C8" stroke="#5F7388" stroke-width="2"/>
+<text text-anchor="middle" font-size="12.5" font-weight="700" fill="#111111" transform="rotate(-90 426.0 1100.0)"><tspan x="426.0" y="1096.6">CONGÉLATEUR</tspan><tspan x="426.0" y="1112.1">LÉGUMES / FRITES</tspan></text>
+<rect id="cong_boeuf" x="480" y="1030" width="72" height="140" rx="3" fill="#A9B8C8" stroke="#5F7388" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111" transform="rotate(-90 516.0 1100.0)"><tspan x="516.0" y="1096.2">CONGÉLATEUR</tspan><tspan x="516.0" y="1114.2">BŒUF / POULET</tspan></text>
+<rect id="bonbons" x="390" y="1190" width="162" height="34" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#111111"><tspan x="471.0" y="1212.2">BONBONS</tspan></text>
+<rect id="caisse" x="740" y="880" width="63" height="130" rx="3" fill="#4A4A4A" stroke="#222222" stroke-width="2"/>
+<text text-anchor="middle" font-size="15" font-weight="700" fill="#FFFFFF" transform="rotate(-90 771.5 945.0)"><tspan x="771.5" y="950.2">CAISSE</tspan></text>
+<rect id="lait" x="745" y="1060" width="58" height="135" rx="3" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text text-anchor="middle" font-size="14.5" font-weight="700" fill="#111111" transform="rotate(-90 774.0 1127.5)"><tspan x="774.0" y="1123.8">LAIT / ŒUFS /</tspan><tspan x="774.0" y="1141.3">PAIN DE MIE</tspan></text>
+</g>
+<text x="672" y="1378" text-anchor="middle" font-size="20" font-weight="700" fill="#111111">ENTRÉE</text>
+<path d="M672 1360 L672 1316 M662 1328 L672 1314 L682 1328" fill="none" stroke="#111111" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<rect x="150" y="1440" width="26" height="18" rx="2" fill="#C62828" stroke="#C62828" stroke-width="2"/>
+<text x="184" y="1455" font-size="16" fill="#111111">Murs</text>
+<rect x="256.0" y="1440" width="26" height="18" rx="2" fill="#DCEEFF" stroke="#6FA8DC" stroke-width="2"/>
+<text x="290.0" y="1455" font-size="16" fill="#111111">Frigos</text>
+<rect x="381.0" y="1440" width="26" height="18" rx="2" fill="#A9B8C8" stroke="#5F7388" stroke-width="2"/>
+<text x="415.0" y="1455" font-size="16" fill="#111111">Congélateurs</text>
+<rect x="563.0" y="1440" width="26" height="18" rx="2" fill="#EFE3C8" stroke="#B59E6B" stroke-width="2"/>
+<text x="597.0" y="1455" font-size="16" fill="#111111">Étagères</text>
+<rect x="707.0" y="1440" width="26" height="18" rx="2" fill="#4A4A4A" stroke="#222222" stroke-width="2"/>
+<text x="741.0" y="1455" font-size="16" fill="#111111">Caisse</text>
+</svg>
