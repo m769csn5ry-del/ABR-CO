@@ -1,45 +1,49 @@
 #!/usr/bin/env python3
-"""Prépare les photos du site : recadrage, WebP en deux largeurs, métadonnées supprimées.
+"""Prépare les images du site : photos (recadrage, WebP en plusieurs largeurs, métadonnées
+supprimées), logo à fond transparent, icônes et image de partage.
 
-Les originaux ne sont pas dans le dépôt (trop lourds). Les ranger dans un dossier avec
-les noms ci-dessous (01-fromages.png, etc.), puis :
+Les originaux des photos ne sont pas dans le dépôt (3 à 4 Mo chacun). Les ranger dans un dossier
+avec les noms ci-dessous (01-fromages.png, etc.), puis :
 
     python3 photos.py <dossier-des-originaux>
 
-Les fichiers produits vont dans shemtov/assets/photos/. Aucune image n'est agrandie.
+Le logo vient de shemtov-interne/marque/logo-hd.png. Aucune image n'est agrandie.
 """
 import pathlib
 import sys
 
+import numpy as np
 from PIL import Image
 
-SITE = pathlib.Path(__file__).resolve().parents[2] / "shemtov"
+RACINE = pathlib.Path(__file__).resolve().parents[2]
+SITE = RACINE / "shemtov"
 SORTIE = SITE / "assets" / "photos"
+LOGO_HD = RACINE / "shemtov-interne" / "marque" / "logo-hd.png"
 LARGEURS = (480, 940)
 # L'image principale est l'élément le plus lourd du premier affichage : une taille de plus, un peu plus compressée
 SPECIAL = {"hero": ((480, 760, 940), 64)}
 
 # nom de sortie : (original, ratio largeur/hauteur, position verticale du cadrage 0-1, boîte de recadrage facultative)
 PHOTOS = {
-    # Accueil et présentation
+    # Accueil : mosaïque du haut de page
     "hero": ("15-epicerie-vue", (4, 5), 0.55, None),
-    "magasin-a": ("13-epicerie-sauces", (4, 5), 0.5, None),
-    "magasin-b": ("11-lait-oeufs-pain", (4, 5), 0.45, None),
-    # Univers (cartes verticales)
-    "u-epicerie": ("12-epicerie-conserves", (3, 4), 0.5, None),
-    "u-frais": ("01-fromages", (3, 4), 0.45, None),
-    "u-viandes": ("08-viandes", (3, 4), 0.55, None),
-    "u-surgeles": ("05-snacks", (3, 4), 0.5, (0, 1100, 430, 1672)),  # le congélateur au premier plan
-    "u-sucre": ("16-chocolats", (3, 4), 0.5, None),
-    "u-boissons": ("04-vins-rouges", (3, 4), 0.45, None),
-    # Étapes de la visite (paysage)
-    "v-entree": ("11-lait-oeufs-pain", (4, 3), 0.5, None),
-    "v-vins": ("03-vins-spiritueux", (4, 3), 0.5, None),
-    "v-centre": ("17-bonbons", (4, 3), 0.42, None),
-    "v-congelateurs": ("07-crackers", (4, 3), 0.78, None),
-    "v-cremerie": ("02-cremerie", (4, 3), 0.5, None),
-    "v-frais": ("06-traiteur-poisson", (4, 3), 0.5, None),
-    "v-epicerie": ("14-epicerie-condiments", (4, 3), 0.5, None),
+    "hero-b": ("01-fromages", (1, 1), 0.42, None),
+    "hero-c": ("17-bonbons", (1, 1), 0.45, None),
+    # Rayons
+    "r-salee": ("12-epicerie-conserves", (4, 5), 0.5, None),
+    "r-sucree": ("16-chocolats", (4, 5), 0.45, None),
+    "r-snacks": ("05-snacks", (4, 5), 0.25, None),
+    "r-frais": ("02-cremerie", (4, 5), 0.45, None),
+    "r-viandes": ("08-viandes", (4, 5), 0.55, None),
+    "r-poissons": ("06-traiteur-poisson", (4, 5), 0.62, None),
+    "r-surgeles": ("05-snacks", (4, 5), 0.5, (0, 1135, 430, 1672)),  # le congélateur au premier plan
+    "r-boissons": ("04-vins-rouges", (4, 5), 0.45, None),
+    "r-recevoir": ("14-epicerie-condiments", (4, 5), 0.5, (380, 150, 941, 851)),  # barquettes et vaisselle
+    # Le magasin : galerie
+    "m-sauces": ("13-epicerie-sauces", (4, 5), 0.5, None),
+    "m-lait": ("11-lait-oeufs-pain", (4, 5), 0.45, None),
+    "m-biscuits": ("10-biscuits", (4, 5), 0.5, None),
+    "m-crackers": ("07-crackers", (4, 5), 0.4, None),
 }
 
 
@@ -57,48 +61,60 @@ def recadrer(im, ratio, fy, boite):
     return im.crop((0, y, w, y + nh))
 
 
+def logo_transparent():
+    """Rend le fond blanc transparent sans liseré (même calcul que « couleur vers alpha »)."""
+    rgb = np.asarray(Image.open(LOGO_HD).convert("RGB")).astype(np.float32) / 255
+    alpha = np.max(1 - rgb, axis=2)
+    alpha = np.clip((alpha - 0.02) / 0.98, 0, 1)  # le fond « presque blanc » devient totalement transparent
+    with np.errstate(divide="ignore", invalid="ignore"):
+        couleur = np.where(alpha[..., None] > 0, (rgb - (1 - alpha[..., None])) / alpha[..., None], 0)
+    rgba = np.dstack([np.clip(couleur, 0, 1), alpha])
+    im = Image.fromarray((rgba * 255).round().astype(np.uint8), "RGBA")
+    return im.crop(im.getbbox())
+
+
 def extras(source):
-    """Icônes et image de partage (réseaux sociaux), à partir du logo et de la photo d'accueil."""
-    logo = Image.open(SITE / "assets" / "logo.png").convert("RGB")
-    petit = logo.copy()
-    petit.thumbnail((128, 128), Image.LANCZOS)
-    petit.quantize(colors=96, method=Image.Quantize.MEDIANCUT).save(SITE / "assets" / "logo-128.png", optimize=True)
-    for nom, cote in (("favicon.png", 64), ("apple-touch-icon.png", 180)):
-        fond = Image.new("RGB", (cote, cote), "white")
+    logo = logo_transparent()
+    for nom, cote in (("logo-160.webp", 160), ("logo-480.webp", 480)):
         l = logo.copy()
-        l.thumbnail((round(cote * 0.92), round(cote * 0.92)), Image.LANCZOS)
-        fond.paste(l, ((cote - l.width) // 2, (cote - l.height) // 2))
-        fond.save(SITE / "assets" / nom, optimize=True)
-    og = Image.new("RGB", (1200, 630), (23, 17, 27))
+        l.thumbnail((cote, cote), Image.LANCZOS)
+        l.save(SITE / "assets" / nom, "WEBP", quality=90, method=6)
+    for nom, cote, marge in (("favicon.png", 64, 0.04), ("apple-touch-icon.png", 180, 0.1)):
+        fond = Image.new("RGBA", (cote, cote), (255, 255, 255, 255))
+        l = logo.copy()
+        l.thumbnail((round(cote * (1 - 2 * marge)),) * 2, Image.LANCZOS)
+        fond.alpha_composite(l, ((cote - l.width) // 2, (cote - l.height) // 2))
+        fond.convert("RGB").save(SITE / "assets" / nom, optimize=True)
+    # Image de partage 1200 × 630 : logo sur fond crème, photo du magasin à droite
+    og = Image.new("RGBA", (1200, 630), (250, 248, 244, 255))
     photo = recadrer(Image.open(source / "15-epicerie-vue.png").convert("RGB"), (570, 630), 0.55, None)
     og.paste(photo.resize((570, 630), Image.LANCZOS), (630, 0))
-    pastille = Image.new("RGB", (400, 400), "white")
     l = logo.copy()
-    l.thumbnail((360, 360), Image.LANCZOS)
-    pastille.paste(l, ((400 - l.width) // 2, (400 - l.height) // 2))
-    masque = Image.new("L", (400, 400), 0)
-    from PIL import ImageDraw
-    ImageDraw.Draw(masque).ellipse((0, 0, 399, 399), fill=255)
-    og.paste(pastille, (115, 115), masque)
-    og.save(SITE / "assets" / "og.jpg", quality=84, optimize=True)
-    print("icônes et image de partage : favicon.png, apple-touch-icon.png, og.jpg")
+    l.thumbnail((420, 420), Image.LANCZOS)
+    og.alpha_composite(l, ((630 - l.width) // 2, (630 - l.height) // 2))
+    og.convert("RGB").save(SITE / "assets" / "og.jpg", quality=84, optimize=True)
+    print("logo transparent (160 et 480 px), favicon.png, apple-touch-icon.png, og.jpg")
 
 
 def main(source):
     SORTIE.mkdir(parents=True, exist_ok=True)
+    for f in SORTIE.glob("*.webp"):  # on repart de zéro : seules les photos listées ci-dessus restent
+        f.unlink()
     total = 0
     for nom, (orig, ratio, fy, boite) in PHOTOS.items():
-        im = Image.open(source / f"{orig}.png").convert("RGB")
-        im = recadrer(im, ratio, fy, boite)
+        im = recadrer(Image.open(source / f"{orig}.png").convert("RGB"), ratio, fy, boite)
         largeurs, qualite = SPECIAL.get(nom, (LARGEURS, 76))
+        faites = []
         for largeur in largeurs:
             l = min(largeur, im.width)
-            h = round(im.height * l / im.width)
+            if l in faites:
+                continue
+            faites.append(l)
             out = SORTIE / f"{nom}-{largeur}.webp"
-            im.resize((l, h), Image.LANCZOS).save(out, "WEBP", quality=qualite, method=6)
+            im.resize((l, round(im.height * l / im.width)), Image.LANCZOS).save(out, "WEBP", quality=qualite, method=6)
             total += out.stat().st_size
-        print(f"{nom:16} {im.width}×{im.height} → {', '.join(str(min(l, im.width)) for l in largeurs)} px")
-    print(f"total : {total // 1024} Ko")
+        print(f"{nom:12} {im.width}×{im.height} → {', '.join(map(str, faites))} px")
+    print(f"photos : {total // 1024} Ko")
     extras(source)
 
 

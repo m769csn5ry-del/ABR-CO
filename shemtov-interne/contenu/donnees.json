@@ -1,7 +1,7 @@
 {
   "domaine": null,
   "nom": "Shemtov Foch",
-  "description": "Épicerie casher de proximité à Strasbourg : épicerie, produits frais, viandes et poissons, surgelés, biscuits et chocolats, boissons et vins.",
+  "description": "Épicerie casher de proximité au 6 rue du Maréchal-Foch à Strasbourg : épicerie salée et sucrée, produits frais, viandes, poissons, surgelés, boissons et vins.",
   "telephone": {
     "affiche": "03 88 11 96 92",
     "international": "+33388119692"
@@ -97,7 +97,175 @@
     "ape": "47.11B (commerce d'alimentation générale)",
     "tva": "FR83794645978",
     "email": null,
-    "responsablePublication": null,
+    "responsablePublication": "Yves MAAREK, gérant de la société SHEMTOV",
     "hebergeur": null
-  }
+  },
+  "rayons": [
+    {
+      "id": "epicerie-salee",
+      "nom": "Épicerie salée",
+      "couleur": "#7DB33A",
+      "photo": "r-salee",
+      "alt": "Pâtes, conserves et épices dans le rayon épicerie",
+      "texte": "Les bases de la cuisine du quotidien, des pâtes aux épices.",
+      "details": [
+        "Pâtes et conserves",
+        "Thon et maquereaux",
+        "Épices",
+        "Sauces tomates et pesto",
+        "Huiles et vinaigres",
+        "Olives, cornichons et condiments",
+        "Produits sans gluten et végan"
+      ]
+    },
+    {
+      "id": "epicerie-sucree",
+      "nom": "Épicerie sucrée",
+      "couleur": "#EF9121",
+      "photo": "r-sucree",
+      "alt": "Pâtes à tartiner, tablettes de chocolat et préparations pour la pâtisserie",
+      "texte": "Chocolats, pâtes à tartiner, confitures et de quoi préparer les desserts.",
+      "details": [
+        "Tablettes de chocolat",
+        "Pâtes à tartiner et confitures",
+        "Biscuits et gâteaux",
+        "Bonbons et confiseries",
+        "Préparations et ingrédients pour la pâtisserie"
+      ]
+    },
+    {
+      "id": "snacks",
+      "nom": "Snacks",
+      "couleur": "#9B6AAD",
+      "photo": "r-snacks",
+      "alt": "Sachets de chips et de snacks salés en rayon",
+      "texte": "Chips, biscuits salés et crackers pour les petites faims.",
+      "details": [
+        "Chips",
+        "Snacks salés",
+        "Crackers"
+      ]
+    },
+    {
+      "id": "produits-frais",
+      "nom": "Produits frais",
+      "couleur": "#14B9A7",
+      "photo": "r-frais",
+      "alt": "Yaourts, beurre, desserts et crèmes dans le frigo crèmerie",
+      "texte": "Fromages, crèmerie et produits du quotidien, au frais.",
+      "details": [
+        "Fromages",
+        "Yaourts et desserts",
+        "Beurre et crèmerie",
+        "Lait et œufs",
+        "Pain de mie",
+        "Salades et spécialités traiteur"
+      ]
+    },
+    {
+      "id": "viandes",
+      "nom": "Viandes et charcuterie",
+      "couleur": "#D9007C",
+      "photo": "r-viandes",
+      "alt": "Viandes sous vide, saucisses et charcuterie dans le frigo",
+      "texte": "Viande et charcuterie au frais, bœuf et poulet surgelés.",
+      "details": [
+        "Viande au frais",
+        "Charcuterie",
+        "Bœuf et poulet surgelés"
+      ]
+    },
+    {
+      "id": "poissons",
+      "nom": "Poissons",
+      "couleur": "#14B9A7",
+      "photo": "r-poissons",
+      "alt": "Saumon fumé, salades et spécialités au frais",
+      "texte": "Saumon fumé, surimi et poissons panés.",
+      "details": [
+        "Saumon fumé",
+        "Surimi",
+        "Poissons panés",
+        "Poisson surgelé"
+      ]
+    },
+    {
+      "id": "surgeles",
+      "nom": "Surgelés",
+      "couleur": "#9B6AAD",
+      "photo": "r-surgeles",
+      "alt": "Légumes surgelés dans un congélateur bac",
+      "texte": "Glaces, pizzas, légumes et frites, toujours à portée de main.",
+      "details": [
+        "Glaces",
+        "Pizzas",
+        "Légumes",
+        "Frites et pommes de terre"
+      ]
+    },
+    {
+      "id": "boissons",
+      "nom": "Boissons et vins",
+      "couleur": "#1D1B18",
+      "photo": "r-boissons",
+      "alt": "Bouteilles de vin rouge rangées dans des casiers blancs",
+      "texte": "Sodas et boissons, vins casher et une sélection de spiritueux.",
+      "details": [
+        "Sodas et boissons",
+        "Vins casher rouges, blancs et rosés",
+        "Spiritueux"
+      ],
+      "alcool": true
+    },
+    {
+      "id": "recevoir",
+      "nom": "Recevoir et fêtes",
+      "couleur": "#7DB33A",
+      "photo": "r-recevoir",
+      "alt": "Barquettes en aluminium et bocaux sur les étagères de l'épicerie",
+      "texte": "Le nécessaire pour les repas de Chabbat et des fêtes.",
+      "details": [
+        "Barquettes en aluminium",
+        "Assiettes, couverts et verres"
+      ]
+    }
+  ],
+  "faq": [
+    {
+      "q": "Où se trouve le magasin ?",
+      "r": "Au {{adresse}}. Le bouton « Itinéraire » ouvre le trajet dans Google Maps."
+    },
+    {
+      "q": "Quels sont les horaires d'ouverture ?",
+      "r": "Le magasin est ouvert {{horaires_phrase}} Les horaires peuvent changer les jours de fête : ils sont indiqués sur la page <a href=\"infos-pratiques.html\">Infos pratiques</a> dès qu'ils sont connus."
+    },
+    {
+      "q": "Le magasin est-il ouvert le samedi ?",
+      "r": "Non, le magasin est fermé le samedi."
+    },
+    {
+      "q": "Comment contacter le magasin ?",
+      "r": "Par téléphone au {{tel_lien}}, pendant les horaires d'ouverture."
+    },
+    {
+      "q": "Quels produits trouve-t-on chez Shemtov Foch ?",
+      "r": "Épicerie salée et sucrée, snacks, produits frais, viandes et charcuterie, poissons, surgelés, boissons et vins, et le nécessaire pour recevoir. Le détail est sur la page <a href=\"nos-rayons.html\">Nos rayons</a>. L'assortiment varie : pour savoir si un produit est disponible, appelez le magasin."
+    },
+    {
+      "q": "Shemtov Foch est-il une épicerie casher ?",
+      "r": "Oui. Shemtov Foch est une épicerie casher référencée par le Consistoire Israélite du Bas-Rhin. Pour une question sur un produit précis, renseignez-vous en magasin."
+    },
+    {
+      "q": "Peut-on commander en ligne ou à distance ?",
+      "r": "Non. Il n'y a pas de commande en ligne ni de commande à distance : les courses se font en magasin."
+    },
+    {
+      "q": "Le magasin est-il ouvert pendant les fêtes juives ?",
+      "r": "Les horaires changent pendant les fêtes. Les dates des prochaines fêtes et les horaires exceptionnels confirmés figurent sur la page <a href=\"infos-pratiques.html\">Infos pratiques</a>. En cas de doute, appelez le magasin."
+    },
+    {
+      "q": "Où suivre l'actualité du magasin ?",
+      "r": "Sur la <a href=\"{{facebook}}\" target=\"_blank\" rel=\"noopener\">page Facebook de Shemtov Strasbourg</a>."
+    }
+  ]
 }

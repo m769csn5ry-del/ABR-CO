@@ -1,36 +1,23 @@
 /* Shemtov Foch : fonctions du site. Tout le contenu reste lisible sans ce script ;
-   il ajoute le statut en direct, le menu mobile, la copie d'adresse et la visite guidée du plan.
-   Les données (horaires, exceptions) viennent de assets/donnees.js, généré depuis donnees.json. */
+   il ajoute le statut en direct, les horaires du jour, le menu mobile, la copie d'adresse,
+   la carte Google Maps sur demande et la navigation entre les rayons.
+   Les horaires et exceptions viennent de assets/donnees.js, généré depuis donnees.json. */
 (function () {
   "use strict";
 
+  document.documentElement.classList.add("js");
   var D = window.SHEMTOV || { horaires: [], exceptions: [] };
   var reduit = window.matchMedia("(prefers-reduced-motion: reduce)");
   var JOURS = ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"];
   var SEMAINE = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
-  function minutes(hhmm) {
-    var p = hhmm.split(":");
-    return (+p[0]) * 60 + (+p[1]);
-  }
+  function minutes(hhmm) { var p = hhmm.split(":"); return (+p[0]) * 60 + (+p[1]); }
+  function fmt(m) { var h = Math.floor(m / 60), mm = m % 60; return h + "h" + (mm ? String(mm).padStart(2, "0") : ""); }
+  function utc(iso) { var p = iso.split("-"); return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2])); }
+  function ajouterJours(iso, n) { var d = utc(iso); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+  function chaque(sel, fn) { Array.prototype.forEach.call(document.querySelectorAll(sel), fn); }
 
-  function fmt(m) {
-    var h = Math.floor(m / 60), mm = m % 60;
-    return h + "h" + (mm ? String(mm).padStart(2, "0") : "");
-  }
-
-  function utc(iso) {
-    var p = iso.split("-");
-    return new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
-  }
-
-  function ajouterJours(iso, n) {
-    var d = utc(iso);
-    d.setUTCDate(d.getUTCDate() + n);
-    return d.toISOString().slice(0, 10);
-  }
-
-  /* ---------- Statut ouvert / fermé, à l'heure de Paris ---------- */
+  /* ---------- Horaires : statut en direct, à l'heure de Paris ---------- */
   var habituels = (D.horaires || []).map(function (h) { return h ? [minutes(h[0]), minutes(h[1])] : null; });
   var exceptions = D.exceptions || [];
 
@@ -76,19 +63,23 @@
     try {
       var now = maintenantParis();
       var s = statut(now.iso, now.minute);
-      document.querySelectorAll("[data-status]").forEach(function (el) {
+      chaque("[data-status]", function (el) {
         el.setAttribute("data-state", s.etat);
         var t = el.querySelector("[data-status-text]");
         if (t && t.textContent !== s.texte) t.textContent = s.texte;
       });
-      document.querySelectorAll(".hours tr[data-jour]").forEach(function (tr) {
+      var auj = horairesDu(now.iso);
+      chaque("[data-aujourdhui]", function (el) {
+        el.textContent = auj ? fmt(auj[0]) + " – " + fmt(auj[1]) : "Fermé aujourd'hui";
+      });
+      chaque(".hours tr[data-jour]", function (tr) {
         tr.classList.toggle("today", +tr.getAttribute("data-jour") === now.jour);
       });
       // Horaires exceptionnels des 14 prochains jours
       var fin = ajouterJours(now.iso, 14);
       var proches = exceptions.filter(function (e) { return e.date >= now.iso && e.date <= fin; })
         .sort(function (a, b) { return a.date < b.date ? -1 : 1; });
-      document.querySelectorAll("[data-exceptions]").forEach(function (bloc) {
+      chaque("[data-exceptions]", function (bloc) {
         var liste = bloc.querySelector("[data-exc-list]");
         liste.textContent = "";
         proches.forEach(function (e) {
@@ -105,27 +96,31 @@
   majHoraires();
   setInterval(majHoraires, 60000);
 
-  /* ---------- Fêtes à venir ---------- */
+  /* ---------- Fêtes à venir : les dates passées disparaissent, la suivante est mise en avant ---------- */
   (function () {
     var auj = new Date();
     auj = new Date(auj.getFullYear(), auj.getMonth(), auj.getDate());
-    function jourLocal(iso) { var p = iso.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
-    var premiere = true;
-    document.querySelectorAll(".fete").forEach(function (li) {
-      var debut = jourLocal(li.getAttribute("data-start")), fin = jourLocal(li.getAttribute("data-end"));
-      if (fin < auj) { li.hidden = true; return; }
-      var jours = Math.round((debut - auj) / 86400000);
-      li.querySelector(".pill").textContent = jours <= 0 ? "En cours" : jours === 1 ? "Demain" : "Dans " + jours + " jours";
-      if (premiere) { li.classList.add("next"); premiere = false; }
+    var jourLocal = function (iso) { var p = iso.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); };
+    chaque(".fetes", function (liste) {
+      var premiere = true, max = +(liste.getAttribute("data-max") || 99), affichees = 0;
+      Array.prototype.forEach.call(liste.querySelectorAll(".fete"), function (li) {
+        var debut = jourLocal(li.getAttribute("data-start")), fin = jourLocal(li.getAttribute("data-end"));
+        if (fin < auj || affichees >= max) { li.hidden = true; return; }
+        affichees++;
+        var jours = Math.round((debut - auj) / 86400000);
+        li.querySelector(".pill").textContent = jours <= 0 ? "En cours" : jours === 1 ? "Demain" : "Dans " + jours + " jours";
+        if (premiere) { li.classList.add("next"); premiere = false; }
+      });
     });
   })();
 
   /* ---------- Menu mobile ---------- */
-  var entete = document.querySelector(".site-header");
+  var entete = document.querySelector("[data-entete]");
   var bouton = document.querySelector(".menu-btn");
   var menu = document.getElementById("menu-mobile");
+  var dock = document.querySelector("[data-dock]");
   if (bouton && menu) {
-    var autour = [document.getElementById("contenu"), document.querySelector(".site-footer"), document.querySelector("[data-dock]")];
+    var autour = [document.getElementById("contenu"), document.querySelector(".site-footer"), dock, document.querySelector(".skip")];
     var ouvrir = function () {
       menu.hidden = false;
       bouton.setAttribute("aria-expanded", "true");
@@ -147,65 +142,65 @@
     bouton.addEventListener("click", function () { if (menu.hidden) ouvrir(); else fermer(true); });
     menu.addEventListener("click", function (e) { if (e.target.closest("a")) fermer(false); });
     document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !menu.hidden) fermer(true); });
-    window.matchMedia("(min-width: 900px)").addEventListener("change", function (e) { if (e.matches && !menu.hidden) fermer(false); });
+    window.matchMedia("(min-width: 960px)").addEventListener("change", function (e) { if (e.matches && !menu.hidden) fermer(false); });
   }
 
   /* ---------- En-tête et barre d'actions : masqués en descendant, visibles en remontant ---------- */
-  var dock = document.querySelector("[data-dock]");
   if (entete) {
     var dernierY = window.scrollY, attente = false;
+    var afficher = function (oui) {
+      entete.classList.toggle("is-hidden", !oui);
+      document.body.classList.toggle("entete-cache", !oui);
+      if (dock) dock.classList.toggle("is-hidden", !oui);
+    };
     var maj = function () {
       var y = window.scrollY;
-      var enHaut = y < 120;
+      entete.classList.toggle("is-scrolled", y > 8);
+      var enHaut = y < 140;
       var enBas = window.innerHeight + y >= document.documentElement.scrollHeight - 40;
       var garder = (menu && !menu.hidden) || entete.contains(document.activeElement);
-      if (garder || enHaut || enBas || y < dernierY - 4) {
-        entete.classList.remove("is-hidden");
-        if (dock) dock.classList.remove("is-hidden");
-      } else if (y > dernierY + 4) {
-        entete.classList.add("is-hidden");
-        if (dock) dock.classList.add("is-hidden");
-      }
+      if (garder || enHaut || enBas || y < dernierY - 4) afficher(true);
+      else if (y > dernierY + 4) afficher(false);
       dernierY = y;
       attente = false;
     };
     window.addEventListener("scroll", function () {
       if (!attente) { attente = true; window.requestAnimationFrame(maj); }
     }, { passive: true });
-    entete.addEventListener("focusin", function () { entete.classList.remove("is-hidden"); });
-    // Sur ordinateur, l'en-tête revient dès que la souris approche du haut de l'écran
-    window.addEventListener("mousemove", function (e) {
-      if (e.clientY < 72) entete.classList.remove("is-hidden");
-    }, { passive: true });
+    entete.addEventListener("focusin", function () { afficher(true); });
+    window.addEventListener("mousemove", function (e) { if (e.clientY < 80) afficher(true); }, { passive: true });
+    maj();
   }
 
   /* ---------- Défilement doux, activé après le chargement ----------
-     Activé plus tôt, il interromprait l'arrivée directe sur une section (lien partagé vers #visite, par exemple). */
+     Activé plus tôt, il interromprait l'arrivée directe sur une section (lien vers #horaires, par exemple). */
   var activerDoux = function () { setTimeout(function () { document.documentElement.classList.add("doux"); }, 400); };
   if (document.readyState === "complete") activerDoux(); else window.addEventListener("load", activerDoux);
 
   /* ---------- Copier l'adresse ---------- */
-  document.querySelectorAll("[data-copy]").forEach(function (b) {
-    var msg = document.querySelector("[data-copy-msg]");
+  chaque("[data-copy]", function (b) {
+    var zone = b.closest("[data-copie-zone]");
+    var msg = zone ? zone.querySelector("[data-copy-msg]") : null;
     var minuterie;
     b.addEventListener("click", function () {
       var texte = b.getAttribute("data-copy");
       var annonce = function (t) {
+        if (!msg) return;
         msg.textContent = t;
         clearTimeout(minuterie);
         minuterie = setTimeout(function () { msg.textContent = ""; }, 5000);
       };
       var secours = function () {
-        var zone = document.createElement("textarea");
-        zone.value = texte;
-        zone.setAttribute("readonly", "");
-        zone.style.position = "fixed";
-        zone.style.opacity = "0";
-        document.body.appendChild(zone);
-        zone.select();
+        var champ = document.createElement("textarea");
+        champ.value = texte;
+        champ.setAttribute("readonly", "");
+        champ.style.position = "fixed";
+        champ.style.opacity = "0";
+        document.body.appendChild(champ);
+        champ.select();
         var ok = false;
         try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
-        zone.remove();
+        champ.remove();
         annonce(ok ? "Adresse copiée." : "Copie impossible sur cet appareil. Adresse : " + texte);
       };
       if (navigator.clipboard && window.isSecureContext) {
@@ -216,108 +211,50 @@
     });
   });
 
-  /* ---------- Visite guidée : la « caméra » du plan suit l'étape en cours ---------- */
-  var boite = document.querySelector("[data-plan]");
-  var plan = boite && boite.querySelector("svg.plan");
-  if (plan) {
-    var complet = plan.getAttribute("data-vb").split(" ").map(Number);
-    var actuel = complet.slice();
-    var zones = {};
-    plan.querySelectorAll(".zone").forEach(function (z) { zones[z.getAttribute("data-etape")] = z; });
-    var etapes = Array.prototype.slice.call(document.querySelectorAll(".etape"));
-    var texteEtape = boite.querySelector("[data-plan-step]");
-    var barre = boite.querySelector("[data-plan-bar]");
-    var actif, animation;
-    var grand = window.matchMedia("(min-width: 900px)");
-
-    // Adapte un cadre au format de l'écran pour que le plan remplisse sa zone sans être déformé
-    var ajuster = function (vb) {
-      var r = plan.clientWidth / Math.max(1, plan.clientHeight);
-      if (!isFinite(r) || r <= 0) return vb;
-      var x = vb[0], y = vb[1], w = vb[2], h = vb[3];
-      if (w / h < r) { var nw = h * r; x -= (nw - w) / 2; w = nw; } else { var nh = w / r; y -= (nh - h) / 2; h = nh; }
-      return [x, y, w, h];
-    };
-    var cadre = function (etape) {
-      if (!etape || !zones[etape]) return ajuster(complet);
-      // Plus de contexte sur grand écran, zoom plus serré sur téléphone
-      var b = zones[etape].getBBox(), marge = 70, mini = grand.matches ? 540 : 440;
-      var x = b.x - marge, y = b.y - marge, w = b.width + 2 * marge, h = b.height + 2 * marge;
-      if (w < mini) { x -= (mini - w) / 2; w = mini; }
-      if (h < mini) { y -= (mini - h) / 2; h = mini; }
-      return ajuster([x, y, w, h]);
-    };
-    var poser = function (vb) {
-      plan.setAttribute("viewBox", vb.map(function (v) { return v.toFixed(1); }).join(" "));
-      actuel = vb;
-    };
-    var allerA = function (vb) {
-      if (animation) cancelAnimationFrame(animation);
-      if (reduit.matches) { poser(vb); return; }
-      var depart = actuel.slice(), t0 = performance.now(), duree = 750;
-      var pas = function (t) {
-        var p = Math.min(1, (t - t0) / duree);
-        var e = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
-        poser(depart.map(function (v, i) { return v + (vb[i] - v) * e; }));
-        if (p < 1) animation = requestAnimationFrame(pas);
-      };
-      animation = requestAnimationFrame(pas);
-    };
-    var activer = function (etape) {
-      if (etape === actif) return;
-      actif = etape;
-      plan.classList.toggle("has-active", !!etape);
-      Object.keys(zones).forEach(function (k) { zones[k].classList.toggle("is-active", k === etape); });
-      var i = etapes.findIndex(function (el) { return el.getAttribute("data-etape") === etape; });
-      etapes.forEach(function (el, j) { el.classList.toggle("is-active", j === i); });
-      texteEtape.textContent = i >= 0 ? "Étape " + (i + 1) + " sur " + etapes.length : "Plan du magasin";
-      barre.style.width = i >= 0 ? ((i + 1) / etapes.length * 100) + "%" : "0";
-      allerA(cadre(etape));
-    };
-
-    poser(ajuster(complet));
-    if ("IntersectionObserver" in window) {
-      // L'étape active est celle qui croise une ligne horizontale : vers 43 % de l'écran sur ordinateur
-      // (là où l'on lit), vers 69 % sur téléphone (sous le plan collé en haut).
-      var obs;
-      var observer = function () {
-        if (obs) obs.disconnect();
-        obs = new IntersectionObserver(function (entrees) {
-          entrees.forEach(function (en) { if (en.isIntersecting) activer(en.target.getAttribute("data-etape")); });
-        }, { rootMargin: grand.matches ? "-42% 0px -56% 0px" : "-68% 0px -30% 0px" });
-        etapes.forEach(function (el) { obs.observe(el); });
-      };
-      observer();
-      grand.addEventListener("change", observer);
-      // Retour au plan entier quand on remonte au-dessus de la visite
-      var section = document.getElementById("visite");
-      new IntersectionObserver(function (entrees) {
-        entrees.forEach(function (en) { if (!en.isIntersecting && en.boundingClientRect.top > 0) activer(null); });
-      }).observe(section);
-    }
-    plan.addEventListener("click", function (e) {
-      var z = e.target.closest(".zone");
-      var cible = z && document.getElementById("etape-" + z.getAttribute("data-etape"));
-      if (cible) cible.scrollIntoView({ behavior: reduit.matches ? "auto" : "smooth", block: "start" });
+  /* ---------- Carte Google Maps : rien n'est chargé chez Google avant le clic du visiteur ---------- */
+  chaque("[data-carte]", function (carte) {
+    var ok = carte.querySelector("[data-carte-ok]");
+    if (!ok) return;
+    ok.addEventListener("click", function () {
+      var cadre = document.createElement("iframe");
+      cadre.src = carte.getAttribute("data-src");
+      cadre.title = "Carte Google Maps : Shemtov Foch, 6 rue du Maréchal-Foch, Strasbourg";
+      cadre.referrerPolicy = "strict-origin-when-cross-origin";
+      carte.querySelector(".carte-voile").remove();
+      carte.appendChild(cadre);
+      cadre.focus();
     });
-    var delai;
-    window.addEventListener("resize", function () {
-      clearTimeout(delai);
-      delai = setTimeout(function () { poser(cadre(actif)); }, 150);
-    });
+  });
+
+  /* ---------- Nos rayons : la pastille du rayon en cours se met en évidence ---------- */
+  var chips = document.querySelector(".chips");
+  if (chips && "IntersectionObserver" in window) {
+    var liens = {};
+    Array.prototype.forEach.call(chips.querySelectorAll("a"), function (a) { liens[a.getAttribute("href").slice(1)] = a; });
+    var obs = new IntersectionObserver(function (entrees) {
+      entrees.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        Object.keys(liens).forEach(function (id) { liens[id].classList.toggle("actif", id === en.target.id); });
+        var a = liens[en.target.id];
+        if (a) a.parentNode.parentNode.scrollTo({ left: a.parentNode.offsetLeft - 20, behavior: reduit.matches ? "auto" : "smooth" });
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });
+    chaque(".rayon", function (r) { obs.observe(r); });
   }
 
   /* ---------- Animations : chargées seulement si le mouvement est autorisé ---------- */
+  var feuille = document.querySelector('link[rel="stylesheet"]');
+  var base = feuille ? feuille.getAttribute("href").replace("assets/style.css", "") : "";
   var charger = function (src) {
     return new Promise(function (ok, ko) {
       var s = document.createElement("script");
-      s.src = src;
+      s.src = base + src;
       s.onload = ok;
       s.onerror = ko;
       document.head.appendChild(s);
     });
   };
-  if (!reduit.matches && !window.gsap && document.querySelector("[data-reveal]")) {
+  if (!reduit.matches && !window.gsap && document.querySelector("[data-reveal], [data-reveal-img], [data-galerie], [data-speed]")) {
     charger("assets/vendor/gsap.min.js")
       .then(function () { return charger("assets/vendor/ScrollTrigger.min.js"); })
       .then(function () { return charger("assets/anim.js"); })
