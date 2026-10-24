@@ -41,6 +41,42 @@ HEURE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 e = html.escape
 COURANT = ' aria-current="page"'
+NOUVEL_ONGLET = '<span class="sr"> (nouvel onglet)</span>'
+
+# Photos fixes des pages, insérées par les blocs <!-- donnees:img-xxx -->.
+# nom du bloc : (photo, attribut sizes d'après la mise en page, texte alternatif, image prioritaire du haut de page)
+IMAGES = {
+    # Accueil
+    "hero": ("hero", "(min-width: 1240px) 290px, (min-width: 1024px) 24vw, 57vw",
+             "Les étagères de l'épicerie Shemtov Foch, garnies de pâtes, de conserves et de bocaux", True),
+    "hero-b": ("hero-b", "(min-width: 1240px) 210px, (min-width: 1024px) 17vw, 42vw",
+               "Fromages et produits laitiers dans la vitrine réfrigérée", False),
+    "hero-c": ("hero-c", "(min-width: 1240px) 210px, (min-width: 1024px) 17vw, 42vw",
+               "Bonbons et confiseries en rayon", False),
+    "accueil-a": ("m-sauces", "(min-width: 1240px) 300px, (min-width: 900px) 25vw, 52vw",
+                  "Bocaux, sauces et huiles sur les étagères de l'épicerie", False),
+    "accueil-b": ("m-lait", "(min-width: 1240px) 240px, (min-width: 900px) 20vw, 42vw",
+                  "Pain de mie, boîtes d'œufs et briques de lait", False),
+    # Le magasin
+    "magasin-tete": ("r-salee", "(min-width: 1240px) 470px, (min-width: 1024px) 38vw, 92vw",
+                     "Une allée de l'épicerie : pâtes, conserves et épices", True),
+    "magasin-a": ("hero-b", "(min-width: 1240px) 300px, (min-width: 900px) 25vw, 52vw",
+                  "Fromages et produits laitiers dans la vitrine réfrigérée", False),
+    "magasin-b": ("r-sucree", "(min-width: 1240px) 240px, (min-width: 900px) 20vw, 42vw",
+                  "Pâtes à tartiner et tablettes de chocolat en rayon", False),
+    "galerie-1": ("m-sauces", "(min-width: 1240px) 390px, (min-width: 900px) 31vw, 46vw",
+                  "Bocaux, sauces et huiles sur les étagères", False),
+    "galerie-2": ("m-vins", "(min-width: 1240px) 390px, (min-width: 900px) 31vw, 46vw",
+                  "Vins et spiritueux rangés dans des casiers blancs", False),
+    "galerie-3": ("m-biscuits", "(min-width: 1240px) 390px, (min-width: 900px) 31vw, 46vw",
+                  "Biscuits et gâteaux en rayon, au-dessus d'un congélateur", False),
+    "galerie-4": ("m-lait", "(min-width: 1240px) 390px, (min-width: 900px) 31vw, 46vw",
+                  "Pain de mie, boîtes d'œufs et briques de lait", False),
+    "galerie-5": ("m-crackers", "(min-width: 1240px) 390px, (min-width: 900px) 31vw, 46vw",
+                  "Crackers, biscottes et biscuits salés en rayon", False),
+    "galerie-6": ("hero-c", "(min-width: 1240px) 390px, (min-width: 900px) 31vw, 46vw",
+                  "Bonbons et confiseries en rayon", False),
+}
 
 
 # ---------------------------------------------------------------- outils
@@ -90,7 +126,8 @@ def photo(nom, sizes, alt, base="", loading="lazy", priorite=False):
     tailles = [(f, Image.open(f).size) for f in fichiers]
     plus_grande, (w, h) = tailles[-1]
     srcset = ", ".join(f"{base}assets/photos/{f.name} {t[0]}w" for f, t in tailles)
-    attributs = f'loading="{loading}" decoding="async"' if not priorite else 'fetchpriority="high" decoding="async"'
+    # priorite : True = image principale du haut de page, "visible" = aussi en haut de page, sans priorité réseau
+    attributs = {True: 'fetchpriority="high" decoding="async"', "visible": 'decoding="async"'}.get(priorite, f'loading="{loading}" decoding="async"')
     return (f'<img src="{base}assets/photos/{plus_grande.name}" srcset="{srcset}" sizes="{sizes}" '
             f'width="{w}" height="{h}" alt="{e(alt)}" {attributs}>')
 
@@ -144,19 +181,19 @@ def bloc_entete(d, page, base):
     return f"""<a class="skip" href="#contenu">Aller au contenu</a>
 <header class="site-header" data-entete>
   <div class="wrap header-in">
-    <a class="brand" href="{base}index.html"><img src="{base}assets/logo-160.webp" alt="" width="40" height="40"><span>Shemtov Foch</span><span class="sr">, retour à l'accueil</span></a>
+    <a class="brand" href="{base or './'}"><img src="{base}assets/logo-160.webp" alt="" width="40" height="40"><span>Shemtov Foch</span><span class="sr">, retour à l'accueil</span></a>
     <nav class="nav" aria-label="Navigation principale"><ul>{items}</ul></nav>
-    <a class="btn btn-sm btn-ink header-cta" href="{e(it)}" target="_blank" rel="noopener">Itinéraire</a>
+    <a class="btn btn-sm btn-ink header-cta" href="{e(it)}" target="_blank" rel="noopener">Itinéraire{NOUVEL_ONGLET}</a>
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-mobile"><span class="menu-ico" aria-hidden="true"></span><span class="menu-txt">Menu</span></button>
   </div>
 </header>
 <div class="menu-mobile" id="menu-mobile" hidden>
   <nav class="wrap" aria-label="Navigation mobile">
-    <ul><li><a href="{base}index.html"{COURANT if page == "index.html" else ""}>Accueil</a></li>{items}</ul>
+    <ul><li><a href="{base or './'}"{COURANT if page == "index.html" else ""}>Accueil</a></li>{items}</ul>
     <div class="menu-infos">
       <p class="statut" data-status data-state="off"><span class="dot" aria-hidden="true"></span><span data-status-text>Horaires dans les infos pratiques</span></p>
       <a class="btn btn-ink" href="tel:{t['international']}">Appeler le {t['affiche']}</a>
-      <a class="btn btn-outline" href="{e(it)}" target="_blank" rel="noopener">Itinéraire</a>
+      <a class="btn btn-outline" href="{e(it)}" target="_blank" rel="noopener">Itinéraire{NOUVEL_ONGLET}</a>
     </div>
   </nav>
 </div>"""
@@ -168,8 +205,8 @@ def bloc_horaires_court(d):
 
 def bloc_pied(d, page, base):
     t, a, l = d["telephone"], d["adresse"], d["liens"]
-    plan = "".join(f'<li><a href="{base}{f}">{lib or "Accueil"}</a></li>' for f, (_, lib, nav) in PAGES.items()
-                   if (lib or f == "index.html"))
+    plan = "".join(f'<li><a href="{(base or "./") if f == "index.html" else base + f}">{lib or "Accueil"}</a></li>'
+                   for f, (_, lib, nav) in PAGES.items() if (lib or f == "index.html"))
     return f"""<footer class="site-footer">
   <div class="wrap footer-grid">
     <div class="footer-marque">
@@ -183,15 +220,15 @@ def bloc_pied(d, page, base):
     <div class="footer-col"><h2 class="footer-titre">Informations</h2><ul>
       <li><a href="{base}mentions-legales.html">Mentions légales</a></li>
       <li><a href="{base}confidentialite.html">Confidentialité et cookies</a></li>
-      <li><a href="{e(l['facebook'])}" target="_blank" rel="noopener">Facebook</a></li>
+      <li><a href="{e(l['facebook'])}" target="_blank" rel="noopener">Facebook{NOUVEL_ONGLET}</a></li>
     </ul></div>
   </div>
   <div class="wrap footer-bas"><p>{bloc_legal_court(d)}</p><p>Photos non contractuelles. Assortiment variable selon les arrivages.</p></div>
 </footer>
-<div class="dock" data-dock>
+<aside class="dock" aria-label="Appeler ou venir au magasin" data-dock>
   <a class="btn btn-ink" href="tel:{t['international']}">Appeler</a>
-  <a class="btn btn-outline" href="{e(l['itineraire'])}" target="_blank" rel="noopener">Itinéraire</a>
-</div>"""
+  <a class="btn btn-outline" href="{e(l['itineraire'])}" target="_blank" rel="noopener">Itinéraire{NOUVEL_ONGLET}</a>
+</aside>"""
 
 
 def bloc_legal_court(d):
@@ -235,7 +272,7 @@ def bloc_rayons_galerie(d):
     cartes = []
     for r in d["rayons"]:
         cartes.append(f"""<li class="carte-rayon">
-  <figure class="carte-img">{photo(r['photo'], '(min-width: 1024px) 360px, (min-width: 640px) 44vw, 78vw', r['alt'])}</figure>
+  <figure class="carte-img">{photo(r['photo'], '(min-width: 1024px) 380px, (min-width: 436px) 340px, 78vw', r['alt'])}</figure>
   <div class="carte-txt"><h3>{pastille(r['couleur'])}<a href="nos-rayons.html#rayon-{r['id']}">{e(r['nom'])}</a></h3><p>{e(r['texte'])}</p></div>
 </li>""")
     return "\n".join(cartes)
@@ -245,6 +282,10 @@ def bloc_rayons_chips(d):
     return "".join(f'<li><a href="#rayon-{r["id"]}">{pastille(r["couleur"])}{e(r["nom"])}</a></li>' for r in d["rayons"])
 
 
+def bloc_rayons_liens(d):
+    return "".join(f'<li><a href="nos-rayons.html#rayon-{r["id"]}">{pastille(r["couleur"])}{e(r["nom"])}</a></li>' for r in d["rayons"])
+
+
 def bloc_rayons_detail(d):
     blocs = []
     for i, r in enumerate(d["rayons"]):
@@ -252,7 +293,7 @@ def bloc_rayons_detail(d):
         evin = ('<p class="evin">L\'abus d\'alcool est dangereux pour la santé, à consommer avec modération.</p>'
                 if r.get("alcool") else "")
         blocs.append(f"""<section class="rayon{' rayon-inverse' if i % 2 else ''}" id="rayon-{r['id']}" aria-labelledby="titre-{r['id']}">
-  <figure class="rayon-img" data-reveal-img>{photo(r['photo'], '(min-width: 900px) 46vw, 92vw', r['alt'])}</figure>
+  <figure class="rayon-img" data-reveal-img>{photo(r['photo'], '(min-width: 1240px) 570px, (min-width: 900px) 46vw, 92vw', r['alt'], priorite="visible" if i == 0 else False)}</figure>
   <div class="rayon-txt" data-reveal>
     <p class="kicker">{pastille(r['couleur'])}Rayon</p>
     <h2 id="titre-{r['id']}">{e(r['nom'])}</h2>
@@ -330,6 +371,15 @@ def bloc_jsonld(d, page):
 
 
 # ---------------------------------------------------------------- assemblage
+def typographie(texte):
+    """Espace insécable avant « : ; ? ! » et à l'intérieur des guillemets, dans le texte des pages
+    (jamais dans les balises ni les adresses web) : la ponctuation ne se retrouve pas seule en début de ligne."""
+    def corriger(m):
+        s = re.sub(r"[ \u00a0]([:;?!»])", "\u00a0\\1", m.group(1))
+        return ">" + re.sub(r"«[ \u00a0]", "«\u00a0", s) + "<"
+    return re.sub(r">([^<]+)<", corriger, texte)
+
+
 def remplacer(texte, nom, contenu):
     motif = re.compile(rf"(<!-- donnees:{nom} -->)(.*?)(<!-- /donnees:{nom} -->)", re.S)
     return motif.sub(lambda m: m.group(1) + ("\n" + contenu + "\n" if contenu else "") + m.group(3), texte)
@@ -348,12 +398,18 @@ def construire(d):
             ("seo", lambda: bloc_seo(d, page)), ("jsonld", lambda: bloc_jsonld(d, page)),
             ("horaires", lambda: bloc_horaires(d)), ("horaires-court", lambda: bloc_horaires_court(d)),
             ("fetes", lambda: bloc_fetes(d)), ("rayons-galerie", lambda: bloc_rayons_galerie(d)),
-            ("rayons-chips", lambda: bloc_rayons_chips(d)), ("rayons-detail", lambda: bloc_rayons_detail(d)),
+            ("rayons-chips", lambda: bloc_rayons_chips(d)), ("rayons-liens", lambda: bloc_rayons_liens(d)),
+            ("rayons-detail", lambda: bloc_rayons_detail(d)),
             ("faq", lambda: bloc_faq(d)), ("editeur", lambda: bloc_editeur(d)), ("legal-court", lambda: bloc_legal_court(d)),
         ]:
             if f"<!-- donnees:{nom} -->" in texte:
                 texte = remplacer(texte, nom, fn())
-        sorties[source] = texte
+        for nom in re.findall(r"<!-- donnees:img-([\w-]+) -->", texte):
+            if nom not in IMAGES:
+                raise SystemExit(f"{page} : image fixe inconnue « {nom} » (voir IMAGES)")
+            fichier, sizes, alt, priorite = IMAGES[nom]
+            texte = remplacer(texte, f"img-{nom}", photo(fichier, sizes, alt, base, priorite=priorite))
+        sorties[source] = typographie(texte)
     sorties[SITE / "assets" / "donnees.js"] = (
         "/* Fichier généré par shemtov-interne/outils/synchroniser.py à partir de donnees.json : ne pas modifier ici. */\n"
         "window.SHEMTOV = " + json.dumps({"horaires": [d["horaires"][j] for j in JOURS], "exceptions": d["exceptions"]},
@@ -372,12 +428,19 @@ def coherence(d, sorties):
     """Le téléphone écrit en dur dans les pages doit correspondre aux données."""
     erreurs = []
     tel = f'tel:{d["telephone"]["international"]}'
+    rue = d["adresse"]["rue"]
     for f, texte in sorties.items():
         if f.suffix != ".html":
             continue
         for lien in re.findall(r'href="(tel:[^"]+)"', texte):
             if lien != tel:
                 erreurs.append(f"{f.name} : lien {lien} différent de {tel}")
+        for numero in set(re.findall(r"\b0\d(?: \d\d){4}\b", texte)):
+            if numero != d["telephone"]["affiche"]:
+                erreurs.append(f"{f.name} : numéro {numero} différent de {d['telephone']['affiche']}")
+        for adresse in set(re.findall(r"\b\d+[\w ,-]{0,8}rue du Maréchal-Foch", texte)):
+            if adresse != rue:
+                erreurs.append(f"{f.name} : adresse « {adresse} » différente de « {rue} »")
         restes = [b for b in re.findall(r"<!-- donnees:(\w[\w-]*) -->\s*<!-- /donnees:\1 -->", texte) if b not in ("seo", "jsonld")]
         if restes:
             erreurs.append(f"{f.name} : bloc(s) vide(s) {', '.join(restes)}")
@@ -404,6 +467,9 @@ def main():
         return
     for f in a_jour:
         f.write_text(sorties[f], encoding="utf-8")
+    if not d["legal"].get("hebergeur"):
+        print("ATTENTION : hébergeur non renseigné dans donnees.json (legal.hebergeur). Mention obligatoire : "
+              "à compléter avant toute mise en ligne.")
     print(f"{len(a_jour)} fichier(s) mis à jour" + (" : " + ", ".join(f.name for f in a_jour) if a_jour else ""))
 
 

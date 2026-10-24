@@ -19,9 +19,10 @@ RACINE = pathlib.Path(__file__).resolve().parents[2]
 SITE = RACINE / "shemtov"
 SORTIE = SITE / "assets" / "photos"
 LOGO_HD = RACINE / "shemtov-interne" / "marque" / "logo-hd.png"
-LARGEURS = (480, 940)
-# L'image principale est l'élément le plus lourd du premier affichage : une taille de plus, un peu plus compressée
-SPECIAL = {"hero": ((480, 760, 940), 64)}
+LARGEURS = (480, 760, 940)
+QUALITE = 72
+# Images qui forment le premier affichage (LCP) sur téléphone : un peu plus compressées
+SPECIAL = {"hero": (LARGEURS, 64), "r-salee": (LARGEURS, 64)}
 
 # nom de sortie : (original, ratio largeur/hauteur, position verticale du cadrage 0-1, boîte de recadrage facultative)
 PHOTOS = {
@@ -44,6 +45,7 @@ PHOTOS = {
     "m-lait": ("11-lait-oeufs-pain", (4, 5), 0.45, None),
     "m-biscuits": ("10-biscuits", (4, 5), 0.5, None),
     "m-crackers": ("07-crackers", (4, 5), 0.4, None),
+    "m-vins": ("03-vins-spiritueux", (4, 5), 0.5, None),
 }
 
 
@@ -75,10 +77,10 @@ def logo_transparent():
 
 def extras(source):
     logo = logo_transparent()
-    for nom, cote in (("logo-160.webp", 160), ("logo-480.webp", 480)):
+    for nom, cote, qualite in (("logo-160.webp", 160, 90), ("logo-320.webp", 320, 82), ("logo-480.webp", 480, 90)):
         l = logo.copy()
         l.thumbnail((cote, cote), Image.LANCZOS)
-        l.save(SITE / "assets" / nom, "WEBP", quality=90, method=6)
+        l.save(SITE / "assets" / nom, "WEBP", quality=qualite, method=6)
     for nom, cote, marge in (("favicon.png", 64, 0.04), ("apple-touch-icon.png", 180, 0.1)):
         fond = Image.new("RGBA", (cote, cote), (255, 255, 255, 255))
         l = logo.copy()
@@ -93,7 +95,7 @@ def extras(source):
     l.thumbnail((420, 420), Image.LANCZOS)
     og.alpha_composite(l, ((630 - l.width) // 2, (630 - l.height) // 2))
     og.convert("RGB").save(SITE / "assets" / "og.jpg", quality=84, optimize=True)
-    print("logo transparent (160 et 480 px), favicon.png, apple-touch-icon.png, og.jpg")
+    print("logo transparent (160, 320 et 480 px), favicon.png, apple-touch-icon.png, og.jpg")
 
 
 def main(source):
@@ -103,7 +105,7 @@ def main(source):
     total = 0
     for nom, (orig, ratio, fy, boite) in PHOTOS.items():
         im = recadrer(Image.open(source / f"{orig}.png").convert("RGB"), ratio, fy, boite)
-        largeurs, qualite = SPECIAL.get(nom, (LARGEURS, 76))
+        largeurs, qualite = SPECIAL.get(nom, (LARGEURS, QUALITE))
         faites = []
         for largeur in largeurs:
             l = min(largeur, im.width)

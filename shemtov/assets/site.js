@@ -86,7 +86,7 @@
           var jour = utc(e.date).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
           var detail = e.note || (e.horaires ? fmt(minutes(e.horaires[0])) + " – " + fmt(minutes(e.horaires[1])) : "Fermé");
           var li = document.createElement("li");
-          li.textContent = jour.charAt(0).toUpperCase() + jour.slice(1) + " : " + detail;
+          li.textContent = jour.charAt(0).toUpperCase() + jour.slice(1) + "\u00a0: " + detail;
           liste.appendChild(li);
         });
         bloc.hidden = proches.length === 0;
@@ -236,7 +236,9 @@
         if (!en.isIntersecting) return;
         Object.keys(liens).forEach(function (id) { liens[id].classList.toggle("actif", id === en.target.id); });
         var a = liens[en.target.id];
-        if (a) a.parentNode.parentNode.scrollTo({ left: a.parentNode.offsetLeft - 20, behavior: reduit.matches ? "auto" : "smooth" });
+        // Position de la pastille dans la liste (offsetLeft est mesuré depuis la barre, marges comprises)
+        var ul = a && a.parentNode.parentNode;
+        if (a) ul.scrollTo({ left: a.parentNode.offsetLeft - ul.offsetLeft - 20, behavior: reduit.matches ? "auto" : "smooth" });
       });
     }, { rootMargin: "-45% 0px -50% 0px" });
     chaque(".rayon", function (r) { obs.observe(r); });
@@ -254,10 +256,20 @@
       document.head.appendChild(s);
     });
   };
-  if (!reduit.matches && !window.gsap && document.querySelector("[data-reveal], [data-reveal-img], [data-galerie], [data-speed]")) {
+  // Chargées une seconde après la page, au premier moment libre : elles ne concernent que le contenu
+  // sous l'écran et ne doivent pas retarder l'affichage du haut de page (animé en CSS) sur un téléphone.
+  var animer = function () {
     charger("assets/vendor/gsap.min.js")
       .then(function () { return charger("assets/vendor/ScrollTrigger.min.js"); })
       .then(function () { return charger("assets/anim.js"); })
       .catch(function () { /* le site reste complet sans animations */ });
+  };
+  var plusTard = function () {
+    setTimeout(function () {
+      if ("requestIdleCallback" in window) requestIdleCallback(animer, { timeout: 1500 }); else animer();
+    }, 1000);
+  };
+  if (!reduit.matches && !window.gsap && document.querySelector("[data-reveal], [data-reveal-img], [data-galerie], [data-speed]")) {
+    if (document.readyState === "complete") plusTard(); else window.addEventListener("load", plusTard);
   }
 })();

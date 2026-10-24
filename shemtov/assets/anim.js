@@ -110,6 +110,7 @@
     if (el) gsap.to(el, { opacity: 1, y: 0, duration: 0.3, overwrite: true });
   });
 
+  document.documentElement.setAttribute("data-anim", "pret");
   if (document.readyState === "complete") ScrollTrigger.refresh();
   else window.addEventListener("load", function () { ScrollTrigger.refresh(); });
 })();

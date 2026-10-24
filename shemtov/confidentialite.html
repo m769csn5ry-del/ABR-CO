@@ -4,63 +4,100 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Confidentialité et cookies · Shemtov Foch</title>
-<meta name="description" content="Politique de confidentialité du site de Shemtov Foch : aucune donnée collectée, aucun cookie, aucun traceur.">
-<meta name="theme-color" content="#17111B">
+<meta name="description" content="Politique de confidentialité du site de Shemtov Foch : aucune donnée collectée, aucun cookie, carte Google Maps chargée seulement à la demande.">
+<meta name="theme-color" content="#FAF8F4">
 <!-- donnees:seo --><!-- /donnees:seo -->
 <link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="assets/style.css">
+<script src="assets/donnees.js" defer></script>
+<script src="assets/site.js" defer></script>
 </head>
 <body>
+<!-- donnees:entete -->
 <a class="skip" href="#contenu">Aller au contenu</a>
-<header class="site-header">
+<header class="site-header" data-entete>
   <div class="wrap header-in">
-    <a class="brand" href="index.html"><img src="assets/logo-128.png" alt="" width="44" height="44"><span>Shemtov Foch</span></a>
-    <nav class="nav-desktop nav-simple" aria-label="Navigation principale"><a href="index.html">Retour au site</a></nav>
+    <a class="brand" href="./"><img src="assets/logo-160.webp" alt="" width="40" height="40"><span>Shemtov Foch</span><span class="sr">, retour à l'accueil</span></a>
+    <nav class="nav" aria-label="Navigation principale"><ul><li><a href="le-magasin.html">Le magasin</a></li><li><a href="nos-rayons.html">Nos rayons</a></li><li><a href="infos-pratiques.html">Infos pratiques</a></li><li><a href="faq.html">FAQ</a></li><li><a href="contact.html">Contact</a></li></ul></nav>
+    <a class="btn btn-sm btn-ink header-cta" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire<span class="sr"> (nouvel onglet)</span></a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-mobile"><span class="menu-ico" aria-hidden="true"></span><span class="menu-txt">Menu</span></button>
   </div>
 </header>
+<div class="menu-mobile" id="menu-mobile" hidden>
+  <nav class="wrap" aria-label="Navigation mobile">
+    <ul><li><a href="./">Accueil</a></li><li><a href="le-magasin.html">Le magasin</a></li><li><a href="nos-rayons.html">Nos rayons</a></li><li><a href="infos-pratiques.html">Infos pratiques</a></li><li><a href="faq.html">FAQ</a></li><li><a href="contact.html">Contact</a></li></ul>
+    <div class="menu-infos">
+      <p class="statut" data-status data-state="off"><span class="dot" aria-hidden="true"></span><span data-status-text>Horaires dans les infos pratiques</span></p>
+      <a class="btn btn-ink" href="tel:+33388119692">Appeler le 03 88 11 96 92</a>
+      <a class="btn btn-outline" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire<span class="sr"> (nouvel onglet)</span></a>
+    </div>
+  </nav>
+</div>
+<!-- /donnees:entete -->
 
-<main id="contenu" class="wrap page-texte" tabindex="-1">
-  <div class="prose">
-    <h1>Confidentialité et cookies</h1>
+<main id="contenu" tabindex="-1">
+  <div class="wrap page-tete">
+    <p class="kicker">Informations légales</p>
+    <h1>Confidentialité et cookies.</h1>
+  </div>
 
-    <h2>Responsable du traitement</h2>
-    <p>SHEMTOV, SARL, 6 rue du Maréchal-Foch, 67000 Strasbourg. Téléphone : <a href="tel:+33388119692">03 88 11 96 92</a>.</p>
+  <div class="wrap">
+    <div class="texte-legal">
+      <h2>Responsable du traitement</h2>
+      <p>SHEMTOV, SARL, 6 rue du Maréchal-Foch, 67000 Strasbourg. Téléphone : <a href="tel:+33388119692">03 88 11 96 92</a>.</p>
 
-    <h2>Ce que le site collecte</h2>
-    <p>Rien. Ce site présente le magasin : il ne comporte ni formulaire, ni compte client, ni commande, ni paiement. Il ne vous demande aucune information personnelle.</p>
+      <h2>Ce que le site collecte</h2>
+      <p>Rien. Ce site présente le magasin : il ne comporte ni formulaire, ni compte client, ni commande, ni paiement. Il ne vous demande aucune information personnelle.</p>
 
-    <h2>Cookies et traceurs</h2>
-    <p>Le site ne dépose aucun cookie et n'utilise aucun traceur, outil de mesure d'audience, pixel publicitaire ni bouton de réseau social intégré. C'est pourquoi aucun bandeau de consentement n'est affiché. Les polices de caractères sont hébergées sur le site lui-même : votre navigateur ne contacte aucun service tiers pour les afficher.</p>
+      <h2>Cookies et traceurs</h2>
+      <p>Le site ne dépose aucun cookie et n'utilise aucun traceur, outil de mesure d'audience, pixel publicitaire ni bouton de réseau social intégré. C'est pourquoi aucun bandeau de consentement n'est affiché. Les polices de caractères et les animations sont hébergées sur le site lui-même : votre navigateur ne contacte aucun service tiers pour les afficher.</p>
 
-    <h2>Journaux techniques de l'hébergeur</h2>
-    <p>Comme pour tout site internet, l'hébergeur enregistre des journaux techniques (adresse IP, date et heure, page demandée, navigateur) nécessaires à la sécurité et au bon fonctionnement du service. Ces journaux ne servent qu'à cet usage et sont conservés pour une durée limitée.</p>
+      <h2 id="carte">Carte Google Maps</h2>
+      <p>La page Infos pratiques propose une carte Google Maps. Elle n'est pas chargée à l'ouverture de la page : rien n'est transmis à Google tant que vous n'avez pas cliqué sur « Afficher la carte ».</p>
+      <p>Si vous l'affichez, la carte est servie par Google (Google Ireland Limited). Google reçoit alors votre adresse IP et des informations techniques sur votre navigateur, et peut déposer des cookies, selon ses propres règles : <a href="https://policies.google.com/privacy?hl=fr" target="_blank" rel="noopener">règles de confidentialité de Google<span class="sr"> (nouvel onglet)</span></a>. Google peut traiter ces données hors de l'Union européenne, notamment aux États-Unis ; ses règles de confidentialité décrivent les garanties qu'il applique. La carte n'est affichée que pour la page en cours : à la visite suivante, elle reste masquée jusqu'à un nouveau clic.</p>
+      <p>Vous pouvez aussi ne pas afficher la carte et utiliser l'adresse ou le bouton « Itinéraire ».</p>
 
-    <h2>Liens vers d'autres sites</h2>
-    <p>Les boutons « Itinéraire » et « fiche Google » ouvrent Google Maps, le lien Facebook ouvre Facebook, et le lien du Consistoire ouvre son site. En les suivant, vous quittez ce site : ces services appliquent leurs propres conditions et leur propre politique de confidentialité.</p>
+      <h2>Journaux techniques de l'hébergeur</h2>
+      <p>Comme pour tout site internet, l'hébergeur enregistre des journaux techniques (adresse IP, date et heure, page demandée, navigateur) nécessaires à la sécurité et au bon fonctionnement du service. Ces journaux ne servent qu'à cet usage et sont conservés pour une durée limitée.</p>
 
-    <h2>Vos droits</h2>
-    <p>Vous disposez d'un droit d'accès, de rectification, d'effacement, d'opposition et de limitation sur les données vous concernant. Pour les exercer, écrivez à SHEMTOV, 6 rue du Maréchal-Foch, 67000 Strasbourg, ou appelez le 03 88 11 96 92. Vous pouvez aussi adresser une réclamation à la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noopener">cnil.fr</a>).</p>
+      <h2>Liens vers d'autres sites</h2>
+      <p>Les boutons « Itinéraire » et « Ouvrir dans Google Maps » ouvrent Google Maps, le lien Facebook ouvre Facebook et le lien du Consistoire ouvre son site. En les suivant, vous quittez ce site : ces services appliquent leurs propres conditions et leur propre politique de confidentialité.</p>
 
-    <p class="note">Dernière mise à jour : 23 octobre 2026.</p>
+      <h2>Vos droits</h2>
+      <p>Vous disposez d'un droit d'accès, de rectification, d'effacement, d'opposition et de limitation sur les données vous concernant. Pour les exercer, écrivez à SHEMTOV, 6 rue du Maréchal-Foch, 67000 Strasbourg, ou appelez le <a href="tel:+33388119692">03 88 11 96 92</a>. Vous pouvez aussi adresser une réclamation à la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noopener">cnil.fr<span class="sr"> (nouvel onglet)</span></a>).</p>
+
+      <p class="note">Dernière mise à jour : 24 octobre 2026.</p>
+    </div>
   </div>
 </main>
 
+<!-- donnees:pied -->
 <footer class="site-footer">
-  <div class="wrap footer-in">
-    <div class="footer-brand">
-      <img src="assets/logo-128.png" alt="" width="64" height="64">
-      <p><strong>Shemtov Foch</strong><br>Épicerie casher<br>6 rue du Maréchal-Foch, 67000 Strasbourg<br><a href="tel:+33388119692">03 88 11 96 92</a></p>
+  <div class="wrap footer-grid">
+    <div class="footer-marque">
+      <span class="footer-logo"><img src="assets/logo-160.webp" alt="" width="64" height="64"></span>
+      <p class="footer-nom">Shemtov Foch</p>
+      <p class="footer-sous">Épicerie casher à Strasbourg</p>
+      <address>6 rue du Maréchal-Foch<br>67000 Strasbourg<br><a href="tel:+33388119692">03 88 11 96 92</a></address>
     </div>
-    <nav class="footer-nav" aria-label="Pied de page">
-      <a href="index.html">Accueil</a>
-      <a href="index.html#infos">Infos pratiques</a>
-      <a href="mentions-legales.html">Mentions légales</a>
-      <a href="confidentialite.html" aria-current="page">Confidentialité</a>
-    </nav>
-    <p class="legal"><!-- donnees:legal-court -->
-SHEMTOV, SARL au capital de 3 000 € · SIRET 794 645 978 00014 · 794 645 978 RCS Strasbourg
-<!-- /donnees:legal-court --></p>
+    <nav class="footer-col" aria-labelledby="pied-site"><h2 class="footer-titre" id="pied-site">Le site</h2><ul><li><a href="./">Accueil</a></li><li><a href="le-magasin.html">Le magasin</a></li><li><a href="nos-rayons.html">Nos rayons</a></li><li><a href="infos-pratiques.html">Infos pratiques</a></li><li><a href="faq.html">FAQ</a></li><li><a href="contact.html">Contact</a></li></ul></nav>
+    <div class="footer-col"><h2 class="footer-titre">Horaires</h2><ul class="horaires-court"><li><span>Lundi – jeudi</span><span>8h – 20h</span></li>
+<li><span>Vendredi</span><span>8h – 17h</span></li>
+<li><span>Samedi</span><span>Fermé</span></li>
+<li><span>Dimanche</span><span>9h30 – 13h</span></li></ul></div>
+    <div class="footer-col"><h2 class="footer-titre">Informations</h2><ul>
+      <li><a href="mentions-legales.html">Mentions légales</a></li>
+      <li><a href="confidentialite.html">Confidentialité et cookies</a></li>
+      <li><a href="https://www.facebook.com/Shemtov.Strasbourg" target="_blank" rel="noopener">Facebook<span class="sr"> (nouvel onglet)</span></a></li>
+    </ul></div>
   </div>
+  <div class="wrap footer-bas"><p>SHEMTOV, SARL au capital de 3 000 € · SIRET 794 645 978 00014 · 794 645 978 RCS Strasbourg</p><p>Photos non contractuelles. Assortiment variable selon les arrivages.</p></div>
 </footer>
+<aside class="dock" aria-label="Appeler ou venir au magasin" data-dock>
+  <a class="btn btn-ink" href="tel:+33388119692">Appeler</a>
+  <a class="btn btn-outline" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire<span class="sr"> (nouvel onglet)</span></a>
+</aside>
+<!-- /donnees:pied -->
 </body>
 </html>

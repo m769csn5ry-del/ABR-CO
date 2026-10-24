@@ -233,7 +233,11 @@
   "faq": [
     {
       "q": "Où se trouve le magasin ?",
-      "r": "Au {{adresse}}. Le bouton « Itinéraire » ouvre le trajet dans Google Maps."
+      "r": "Au {{adresse}}. L'adresse, la carte et l'itinéraire sont réunis sur la page <a href=\"infos-pratiques.html\">Infos pratiques</a>."
+    },
+    {
+      "q": "Comment obtenir un itinéraire ?",
+      "r": "Le bouton « Itinéraire », en haut de chaque page sur ordinateur et en bas de l'écran sur téléphone, ouvre le trajet jusqu'au magasin dans Google Maps."
     },
     {
       "q": "Quels sont les horaires d'ouverture ?",
@@ -265,7 +269,7 @@
     },
     {
       "q": "Où suivre l'actualité du magasin ?",
-      "r": "Sur la <a href=\"{{facebook}}\" target=\"_blank\" rel=\"noopener\">page Facebook de Shemtov Strasbourg</a>."
+      "r": "Sur la <a href=\"{{facebook}}\" target=\"_blank\" rel=\"noopener\">page Facebook de Shemtov Strasbourg<span class=\"sr\"> (nouvel onglet)</span></a>."
     }
   ]
 }

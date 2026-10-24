@@ -5,33 +5,73 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Page introuvable · Shemtov Foch</title>
 <meta name="robots" content="noindex">
-<meta name="theme-color" content="#17111B">
+<meta name="theme-color" content="#FAF8F4">
 <link rel="icon" href="/assets/favicon.png" type="image/png">
 <link rel="stylesheet" href="/assets/style.css">
+<script src="/assets/donnees.js" defer></script>
+<script src="/assets/site.js" defer></script>
 </head>
 <body>
-<header class="site-header">
+<!-- donnees:entete -->
+<a class="skip" href="#contenu">Aller au contenu</a>
+<header class="site-header" data-entete>
   <div class="wrap header-in">
-    <a class="brand" href="/"><img src="/assets/logo-128.png" alt="" width="44" height="44"><span>Shemtov Foch</span></a>
+    <a class="brand" href="/"><img src="/assets/logo-160.webp" alt="" width="40" height="40"><span>Shemtov Foch</span><span class="sr">, retour à l'accueil</span></a>
+    <nav class="nav" aria-label="Navigation principale"><ul><li><a href="/le-magasin.html">Le magasin</a></li><li><a href="/nos-rayons.html">Nos rayons</a></li><li><a href="/infos-pratiques.html">Infos pratiques</a></li><li><a href="/faq.html">FAQ</a></li><li><a href="/contact.html">Contact</a></li></ul></nav>
+    <a class="btn btn-sm btn-ink header-cta" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire<span class="sr"> (nouvel onglet)</span></a>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="menu-mobile"><span class="menu-ico" aria-hidden="true"></span><span class="menu-txt">Menu</span></button>
   </div>
 </header>
-<main id="contenu" class="wrap page-texte page-404">
-  <div class="prose">
+<div class="menu-mobile" id="menu-mobile" hidden>
+  <nav class="wrap" aria-label="Navigation mobile">
+    <ul><li><a href="/">Accueil</a></li><li><a href="/le-magasin.html">Le magasin</a></li><li><a href="/nos-rayons.html">Nos rayons</a></li><li><a href="/infos-pratiques.html">Infos pratiques</a></li><li><a href="/faq.html">FAQ</a></li><li><a href="/contact.html">Contact</a></li></ul>
+    <div class="menu-infos">
+      <p class="statut" data-status data-state="off"><span class="dot" aria-hidden="true"></span><span data-status-text>Horaires dans les infos pratiques</span></p>
+      <a class="btn btn-ink" href="tel:+33388119692">Appeler le 03 88 11 96 92</a>
+      <a class="btn btn-outline" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire<span class="sr"> (nouvel onglet)</span></a>
+    </div>
+  </nav>
+</div>
+<!-- /donnees:entete -->
+
+<main id="contenu" tabindex="-1">
+  <div class="wrap page-tete page-404">
     <p class="kicker">Erreur 404</p>
     <h1>Cette page n'existe pas.</h1>
-    <p>Le lien est peut-être ancien ou mal recopié. Toutes les informations du magasin sont sur la page d'accueil.</p>
+    <p class="lead">Le lien est peut-être ancien ou mal recopié. Les horaires, l'adresse et les rayons sont accessibles depuis le menu.</p>
     <div class="actions">
-      <a class="btn btn-pink" href="/">Retour à l'accueil</a>
-      <a class="btn btn-outline" href="/#infos">Horaires et adresse</a>
+      <a class="btn btn-ink" href="/">Retour à l'accueil</a>
+      <a class="btn btn-outline" href="/infos-pratiques.html">Horaires et accès</a>
     </div>
   </div>
 </main>
+
+<!-- donnees:pied -->
 <footer class="site-footer">
-  <div class="wrap footer-in">
-    <p class="legal"><!-- donnees:legal-court -->
-SHEMTOV, SARL au capital de 3 000 € · SIRET 794 645 978 00014 · 794 645 978 RCS Strasbourg
-<!-- /donnees:legal-court --></p>
+  <div class="wrap footer-grid">
+    <div class="footer-marque">
+      <span class="footer-logo"><img src="/assets/logo-160.webp" alt="" width="64" height="64"></span>
+      <p class="footer-nom">Shemtov Foch</p>
+      <p class="footer-sous">Épicerie casher à Strasbourg</p>
+      <address>6 rue du Maréchal-Foch<br>67000 Strasbourg<br><a href="tel:+33388119692">03 88 11 96 92</a></address>
+    </div>
+    <nav class="footer-col" aria-labelledby="pied-site"><h2 class="footer-titre" id="pied-site">Le site</h2><ul><li><a href="/">Accueil</a></li><li><a href="/le-magasin.html">Le magasin</a></li><li><a href="/nos-rayons.html">Nos rayons</a></li><li><a href="/infos-pratiques.html">Infos pratiques</a></li><li><a href="/faq.html">FAQ</a></li><li><a href="/contact.html">Contact</a></li></ul></nav>
+    <div class="footer-col"><h2 class="footer-titre">Horaires</h2><ul class="horaires-court"><li><span>Lundi – jeudi</span><span>8h – 20h</span></li>
+<li><span>Vendredi</span><span>8h – 17h</span></li>
+<li><span>Samedi</span><span>Fermé</span></li>
+<li><span>Dimanche</span><span>9h30 – 13h</span></li></ul></div>
+    <div class="footer-col"><h2 class="footer-titre">Informations</h2><ul>
+      <li><a href="/mentions-legales.html">Mentions légales</a></li>
+      <li><a href="/confidentialite.html">Confidentialité et cookies</a></li>
+      <li><a href="https://www.facebook.com/Shemtov.Strasbourg" target="_blank" rel="noopener">Facebook<span class="sr"> (nouvel onglet)</span></a></li>
+    </ul></div>
   </div>
+  <div class="wrap footer-bas"><p>SHEMTOV, SARL au capital de 3 000 € · SIRET 794 645 978 00014 · 794 645 978 RCS Strasbourg</p><p>Photos non contractuelles. Assortiment variable selon les arrivages.</p></div>
 </footer>
+<aside class="dock" aria-label="Appeler ou venir au magasin" data-dock>
+  <a class="btn btn-ink" href="tel:+33388119692">Appeler</a>
+  <a class="btn btn-outline" href="https://www.google.com/maps/dir/?api=1&amp;destination=6+Rue+du+Mar%C3%A9chal+Foch%2C+67000+Strasbourg" target="_blank" rel="noopener">Itinéraire<span class="sr"> (nouvel onglet)</span></a>
+</aside>
+<!-- /donnees:pied -->
 </body>
 </html>

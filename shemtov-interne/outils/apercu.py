@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Fabrique un aperçu d'une seule page par fichier HTML du site : styles, scripts, polices
-et images sont embarqués. Sert à montrer le site sans le mettre en ligne.
+"""Fabrique un aperçu autonome de chaque page du site (un fichier par page) : styles, scripts,
+polices et images sont embarqués. Sert à montrer le site sans le mettre en ligne. Les liens entre
+pages mènent aux autres fichiers d'aperçu ; la carte Google et les liens externes restent en ligne.
 
     python3 apercu.py <dossier-de-sortie>
 
@@ -13,7 +14,8 @@ import re
 import sys
 
 SITE = pathlib.Path(__file__).resolve().parents[2] / "shemtov"
-PAGES = ["index.html", "mentions-legales.html", "confidentialite.html"]
+PAGES = ["index.html", "le-magasin.html", "nos-rayons.html", "infos-pratiques.html", "faq.html", "contact.html",
+         "mentions-legales.html", "confidentialite.html"]
 SCRIPTS = ["assets/donnees.js", "assets/vendor/gsap.min.js", "assets/vendor/ScrollTrigger.min.js", "assets/site.js", "assets/anim.js"]
 
 
@@ -48,6 +50,7 @@ def build(page: str) -> str:
     # Liens entre pages
     for p in PAGES:
         html = html.replace(f'href="{p}', f'href="apercu-{p}')
+    html = html.replace('href="./"', 'href="apercu-index.html"')
     return html
 
 
